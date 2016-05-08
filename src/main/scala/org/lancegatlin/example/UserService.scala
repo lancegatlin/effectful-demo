@@ -10,6 +10,7 @@ trait UserService[E[_]] extends EntityService[UUID,UserService.User,E] {
 
 object UserService {
   case class User(
+    id: UUID,
     username: String,
     passwordDigest: String
   )
