@@ -1,0 +1,22 @@
+language: scala
+scala:
+- 2.11.7
+# This is a workaround for this issue: https://goo.gl/FexVa7
+addons:
+  hostname: short-hostname
+jdk:
+- openjdk6
+notifications:
+  email:
+    recipients:
+    - lance.gatlin@s-mach.net
+script:
+ - sbt coverage test coverageReport -J-Xmx3g
+after_success:
+ - sbt coveralls
+ - sbt codacyCoverage
+ - >
+      test "${TRAVIS_PULL_REQUEST}" = 'false' &&
+      test "${TRAVIS_BRANCH}" == 'master' &&
+      test "${TRAVIS_JDK_VERSION}" = 'openjdk6' &&
+      sbt 'set credentials += Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", System.getenv("SONATYPE_USER"), System.getenv("SONATYPE_PASS"))' publish

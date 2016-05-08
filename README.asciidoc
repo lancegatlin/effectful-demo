@@ -1,0 +1,38 @@
+= s_mach.$PROJECT: $PROJECT_SHORT_DESC 
+Lance Gatlin <lance.gatlin@gmail.com>
+v1,$DATE
+:blogpost-status: unpublished
+:blogpost-categories: s_mach, scala
+
+image:https://travis-ci.org/S-Mach/s_mach.$PROJECT.svg[Build Status, link="https://travis-ci.org/S-Mach/s_mach.$PROJECT"]
+image:https://coveralls.io/repos/S-Mach/s_mach.$PROJECT/badge.png[Test Coverage,link="https://coveralls.io/r/S-Mach/s_mach.$PROJECT"]
+image:https://api.codacy.com/project/badge/grade/cf9048205e154e8a9e01244de497db25[Codacy Badge,link="https://www.codacy.com/public/lancegatlin/s_mach.$PROJECT"]
+https://github.com/S-Mach/s_mach.$PROJECT[Code]
+http://s-mach.github.io/s_mach.$PROJECT/#s_mach.$PROJECT.package[Scaladoc]
+
++s_mach.$PROJECT+ $PROJECT_LONG_DESC
+
+== Include in SBT
+1. Add to +build.sbt+
++
+[source,sbt,numbered]
+----
+libraryDependencies += "net.s_mach" %% "$PROJECT" % "$PROJECT_VERSION"
+----
+NOTE: +s_mach.$PROJECT+ is currently only compiled for Scala 2.11 (though 2.10.4
+support can be added if there is interest)
+
+== Versioning
++s_mach.$PROJECT+ uses semantic versioning (http://semver.org/). +s_mach.$PROJECT+
+does not use the package private modifier. Instead, all code files outside of
+the +s_mach.$PROJECT.impl+ package form the public interface and are governed by
+the rules of semantic versioning. Code files inside the +s_mach.$PROJECT.impl+
+package may be used by downstream applications and libraries. However, no
+guarantees are made as to the stability or interface of code in the
++s_mach.$PROJECT.impl+ package between versions.
+
+== Overview
+
+== Features
+
+== Examples
