@@ -11,7 +11,11 @@ trait UserService[E[_]] {
   def findByUsername(username: String) : E[Option[User]]
   def findById(id: UUID) : E[Option[User]]
   def findAll(start: Int, batchSize: Int) : E[Seq[User]]
-  def create(user: User) : E[Boolean]
+  def create(
+    id: UUID,
+    username: String,
+    password: String
+  ) : E[Boolean]
   def rename(userId: UUID, newUsername: String) : E[Boolean]
   def remove(userId: User) : E[Boolean]
  }
