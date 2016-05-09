@@ -11,4 +11,5 @@ trait UUID extends Comparable[UUID] {
 
 trait UUIDService[E[_]] {
   def apply() : E[UUID]
+  def parse(s: String) : E[Option[UUID]]
 }
