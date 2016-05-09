@@ -12,6 +12,8 @@ trait UserLoginService[E[_]] {
 object UserLoginService {
   type Token = String
   sealed trait LoginFailure
-  case object PasswordMismatch extends LoginFailure
-  case object UserDoesNotExist extends LoginFailure
+  object LoginFailure {
+    case object PasswordMismatch extends LoginFailure
+    case object UserDoesNotExist extends LoginFailure
+  }
 }

@@ -40,9 +40,10 @@ class TokenServiceImpl[E[_]](
     userId: UUID,
     deviceId: Option[UUID],
     expireAfter: Option[Duration]
-  ): E[TokenInfo] =
+  ): E[(Token,TokenInfo)] =
     for {
       uuid <- uuids.gen()
+      token = uuid.toString
       tokenInfo = TokenInfo(
         userId = userId,
         deviceId = deviceId,
@@ -52,7 +53,7 @@ class TokenServiceImpl[E[_]](
           MILLIS
         )
       )
-      result <- tokens.insert(uuid.toString, tokenInfo)
+      result <- tokens.insert(token, tokenInfo)
       _ <- {
         if(result == false) {
           E(throw new RuntimeException("Failed to create token"))
@@ -61,7 +62,7 @@ class TokenServiceImpl[E[_]](
         }
       }:E[Unit] // Note: fix intellij erroneous error
       _ <- info(s"Issued token $uuid to user $userId")
-    } yield tokenInfo
+    } yield (token,tokenInfo)
 
 
   override def validate(token: String): E[Option[TokenInfo]] =
@@ -82,10 +83,10 @@ class TokenServiceImpl[E[_]](
       _ <- info(s"Validated token $token for user ${optTokenInfo.get._1.userId}")
     } yield optTokenInfo.map(_._1)
 
-  override def find(token: String): E[Option[TokenInfo]] =
+  override def find(token: Token): E[Option[TokenInfo]] =
     tokens.findById(token).map(_.map(_._1))
 
-  override def forceExpire(token: String): E[Unit] =
+  override def forceExpire(token: Token): E[Unit] =
     for {
       optTokenInfo <- tokens.findById(token)
       result <- {
@@ -106,7 +107,7 @@ class TokenServiceImpl[E[_]](
       }
     } yield ()
 
-  override def forceAllExpire(userId: UUID, exceptTokens: String*): E[Boolean] =
+  override def forceAllExpire(userId: UUID, exceptTokens: Token*): E[Boolean] =
     for {
       allTokenInfo <- tokens.find {
         TokenInfoFields.userId === userId

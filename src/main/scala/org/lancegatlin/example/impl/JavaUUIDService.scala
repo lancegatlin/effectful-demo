@@ -20,7 +20,7 @@ object JavaUUIDService {
 
 class JavaUUIDService extends UUIDService[Id] {
   import JavaUUIDService._
-  override def apply(): Id[UUID] =
+  override def gen(): Id[UUID] =
     Wrapper(JavaUUID.randomUUID())
   override def parse(s: String): Id[Option[UUID]] =
     Try(JavaUUID.fromString(s)).toOption.map(Wrapper)

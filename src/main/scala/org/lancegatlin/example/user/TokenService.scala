@@ -12,27 +12,28 @@ trait TokenService[E[_]] {
     userId: UUID,
     deviceId: Option[UUID],
     expireAfter: Option[Duration]
-  ) : E[TokenInfo]
+  ) : E[(Token,TokenInfo)]
 
   def validate(
-    token: String
+    token: Token
   ) : E[Option[TokenInfo]]
 
   def find(
-    token: String
+    token: Token
   ) : E[Option[TokenInfo]]
 
   def forceExpire(
-    token: String
+    token: Token
   ) : E[Unit]
 
   def forceAllExpire(
     userId: UUID,
-    exceptTokens: String*
+    exceptTokens: Token*
   ) : E[Boolean]
 }
 
 object TokenService {
+  type Token = String
   case class TokenInfo(
     userId: UUID,
     deviceId: Option[UUID],
