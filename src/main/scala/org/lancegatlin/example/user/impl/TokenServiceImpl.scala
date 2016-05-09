@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration
 import org.lancegatlin.effectful._
-import org.lancegatlin.effectful.logging.Logger
+import org.lancegatlin.example.logging.Logger
 import org.lancegatlin.example.{UUID, UUIDService}
 import org.lancegatlin.example.db.EntityService
 import org.lancegatlin.example.db.query._
@@ -42,7 +42,7 @@ class TokenServiceImpl[E[_]](
     expireAfter: Option[Duration]
   ): E[TokenInfo] =
     for {
-      uuid <- uuids()
+      uuid <- uuids.gen()
       tokenInfo = TokenInfo(
         userId = userId,
         deviceId = deviceId,

@@ -1,4 +1,4 @@
-package org.lancegatlin.effectful.logging.free
+package org.lancegatlin.example.logging.free
 
 sealed trait LoggingCmd[A]
 object LoggingCmd {

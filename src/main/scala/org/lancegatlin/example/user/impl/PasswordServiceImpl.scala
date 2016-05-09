@@ -19,6 +19,7 @@ class PasswordServiceImpl[E[_]](
     if(digester.matches(d1, d2)) {
       E(true)
     } else {
+      // Delay if password didn't match
       E.delay(passwordMismatchDelay).map(_ => false)
     }
   }

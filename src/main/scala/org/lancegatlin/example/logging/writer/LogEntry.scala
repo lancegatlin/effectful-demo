@@ -1,4 +1,4 @@
-package org.lancegatlin.effectful.logging.writer
+package org.lancegatlin.example.logging.writer
 
 case class LogEntry(
   logger: String, 

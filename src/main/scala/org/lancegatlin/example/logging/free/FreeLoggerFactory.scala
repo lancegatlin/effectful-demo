@@ -1,7 +1,7 @@
-package org.lancegatlin.effectful.logging.free
+package org.lancegatlin.example.logging.free
 
 import scala.language.higherKinds
-import org.lancegatlin.effectful.logging.{Logger, LoggerFactory}
+import org.lancegatlin.example.logging.{Logger, LoggerFactory}
 
 object FreeLoggerFactory extends LoggerFactory[FreeLogging] {
   override def mkLogger(name: String): Logger[FreeLogging] =

@@ -1,4 +1,4 @@
-package org.lancegatlin.effectful.logging
+package org.lancegatlin.example.logging
 
 import scala.language.higherKinds
 

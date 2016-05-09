@@ -1,6 +1,6 @@
-package org.lancegatlin.effectful.logging.slf4j
+package org.lancegatlin.example.logging.slf4j
 
-import org.lancegatlin.effectful.logging.{Logger, LoggerFactory}
+import org.lancegatlin.example.logging.{Logger, LoggerFactory}
 
 import scalaz.Id.Id
 

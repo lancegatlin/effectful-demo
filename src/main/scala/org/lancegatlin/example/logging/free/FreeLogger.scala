@@ -1,7 +1,7 @@
-package org.lancegatlin.effectful.logging.free
+package org.lancegatlin.example.logging.free
 
 import org.lancegatlin.effectful.Free
-import org.lancegatlin.effectful.logging.Logger
+import org.lancegatlin.example.logging.Logger
 
 class FreeLogger(logger: String) extends Logger[FreeLogging] {
   override def trace(message: =>String) =

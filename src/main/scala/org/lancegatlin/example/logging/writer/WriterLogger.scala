@@ -1,6 +1,6 @@
-package org.lancegatlin.effectful.logging.writer
+package org.lancegatlin.example.logging.writer
 
-import org.lancegatlin.effectful.logging.Logger
+import org.lancegatlin.example.logging.Logger
 import scalaz.Writer
 
 class WriterLogger(name: String) extends Logger[LogWriter] {
