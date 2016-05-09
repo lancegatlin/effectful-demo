@@ -31,7 +31,6 @@ trait EntityService[ID,A,E[_]] {
   /** @return TRUE if document was marked as removed FALSE if id doesn't exist */
   def remove(id: ID) : E[Boolean]
   def remove(ids: TraversableOnce[ID]) : E[Boolean]
-  // todo: batch calls
 }
 
 object EntityService {

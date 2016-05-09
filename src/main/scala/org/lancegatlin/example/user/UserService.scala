@@ -1,5 +1,7 @@
 package org.lancegatlin.example.user
 
+import java.time.Instant
+
 import scala.language.higherKinds
 import org.lancegatlin.example.UUID
 
@@ -18,6 +20,8 @@ object UserService {
   case class User(
     id: UUID,
     username: String,
-    passwordDigest: String
+    passwordDigest: String,
+    created: Instant,
+    removed: Option[Instant]
   )
 }
