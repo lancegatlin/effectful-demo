@@ -17,7 +17,7 @@ trait Db[ID,A,E[_]] {
   import Db._
 
   /** @return if id exists, some value otherwise none */
-  def findById(id: ID) : E[Option[(A,RecordMetadata)]]
+  def findById(id: ID) : E[Option[(ID,A,RecordMetadata)]]
 
   def find(query: Query[A]) : E[Seq[(ID,A,RecordMetadata)]]
 
@@ -38,7 +38,7 @@ trait Db[ID,A,E[_]] {
 
   /** @return TRUE if document was marked as removed FALSE if id doesn't exist */
   def remove(id: ID) : E[Boolean]
-  def remove(ids: TraversableOnce[ID]) : E[Boolean]
+  def remove(ids: TraversableOnce[ID]) : E[Int]
 }
 
 object Db {

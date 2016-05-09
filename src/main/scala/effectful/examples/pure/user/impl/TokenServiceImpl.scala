@@ -70,29 +70,32 @@ class TokenServiceImpl[E[_]](
     for {
       optTokenInfo <- tokens.findById(token)
       result <- optTokenInfo match {
-        case Some((tokenInfo,_)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
-          tokens.update(token, tokenInfo.copy(
-            lastValidated = Instant.now()
-          ))
-        case None => E(true)
+        case Some((_,tokenInfo,_)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
+          for {
+            result <- tokens.update(token, tokenInfo.copy(
+              lastValidated = Instant.now()
+            ))
+            _ <- {
+              if(result) {
+                info(s"Validated token $token for user ${optTokenInfo.get._2.userId}")
+              } else {
+                E(throw new RuntimeException("Failed to update token"))
+              }
+            }:E[Unit]
+          } yield Some(tokenInfo)
+        case _ => E(None)
       }
-      _ <- if(result == false) {
-        E(throw new RuntimeException("Failed to update token"))
-      } else {
-        E(())
-      }
-      _ <- info(s"Validated token $token for user ${optTokenInfo.get._1.userId}")
-    } yield optTokenInfo.map(_._1)
+    } yield result
 
   override def find(token: Token): E[Option[TokenInfo]] =
-    tokens.findById(token).map(_.map(_._1))
+    tokens.findById(token).map(_.map(_._2))
 
   override def forceExpire(token: Token): E[Unit] =
     for {
       optTokenInfo <- tokens.findById(token)
       result <- {
         optTokenInfo match {
-          case Some((tokenInfo,_)) =>
+          case Some((_,tokenInfo,_)) =>
             tokens.update(token, tokenInfo.copy(
               expiresOn = Instant.now()
             ))
