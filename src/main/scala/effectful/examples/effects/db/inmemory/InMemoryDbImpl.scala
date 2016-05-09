@@ -2,6 +2,7 @@ package effectful.examples.effects.db.inmemory
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
+
 import effectful._
 import effectful.examples.effects.db.Db
 import effectful.examples.effects.db.Db.RecordMetadata
@@ -118,5 +119,8 @@ class InMemoryDbImpl[ID,A](
     }
 
 
-  override def find(query: Query[A]): Id[Seq[(ID, A, RecordMetadata)]] = ???
+  override def find(query: Query[A]): Id[Seq[(ID, A, RecordMetadata)]] = {
+    val q = Query.mkInMemoryQuery(query)
+    data.valuesIterator.filter { case (_,record,_) => q(record) }.toSeq
+  }
 }
