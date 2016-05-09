@@ -1,4 +1,4 @@
-package org.lancegatlin.example
+package org.lancegatlin.example.net
 
 import scala.language.higherKinds
 

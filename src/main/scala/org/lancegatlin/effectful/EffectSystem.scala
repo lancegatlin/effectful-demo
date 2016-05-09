@@ -1,5 +1,6 @@
 package org.lancegatlin.effectful
 
+import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 /**
@@ -24,4 +25,8 @@ trait EffectSystem[E[_]] {
     * @return an instance of E that can capture the effects of the computation
     */
   def apply[A](a: => A) : E[A]
+
+  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]]) : E[F[A]]
+
+  def delay(duration: FiniteDuration) : E[Unit]
 }

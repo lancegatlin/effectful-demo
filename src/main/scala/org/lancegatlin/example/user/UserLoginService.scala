@@ -1,7 +1,6 @@
-package org.lancegatlin.example
+package org.lancegatlin.example.user
 
 import scala.language.higherKinds
-
 import scalaz.\/
 
 trait UserLoginService[E[_]] {
