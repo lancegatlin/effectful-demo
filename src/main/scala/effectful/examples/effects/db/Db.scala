@@ -27,18 +27,18 @@
 //  /** @return TRUE if document was inserted FALSE if id already exists */
 //  def insert(id: ID, a : A) : E[Boolean]
 //  /** @return count of documents successfully inserted */
-//  def insert(records: Seq[(ID,A)]) : E[Int]
+//  def batchInsert(records: Seq[(ID,A)]) : E[Int]
 //  /** @return TRUE if document was updated FALSE if id doesn't exist */
 //  def update(id: ID, value: A) : E[Boolean]
 //
-//  def update(records: TraversableOnce[(ID,A)]) : E[Int]
+//  def batchUpdate(records: TraversableOnce[(ID,A)]) : E[Int]
 //
 //  def upsert(id: ID, a : A) : E[(Boolean,Boolean)]
-//  def upsert(records: TraversableOnce[(ID,A)]) : E[(Int,Int)]
+//  def batchUpsert(records: TraversableOnce[(ID,A)]) : E[(Int,Int)]
 //
 //  /** @return TRUE if document was marked as removed FALSE if id doesn't exist */
 //  def remove(id: ID) : E[Boolean]
-//  def remove(ids: TraversableOnce[ID]) : E[Int]
+//  def batchRemove(ids: TraversableOnce[ID]) : E[Int]
 //}
 //
 //object Db {
