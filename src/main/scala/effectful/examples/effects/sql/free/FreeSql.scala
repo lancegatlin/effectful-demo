@@ -1,9 +1,7 @@
 package effectful.examples.effects.sql.free
 
 import effectful.Free
-import effectful.examples.effects.sql.Sql
-import effectful.examples.effects.sql.Sql._
-import effectful.examples.effects.sql.Sql.SqlVal
+import effectful.examples.effects.sql._
 
 class FreeSql extends Sql[FreeSqlCmd] {
   override def executePreparedUpdate(preparedStatement: PreparedStatement, args: Seq[SqlVal]*): FreeSqlCmd[Int] =

@@ -1,6 +1,6 @@
 package effectful.examples.effects.sql.free
 
-import effectful.examples.effects.sql.Sql._
+import effectful.examples.effects.sql._
 
 
 sealed trait SqlCmd[R]
