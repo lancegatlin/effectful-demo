@@ -3,36 +3,36 @@ package effectful.examples.effects.sql.free
 import effectful.examples.effects.sql._
 
 
-sealed trait SqlCmd[R]
+sealed trait SqlDriverCmd[R]
 
-object SqlCmd {
+object SqlDriverCmd {
   case class GetConnection(
     url: String,
-    username: String, 
+    username: String,
     password: String
-  ) extends SqlCmd[Connection]
+  ) extends SqlDriverCmd[Connection]
 
   case class Prepare(
     connection: Connection,
     statement: String
-  ) extends SqlCmd[PreparedStatement]
+  ) extends SqlDriverCmd[PreparedStatement]
 
   case class ExecutePreparedQuery(
     preparedStatement: PreparedStatement,
     args: Seq[Seq[SqlVal]]
-  ) extends SqlCmd[Cursor]
+  ) extends SqlDriverCmd[Cursor]
 
   case class ExecutePreparedUpdate(
     preparedStatement: PreparedStatement,
     args: Seq[Seq[SqlVal]]
-  ) extends SqlCmd[Int]
+  ) extends SqlDriverCmd[Int]
 
   case class ExecuteQuery(
     connection: Connection,
     statement: String
-  ) extends SqlCmd[Cursor]
+  ) extends SqlDriverCmd[Cursor]
   case class ExecuteUpdate(
     connection: Connection,
     statement: String
-  ) extends SqlCmd[Int]
+  ) extends SqlDriverCmd[Int]
 }

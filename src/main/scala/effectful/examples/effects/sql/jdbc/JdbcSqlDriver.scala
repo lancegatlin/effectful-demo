@@ -7,7 +7,7 @@ import effectful._
 import effectful.examples.effects.sql._
 import org.apache.commons.io.IOUtils
 
-class JdbcSql extends Sql[Id] {
+class JdbcSqlDriver extends SqlDriver[Id] {
   case class JdbcConnection(
     url: String,
     jdbcConnection: java.sql.Connection
@@ -36,8 +36,9 @@ class JdbcSql extends Sql[Id] {
     )
 
   override def prepare(
-    connection: Connection,
     statement: String
+  )(implicit
+    connection: Connection
   ): Id[PreparedStatement] =
     JdbcPreparedStatement(
       statement,
@@ -45,8 +46,11 @@ class JdbcSql extends Sql[Id] {
     )
 
   override def executePreparedUpdate(
-    preparedStatement: PreparedStatement,
+    preparedStatement: PreparedStatement
+  )(
     batches: Seq[SqlVal]*
+  )(implicit
+    connection: Connection
   ): Id[Int] = {
     val ps = preparedStatement.asInstanceOf[JdbcPreparedStatement].preparedStatement
     prepareBatches(ps,batches)
@@ -55,8 +59,11 @@ class JdbcSql extends Sql[Id] {
 
 
   override def executePreparedQuery(
-    preparedStatement: PreparedStatement,
+    preparedStatement: PreparedStatement
+  )(
     batches: Seq[SqlVal]*
+  )(implicit
+    connection: Connection
   ): Id[Cursor] = {
     val ps = preparedStatement.asInstanceOf[JdbcPreparedStatement].preparedStatement
     prepareBatches(ps,batches)
@@ -64,16 +71,18 @@ class JdbcSql extends Sql[Id] {
   }
 
   override def executeQuery(
-    connection: Connection,
     statement: String
+  )(implicit
+    connection: Connection
   ): Id[Cursor] = {
     val s = connection.asInstanceOf[JdbcConnection].jdbcConnection.createStatement()
     JdbcCursor(s.executeQuery(statement))
   }
 
   override def executeUpdate(
-    connection: Connection,
     statement: String
+  )(implicit
+    connection: Connection
   ): Id[Int] = {
     val s = connection.asInstanceOf[JdbcConnection].jdbcConnection.createStatement()
     s.executeUpdate(statement)
@@ -82,7 +91,9 @@ class JdbcSql extends Sql[Id] {
   case class JdbcRow(
     index: Int,
     cursor: JdbcCursor
-  ) extends Row {
+  ) extends CursorRow {
+    override def columnCount = cursor.columnCount
+
     def apply(col: Int) : SqlVal = {
       import SqlType._
       cursor.columnMetadata(col).sqlType match {
@@ -155,6 +166,17 @@ class JdbcSql extends Sql[Id] {
           SqlVal.TIMESTAMP(java.time.Instant.ofEpochMilli(cursor.resultSet.getTimestamp(col).getTime))
       }
     }
+    case class ColumnIterator(
+      var current: Int = 0
+    ) extends Iterator[SqlVal] {
+      override def hasNext = current < columnCount
+      override def next() = {
+        val retv = apply(current)
+        current = current + 1
+        retv
+      }
+    }
+    override def iterator = if(columnCount > 0) ColumnIterator() else Iterator.empty
   }
   case class JdbcCursor(
     resultSet: java.sql.ResultSet
@@ -201,6 +223,7 @@ class JdbcSql extends Sql[Id] {
     def currentRowNum = resultSet.getRow
     def current = JdbcRow(currentRowNum,this)
 
+    // todo:
     def reverse() : Unit = ???
 
     def isClosed = resultSet.isClosed

@@ -1,6 +1,6 @@
 package effectful.examples.effects.sql
 
-trait Cursor extends Iterator[Row] {
+trait Cursor extends Iterator[CursorRow] {
   def schemaName: String
   def tableName: String
 
@@ -17,7 +17,7 @@ trait Cursor extends Iterator[Row] {
   def first() : Unit
   def last() : Unit
   def currentRowNum : Int
-  def current: Row
+  def current: CursorRow
 
   def reverse() : Unit
 
