@@ -62,7 +62,7 @@ class InMemoryDaoImpl[ID,A](
         false
     }
   }
-  override def batchUpdate(records: TraversableOnce[(ID, A)]): Id[Int] =
+  override def batchUpdate(records: Traversable[(ID, A)]): Id[Int] =
     records.foldLeft(0) { case (acc,(id,record)) => if(update(id,record)) 1 else 0 }
 
   override def insert(id: ID, value: A): Id[Boolean] = {
@@ -82,7 +82,7 @@ class InMemoryDaoImpl[ID,A](
     }
   }
 
-  override def batchInsert(records: Seq[(ID, A)]): Id[Int] =
+  override def batchInsert(records: Traversable[(ID, A)]): Id[Int] =
     records.foldLeft(0) { case (acc,(id,record)) => if(insert(id,record)) 1 else 0 }
 
   override def remove(id: ID): Id[Boolean] =
@@ -93,7 +93,7 @@ class InMemoryDaoImpl[ID,A](
       false
     }
 
-  override def batchRemove(ids: TraversableOnce[ID]): Id[Int] =
+  override def batchRemove(ids: Traversable[ID]): Id[Int] =
     ids.foldLeft(0)((acc,id) => if(remove(id)) 1 else 0)
 
   override def upsert(id: ID, value: A): (Boolean, Boolean) = {
@@ -112,7 +112,7 @@ class InMemoryDaoImpl[ID,A](
     (inserted,updated)
   }
 
-  override def batchUpsert(records: TraversableOnce[(ID, A)]): (Int, Int) =
+  override def batchUpsert(records: Traversable[(ID, A)]): (Int, Int) =
     records.foldLeft((0,0)) { case ((inserted,updated),(id,record)) =>
         val (i,u) = upsert(id,record)
       (if(i) inserted + 1 else inserted, if(u) updated + 1 else updated)

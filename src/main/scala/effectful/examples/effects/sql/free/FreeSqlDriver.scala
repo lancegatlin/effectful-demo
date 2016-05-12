@@ -4,23 +4,36 @@ import effectful.Free
 import effectful.examples.effects.sql._
 
 class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
+  import Free._
+  import SqlDriverCmd._
+  
   override def executePreparedUpdate(preparedStatement: PreparedStatement)(args: Seq[SqlVal]*)(implicit connection: Connection): FreeSqlDriverCmd[Int] =
-    Free.Cmd(SqlDriverCmd.ExecutePreparedUpdate(preparedStatement,args))
+    Cmd(ExecutePreparedUpdate(preparedStatement,args))
 
   override def executePreparedQuery(preparedStatement: PreparedStatement)(args: Seq[SqlVal]*)(implicit connection: Connection): FreeSqlDriverCmd[Cursor] =
-    Free.Cmd(SqlDriverCmd.ExecutePreparedQuery(preparedStatement,args))
+    Cmd(ExecutePreparedQuery(preparedStatement,args))
 
   override def executeQuery(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[Cursor] =
-    Free.Cmd(SqlDriverCmd.ExecuteQuery(statement))
+    Cmd(ExecuteQuery(statement))
 
   override def executeUpdate(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[Int] =
-    Free.Cmd(SqlDriverCmd.ExecuteUpdate(statement))
+    Cmd(ExecuteUpdate(statement))
 
   override def getConnection(url: String, username: String, password: String): FreeSqlDriverCmd[Connection] =
-    Free.Cmd(SqlDriverCmd.GetConnection(url,username,password))
+    Cmd(GetConnection(url,username,password))
 
   override def prepare(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[PreparedStatement] =
-    Free.Cmd(SqlDriverCmd.Prepare(statement))
+    Cmd(Prepare(statement))
 
-  override def executeTransaction[A](f: FreeSqlDriver => FreeSqlDriverCmd[A]): FreeSqlDriverCmd[A] = f(this)
+  override def beginTransaction()(implicit connection: Connection): FreeSqlDriverCmd[Unit] =
+    Cmd(BeginTransaction())
+
+  override def commit()(implicit connection: Connection): FreeSqlDriverCmd[Unit] =
+    Cmd(Commit())
+  
+  override def rollback()(implicit connection: Connection): FreeSqlDriverCmd[Unit] =
+    Cmd(Rollback())
+
+  override def close()(connection: Connection): FreeSqlDriverCmd[Unit] =
+    Cmd(Close(connection))
 }

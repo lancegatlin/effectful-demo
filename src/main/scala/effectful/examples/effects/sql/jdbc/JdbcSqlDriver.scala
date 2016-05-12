@@ -5,7 +5,6 @@ import java.time.{LocalDate, ZoneId, ZoneOffset}
 
 import effectful._
 import effectful.examples.effects.sql._
-import effectful.examples.effects.sql.free.{FreeSqlDriver, FreeSqlDriverCmd}
 import org.apache.commons.io.IOUtils
 
 class JdbcSqlDriver extends SqlDriver[Id] {
@@ -15,10 +14,6 @@ class JdbcSqlDriver extends SqlDriver[Id] {
   ) extends Connection {
     override def isClosed =
       jdbcConnection.isClosed
-    override def close() =
-      jdbcConnection.close()
-    override def commit(): Unit =
-      jdbcConnection.commit()
   }
 
   case class JdbcPreparedStatement(
@@ -89,8 +84,20 @@ class JdbcSqlDriver extends SqlDriver[Id] {
     s.executeUpdate(statement)
   }
 
+  override def beginTransaction()(implicit connection: Connection): Id[Unit] =
+    connection.asInstanceOf[JdbcConnection].jdbcConnection.setAutoCommit(false)
 
-  override def executeTransaction[A](f: (FreeSqlDriver) => FreeSqlDriverCmd[A]): Id[A] = ???
+  override def rollback()(implicit connection: Connection): Id[Unit] =
+    connection.asInstanceOf[JdbcConnection].jdbcConnection.rollback()
+
+  override def commit()(implicit connection: Connection): Id[Unit] = {
+    connection.asInstanceOf[JdbcConnection].jdbcConnection.commit()
+    connection.asInstanceOf[JdbcConnection].jdbcConnection.setAutoCommit(true)
+  }
+
+  override def close()(connection: Connection): Id[Unit] = {
+    connection.asInstanceOf[JdbcConnection].jdbcConnection.close()
+  }
 
   case class JdbcRow(
     index: Int,

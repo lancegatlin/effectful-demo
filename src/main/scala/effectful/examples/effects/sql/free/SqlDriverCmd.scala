@@ -43,4 +43,20 @@ object SqlDriverCmd {
   )(implicit
     val connection: Connection
   ) extends SqlDriverCmd[Int]
+  
+  case class BeginTransaction()(implicit
+    val connection: Connection
+  ) extends SqlDriverCmd[Unit]
+  
+  case class Commit()(implicit
+    val connection: Connection
+  ) extends SqlDriverCmd[Unit]
+  
+  case class Rollback()(implicit
+    val connection: Connection
+  ) extends SqlDriverCmd[Unit]
+
+  case class Close(
+    connection: Connection
+  ) extends SqlDriverCmd[Unit]
 }

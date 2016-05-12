@@ -1,7 +1,5 @@
 package effectful.examples.effects.sql
 
-import effectful.examples.effects.sql.free.{FreeSqlDriver, FreeSqlDriverCmd}
-
 import scala.language.higherKinds
 
 trait SqlDriver[E[_]] {
@@ -27,5 +25,9 @@ trait SqlDriver[E[_]] {
   def executeQuery(statement: String)(implicit connection: Connection) : E[Cursor]
   def executeUpdate(statement: String)(implicit connection: Connection) : E[Int]
 
-  def executeTransaction[A](f: FreeSqlDriver => FreeSqlDriverCmd[A]) : E[A]
+  def beginTransaction()(implicit connection: Connection) : E[Unit]
+  def rollback()(implicit connection: Connection) : E[Unit]
+  def commit()(implicit connection: Connection) : E[Unit]
+
+  def close()(connection: Connection) : E[Unit]
 }

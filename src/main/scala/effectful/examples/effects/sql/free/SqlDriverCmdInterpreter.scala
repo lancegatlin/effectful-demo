@@ -35,6 +35,14 @@ class SqlDriverCmdInterpreter[E[_]](
         executeQuery(statement)(c.connection)
       case c@ExecuteUpdate(statement) =>
         executeUpdate(statement)(c.connection)
+      case c@BeginTransaction() =>
+        beginTransaction()(c.connection)
+      case c@Rollback() =>
+        rollback()(c.connection)
+      case c@Commit() =>
+        commit()(c.connection)
+      case c@Close(connection) =>
+        close()(connection)
     }
   }
 

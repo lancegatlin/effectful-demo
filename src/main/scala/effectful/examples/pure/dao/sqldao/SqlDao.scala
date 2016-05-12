@@ -19,7 +19,7 @@ object SqlDao {
   )(implicit
     val idToSql: ID => SqlVal,
     val sqlToId: SqlVal => ID,
-    val recordFromSqlRow: Seq[SqlVal] => A,
+    val recordToSqlRow: A => Seq[SqlVal],
     val sqlRowToRecord: Seq[SqlVal] => A
   ) {
     def fieldCount = fieldColumnMappings.size
@@ -69,7 +69,7 @@ class SqlDao[ID,A,E[_]](
     }
   }
 
-  val qFindById =
+  lazy val qFindById =
       sql.prepare(
         s"$qSelectRecordAndMetadata WHERE ${idFieldName.esc} = ?"
       ).map { ps =>
@@ -98,7 +98,7 @@ class SqlDao[ID,A,E[_]](
       cursor <- sql.executeQuery(s"$qSelectRecordAndMetadata WHERE ${queryToSqlWhere(query)}")
     } yield parseRecordAndMetadataCursor(cursor).toSeq
 
-  val qFindAll = sql.prepare(qSelectRecordAndMetadata)
+  lazy val qFindAll = sql.prepare(qSelectRecordAndMetadata)
 
   override def findAll(start: Int, batchSize: Int): E[Seq[(ID, A, RecordMetadata)]] =
     for {
@@ -106,16 +106,77 @@ class SqlDao[ID,A,E[_]](
       cursor <- sql.executePreparedQuery(fq)()
     } yield parseRecordAndMetadataCursor(cursor).toSeq
 
-  val qRemove = sql.prepare(s"DELETE FROM $tableName WHERE")
-  override def remove(id: ID): E[Boolean] = ???
-  override def batchRemove(ids: TraversableOnce[ID]): E[Int] = ???
+  lazy val qRemove = sql.prepare(esc"DELETE FROM $tableName WHERE $idFieldName=?").map { ps =>
+    { id:ID =>
+      for {
+        result <- sql.executePreparedUpdate(ps)(Seq(idToSql(id)))
+      } yield result == 1
+    }
+  }
+  override def remove(id: ID): E[Boolean] =
+    for {
+      fq <- qRemove
+      result <- fq(id)
+    } yield result
 
-  override def insert(id: ID, a: A): E[Boolean] = ???
-  override def batchInsert(records: Seq[(ID, A)]): E[Int] = ???
+  override def batchRemove(ids: Traversable[ID]): E[Int] = {
+    for {
+      updateCount <- sql.executeUpdate(
+        esc"DELETE FROM $tableName WHERE $idFieldName IN (" +
+        ids.map(id => idToSql(id).printSQL).mkString(",") +
+        ")"
+      )
+    } yield updateCount
+  }
 
-  override def update(id: ID, value: A): E[Boolean] = ???
-  override def batchUpdate(records: TraversableOnce[(ID, A)]): E[Int] = ???
+  lazy val qInsert =
+    sql.prepare(
+      s"INSERT INTO ${tableName.esc} VALUES(${(0 until fieldCount).map(_ => "?").mkString(",")})"
+    ).map { ps =>
 
-  override def batchUpsert(records: TraversableOnce[(ID, A)]): E[(Int, Int)] = ???
+      { values:Seq[(ID,A)] =>
+        sql.executePreparedUpdate(ps)(values.map { case (id,a) =>
+          idToSql(id) +: recordToSqlRow(a)
+        }:_*)
+      }
+    }
+
+  override def insert(id: ID, a: A): E[Boolean] =
+    for {
+      fq <- qInsert
+      insertCount <- fq(Seq((id,a)))
+    } yield insertCount == 1
+
+  override def batchInsert(records: Traversable[(ID, A)]): E[Int] =
+    for {
+      fq <- qInsert
+      insertCount <- fq(records.toSeq)
+    } yield insertCount
+
+
+  lazy val qUpdate =
+    sql.prepare(
+      s"UPDATE ${tableName.esc} SET ${fieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idFieldName.esc}=?"
+    ).map { ps =>
+
+      { (id:ID,a:A) =>
+        sql.executePreparedUpdate(ps)(recordToSqlRow(a) :+ idToSql(id))
+      }
+    }
+  override def update(id: ID, value: A): E[Boolean] =
+    for {
+      fq <- qUpdate
+      updateCount <- fq(id,value)
+    } yield updateCount == 1
+
+  override def batchUpdate(records: Traversable[(ID, A)]): E[Int] =
+    for {
+      // todo: thread safety of this op? what if multiple callers call beginTransaction?
+      _ <- sql.beginTransaction()
+      results <- records.map { case (id,a) => update(id,a) }.sequence
+      _ <- sql.commit()
+    } yield results.count(_ == true)
+
+  override def batchUpsert(records: Traversable[(ID, A)]): E[(Int, Int)] = ???
   override def upsert(id: ID, a: A): E[(Boolean, Boolean)] = ???
 }

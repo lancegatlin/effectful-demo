@@ -7,6 +7,7 @@ sealed trait SqlVal {
 }
 object SqlVal {
   // Mappings based on: https://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
+  // todo: support SqlTypes & Vals that are closer to underlying data instead of as interpreted by JDBC
 
   case class NULL(sqlType: SqlType) extends SqlVal
   case class CHAR(
@@ -210,8 +211,8 @@ object SqlVal {
   }
 
   /*
-    case NULL =>
-    case sql@CHARACTER(_) =>
+    case NULL(_ =>
+    case sql@CHAR(_) =>
     case sql@VARCHAR(_) =>
     case sql@CLOB() =>
     case sql@NCLOB() =>
