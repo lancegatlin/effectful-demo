@@ -11,14 +11,16 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
     Free.Cmd(SqlDriverCmd.ExecutePreparedQuery(preparedStatement,args))
 
   override def executeQuery(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[Cursor] =
-    Free.Cmd(SqlDriverCmd.ExecuteQuery(connection, statement))
+    Free.Cmd(SqlDriverCmd.ExecuteQuery(statement))
 
   override def executeUpdate(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[Int] =
-    Free.Cmd(SqlDriverCmd.ExecuteUpdate(connection,statement))
+    Free.Cmd(SqlDriverCmd.ExecuteUpdate(statement))
 
   override def getConnection(url: String, username: String, password: String): FreeSqlDriverCmd[Connection] =
     Free.Cmd(SqlDriverCmd.GetConnection(url,username,password))
 
   override def prepare(statement: String)(implicit connection: Connection): FreeSqlDriverCmd[PreparedStatement] =
-    Free.Cmd(SqlDriverCmd.Prepare(connection, statement))
+    Free.Cmd(SqlDriverCmd.Prepare(statement))
+
+  override def executeTransaction[A](f: FreeSqlDriver => FreeSqlDriverCmd[A]): FreeSqlDriverCmd[A] = f(this)
 }

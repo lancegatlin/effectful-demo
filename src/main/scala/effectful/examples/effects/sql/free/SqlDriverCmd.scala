@@ -1,6 +1,6 @@
 package effectful.examples.effects.sql.free
 
-import effectful.examples.effects.sql._
+import effectful.examples.effects.sql.{Connection, _}
 
 
 sealed trait SqlDriverCmd[R]
@@ -13,26 +13,34 @@ object SqlDriverCmd {
   ) extends SqlDriverCmd[Connection]
 
   case class Prepare(
-    connection: Connection,
     statement: String
+  )(implicit
+    val connection: Connection
   ) extends SqlDriverCmd[PreparedStatement]
 
   case class ExecutePreparedQuery(
     preparedStatement: PreparedStatement,
     args: Seq[Seq[SqlVal]]
+  )(implicit
+    val connection: Connection
   ) extends SqlDriverCmd[Cursor]
 
   case class ExecutePreparedUpdate(
     preparedStatement: PreparedStatement,
     args: Seq[Seq[SqlVal]]
+  )(implicit
+    val connection: Connection
   ) extends SqlDriverCmd[Int]
 
   case class ExecuteQuery(
-    connection: Connection,
     statement: String
+  )(implicit
+    val connection: Connection
   ) extends SqlDriverCmd[Cursor]
+
   case class ExecuteUpdate(
-    connection: Connection,
     statement: String
+  )(implicit
+    val connection: Connection
   ) extends SqlDriverCmd[Int]
 }

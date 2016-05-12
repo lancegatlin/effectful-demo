@@ -5,6 +5,7 @@ import java.time.{LocalDate, ZoneId, ZoneOffset}
 
 import effectful._
 import effectful.examples.effects.sql._
+import effectful.examples.effects.sql.free.{FreeSqlDriver, FreeSqlDriverCmd}
 import org.apache.commons.io.IOUtils
 
 class JdbcSqlDriver extends SqlDriver[Id] {
@@ -87,6 +88,9 @@ class JdbcSqlDriver extends SqlDriver[Id] {
     val s = connection.asInstanceOf[JdbcConnection].jdbcConnection.createStatement()
     s.executeUpdate(statement)
   }
+
+
+  override def executeTransaction[A](f: (FreeSqlDriver) => FreeSqlDriverCmd[A]): Id[A] = ???
 
   case class JdbcRow(
     index: Int,

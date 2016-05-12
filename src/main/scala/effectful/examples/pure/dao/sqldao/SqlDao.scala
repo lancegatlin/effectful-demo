@@ -106,6 +106,7 @@ class SqlDao[ID,A,E[_]](
       cursor <- sql.executePreparedQuery(fq)()
     } yield parseRecordAndMetadataCursor(cursor).toSeq
 
+  val qRemove = sql.prepare(s"DELETE FROM $tableName WHERE")
   override def remove(id: ID): E[Boolean] = ???
   override def batchRemove(ids: TraversableOnce[ID]): E[Int] = ???
 
