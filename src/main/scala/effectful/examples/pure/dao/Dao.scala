@@ -16,6 +16,11 @@ import scala.language.higherKinds
 trait Dao[ID,A,E[_]] {
   import Dao._
 
+  /** @return TRUE if id is in use FALSE otherwise */
+  def exists(id: ID) : E[Boolean]
+  /** @return empty sequence if all IDs exists otherwise a sequence of IDs that do not exist */
+  def batchExists(id: Traversable[ID]) : E[Map[ID,Boolean]]
+
   /** @return if id exists, some value otherwise none */
   def findById(id: ID) : E[Option[(ID,A,RecordMetadata)]]
 

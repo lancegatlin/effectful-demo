@@ -25,24 +25,43 @@ class SqlDriverCmdInterpreter[E[_]](
           username = username,
           password = password
         )
-      case c@Prepare(statement) =>
-        prepare(statement)(c.connection)
-      case c@ExecutePreparedQuery(preparedStatement, args) =>
-        executePreparedQuery(preparedStatement)(args:_*)(c.connection)
-      case c@ExecutePreparedUpdate(preparedStatement, args) =>
-        executePreparedUpdate(preparedStatement)(args:_*)(c.connection)
-      case c@ExecuteQuery(statement) =>
-        executeQuery(statement)(c.connection)
-      case c@ExecuteUpdate(statement) =>
-        executeUpdate(statement)(c.connection)
-      case c@BeginTransaction() =>
-        beginTransaction()(c.connection)
-      case c@Rollback() =>
-        rollback()(c.connection)
-      case c@Commit() =>
-        commit()(c.connection)
-      case c@Close(connection) =>
-        close()(connection)
+      case CloseConnection(connection) =>
+        closeConnection(connection)
+
+      case BeginTransaction(context) =>
+        beginTransaction()(context)
+      case Rollback(context) =>
+        rollback()(context)
+      case Commit(context) =>
+        commit()(context)
+
+      case Prepare(statement,context) =>
+        prepare(statement)(context)
+      case ExecutePreparedQuery(preparedStatement, rows, context) =>
+        executePreparedQuery(preparedStatement)(rows:_*)(context)
+      case ExecutePreparedUpdate(preparedStatement, rows, context) =>
+        executePreparedUpdate(preparedStatement)(rows:_*)(context)
+      case ExecuteQuery(statement,context) =>
+        executeQuery(statement)(context)
+      case ExecuteUpdate(statement,context) =>
+        executeUpdate(statement)(context)
+
+      case GetMetadata(cursor) =>
+        getMetadata(cursor)
+      case SeekAbsolute(cursor, rowNum) =>
+        seekAbsolute(cursor, rowNum)
+      case SeekRelative(cursor, rowOffset) =>
+        seekRelative(cursor, rowOffset)
+      case SeekFirst(cursor) =>
+        seekFirst(cursor)
+      case SeekLast(cursor) =>
+        seekLast(cursor)
+      case SetSeekDir(cursor, forward) =>
+        setSeekDir(cursor, forward)
+      case NextRow(cursor) =>
+        nextRow(cursor)
+      case CloseCursor(cursor) =>
+        closeCursor(cursor)
     }
   }
 

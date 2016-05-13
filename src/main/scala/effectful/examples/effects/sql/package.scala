@@ -1,9 +1,25 @@
 package effectful.examples.effects
 
+import scala.language.higherKinds
+import scala.language.implicitConversions
 import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
+import effectful._
 
 package object sql {
+  implicit def connectiontoContextAutoCommit(implicit connection: SqlDriver.Connection) : SqlDriver.Context.AutoCommit =
+    SqlDriver.Context.AutoCommit(connection)
+
+  implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
+    def iterator(cursor: SqlDriver.Cursor)(implicit E:EffectSystem[E]) : EffectInputStream[E,SqlDriver.SqlRow]= {
+      val _E = E
+      new EffectInputStream[E,SqlDriver.SqlRow] {
+        implicit val E = _E
+        override def next() = self.nextRow(cursor).map(_.map(_.current))
+      }
+    }
+  }
+
   implicit class SqlValPML(val self: SqlVal) extends AnyVal {
     def printSQL : String = {
       def quotes(s: String) = s"'$s'"
@@ -13,6 +29,9 @@ package object sql {
         case NULL(_) => "null"
         case sql@CHAR(_) => quotes(sql.toCharString())
         case sql@VARCHAR(_) => quotes(sql.toCharString())
+
+        case sql@NCHAR(_) => quotes(sql.toCharString())
+        case sql@NVARCHAR(_) => quotes(sql.toCharString())
 
         // todo: prob shouldn't ship these as strings - should be way to attach stream?
         case sql@CLOB() => quotes(sql.toCharString())

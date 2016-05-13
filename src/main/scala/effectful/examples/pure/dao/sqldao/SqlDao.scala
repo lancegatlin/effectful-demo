@@ -2,10 +2,11 @@ package effectful.examples.pure.dao.sqldao
 
 import scala.language.higherKinds
 import effectful._
-import effectful.examples.effects.sql.{Connection, Cursor, SqlDriver, SqlVal}
+import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.Dao
 import effectful.examples.pure.dao.Dao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
+import SqlDriver._
 
 object SqlDao {
   case class FieldColumnMapping(
@@ -19,8 +20,8 @@ object SqlDao {
   )(implicit
     val idToSql: ID => SqlVal,
     val sqlToId: SqlVal => ID,
-    val recordToSqlRow: A => Seq[SqlVal],
-    val sqlRowToRecord: Seq[SqlVal] => A
+    val recordToSqlRow: A => IndexedSeq[SqlVal],
+    val sqlRowToRecord: IndexedSeq[SqlVal] => A
   ) {
     def fieldCount = fieldColumnMappings.size
   }
@@ -61,10 +62,10 @@ class SqlDao[ID,A,E[_]](
       (fieldNames ++ metadataFieldNames).map(_.esc).mkString(",")
     } FROM ${tableName.esc} $sqlMaybeJoinMetadata"
 
-  def parseRecordAndMetadataCursor(cursor: Cursor) : Iterator[(ID,A,RecordMetadata)] = {
-    cursor.map { row =>
+  def parse(cursor: Cursor) : EffectInputStream[E,(ID,A,RecordMetadata)] = {
+    sql.iterator(cursor).map { row =>
       val idCol = row.head
-      val (recordRow, metadataRow) = row.tail.toSeq.splitAt(fieldCount)
+      val (recordRow, metadataRow) = row.tail.splitAt(fieldCount)
       (sqlToId(idCol), sqlRowToRecord(recordRow), metadataMapping.sqlRowToRecord(metadataRow))
     }
   }
@@ -75,9 +76,9 @@ class SqlDao[ID,A,E[_]](
       ).map { ps =>
         { id: ID =>
           for {
-            cursor <- sql.executePreparedQuery(ps)(Seq(idToSql(id)))
+            cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
           } yield {
-            parseRecordAndMetadataCursor(cursor)
+            parse(cursor)
           }
         }
       }
@@ -85,10 +86,9 @@ class SqlDao[ID,A,E[_]](
   override def findById(id: ID): E[Option[(ID, A, RecordMetadata)]] =
     for {
       fq <- qFindById
-      result <- fq(id)
-    } yield {
-      result.toStream.headOption
-    }
+      iterator <- fq(id)
+      result <- iterator.headOption()
+    } yield result
 
   // todo: translate Query[A] to SQL where text
   def queryToSqlWhere(query: Query[A]) : String = ???
@@ -96,7 +96,9 @@ class SqlDao[ID,A,E[_]](
   override def find(query: Query[A]): E[Seq[(ID, A, RecordMetadata)]] =
     for {
       cursor <- sql.executeQuery(s"$qSelectRecordAndMetadata WHERE ${queryToSqlWhere(query)}")
-    } yield parseRecordAndMetadataCursor(cursor).toSeq
+      iterator = parse(cursor)
+      result <- iterator.collect[Seq]()
+    } yield result
 
   lazy val qFindAll = sql.prepare(qSelectRecordAndMetadata)
 
@@ -104,12 +106,31 @@ class SqlDao[ID,A,E[_]](
     for {
       fq <- qFindAll
       cursor <- sql.executePreparedQuery(fq)()
-    } yield parseRecordAndMetadataCursor(cursor).toSeq
+      iterator = parse(cursor)
+      result <- iterator.collect[Seq]()
+    } yield result
 
+  // todo:
+//  lazy val qExists =
+//    sql.prepare(
+//      s"SELECT 1 FROM ${tableName.esc} WHERE ${idFieldName.esc}=?"
+//    ).map { ps =>
+//
+//      { id:ID =>
+//        for {
+//          cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
+//        } yield sqlToId(cursor.current(0))
+//      }
+//    }
+  override def exists(id: ID): E[Boolean] = ???
+
+  override def batchExists(id: Traversable[ID]): E[Map[ID, Boolean]] = ???
+
+  // todo: fix me this should be an update not actual delete
   lazy val qRemove = sql.prepare(esc"DELETE FROM $tableName WHERE $idFieldName=?").map { ps =>
     { id:ID =>
       for {
-        result <- sql.executePreparedUpdate(ps)(Seq(idToSql(id)))
+        result <- sql.executePreparedUpdate(ps)(IndexedSeq(idToSql(id)))
       } yield result == 1
     }
   }
@@ -129,6 +150,7 @@ class SqlDao[ID,A,E[_]](
     } yield updateCount
   }
 
+  // todo: insert to metadata table too if needed
   lazy val qInsert =
     sql.prepare(
       s"INSERT INTO ${tableName.esc} VALUES(${(0 until fieldCount).map(_ => "?").mkString(",")})"
@@ -154,6 +176,7 @@ class SqlDao[ID,A,E[_]](
     } yield insertCount
 
 
+  // todo: update metadata table too if needed
   lazy val qUpdate =
     sql.prepare(
       s"UPDATE ${tableName.esc} SET ${fieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idFieldName.esc}=?"
@@ -170,13 +193,31 @@ class SqlDao[ID,A,E[_]](
     } yield updateCount == 1
 
   override def batchUpdate(records: Traversable[(ID, A)]): E[Int] =
-    for {
-      // todo: thread safety of this op? what if multiple callers call beginTransaction?
-      _ <- sql.beginTransaction()
-      results <- records.map { case (id,a) => update(id,a) }.sequence
-      _ <- sql.commit()
-    } yield results.count(_ == true)
+    // Note: implicit keyword not currently allowed inside for-compre https://issues.scala-lang.org/browse/SI-2823
+    sql.beginTransaction().flatMap { implicit transaction =>
+      for {
+        results <- records.map { case (id,a) => update(id,a) }.sequence
+        _ <- sql.commit()
+      } yield results.count(_ == true)
+    }
 
-  override def batchUpsert(records: Traversable[(ID, A)]): E[(Int, Int)] = ???
-  override def upsert(id: ID, a: A): E[(Boolean, Boolean)] = ???
+  override def upsert(id: ID, a: A): E[(Boolean, Boolean)] =
+    for {
+      idExists <- exists(id)
+      result <- if(idExists) {
+        update(id,a).map(result => (false,result))
+      } else {
+        insert(id,a).map(result => (result,false))
+      }
+    } yield result
+
+  override def batchUpsert(records: Traversable[(ID, A)]): E[(Int, Int)] =
+    for {
+      idToExists <- batchExists(records.map(_._1))
+      (toUpdate,toInsert) = records.partition { case (id,a) => idToExists(id) }
+      eUpdates = batchUpdate(toUpdate)
+      eInserts = batchInsert(toInsert)
+      updateCount <- eUpdates
+      insertCount <- eInserts
+    } yield (insertCount,updateCount)
 }

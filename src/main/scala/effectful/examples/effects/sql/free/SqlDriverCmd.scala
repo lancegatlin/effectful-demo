@@ -1,6 +1,7 @@
 package effectful.examples.effects.sql.free
 
-import effectful.examples.effects.sql.{Connection, _}
+import effectful.examples.effects.sql._
+import SqlDriver._
 
 
 sealed trait SqlDriverCmd[R]
@@ -12,51 +13,86 @@ object SqlDriverCmd {
     password: String
   ) extends SqlDriverCmd[Connection]
 
+  case class CloseConnection(
+    connection: Connection
+  ) extends SqlDriverCmd[Unit]
+
+
+  case class BeginTransaction(
+    context: Context.AutoCommit
+  ) extends SqlDriverCmd[Context.InTransaction]
+
+  case class Commit(
+    context: Context.InTransaction
+  ) extends SqlDriverCmd[Unit]
+
+  case class Rollback(
+    context: Context.InTransaction
+  ) extends SqlDriverCmd[Unit]
+
+
   case class Prepare(
-    statement: String
-  )(implicit
-    val connection: Connection
+    statement: String,
+    context: Context
   ) extends SqlDriverCmd[PreparedStatement]
 
   case class ExecutePreparedQuery(
     preparedStatement: PreparedStatement,
-    args: Seq[Seq[SqlVal]]
-  )(implicit
-    val connection: Connection
+    rows: Seq[SqlRow],
+    context: Context
   ) extends SqlDriverCmd[Cursor]
 
   case class ExecutePreparedUpdate(
     preparedStatement: PreparedStatement,
-    args: Seq[Seq[SqlVal]]
-  )(implicit
-    val connection: Connection
+    rows: Seq[SqlRow],
+    context: Context
   ) extends SqlDriverCmd[Int]
 
+
   case class ExecuteQuery(
-    statement: String
-  )(implicit
-    val connection: Connection
+    statement: String,
+    context: Context
   ) extends SqlDriverCmd[Cursor]
 
   case class ExecuteUpdate(
-    statement: String
-  )(implicit
-    val connection: Connection
+    statement: String,
+    context: Context
   ) extends SqlDriverCmd[Int]
-  
-  case class BeginTransaction()(implicit
-    val connection: Connection
-  ) extends SqlDriverCmd[Unit]
-  
-  case class Commit()(implicit
-    val connection: Connection
-  ) extends SqlDriverCmd[Unit]
-  
-  case class Rollback()(implicit
-    val connection: Connection
+
+
+  case class GetMetadata(
+    cursor: Cursor
+  ) extends SqlDriverCmd[CursorMetadata]
+
+  case class SeekAbsolute(
+    cursor: Cursor,
+    rowNum: Int
+  ) extends SqlDriverCmd[Cursor]
+
+  case class SeekRelative(
+    cursor: Cursor,
+    rowOffset: Int
+  ) extends SqlDriverCmd[Cursor]
+
+  case class SeekFirst(
+    cursor: Cursor
+  ) extends SqlDriverCmd[Cursor]
+
+  case class SeekLast(
+    cursor: Cursor
+  ) extends SqlDriverCmd[Cursor]
+
+  case class SetSeekDir(
+    cursor: Cursor,
+    forward: Boolean
+  ) extends SqlDriverCmd[Cursor]
+
+  case class NextRow(
+    cursor: Cursor
+  ) extends SqlDriverCmd[Option[Cursor]]
+
+  case class CloseCursor(
+    cursor: Cursor
   ) extends SqlDriverCmd[Unit]
 
-  case class Close(
-    connection: Connection
-  ) extends SqlDriverCmd[Unit]
 }
