@@ -32,6 +32,17 @@ trait EffectInputStream[E[_],A] { self =>
 }
 
 object EffectInputStream {
+  def apply[E[_], A](
+    f: () => E[Option[A]]
+  )(implicit
+    E: EffectSystem[E]
+  ) : EffectInputStream[E,A] = {
+    val _E = E
+    new EffectInputStream[E,A] {
+      override implicit val E = _E
+      override def next() = f()
+    }
+  }
   case class Map[E[_],A,B](base: EffectInputStream[E,A], f: A => B) extends EffectInputStream[E,B] {
     override implicit val E = base.E
     override def next(): E[Option[B]] = base.next().map(_.map(f))
