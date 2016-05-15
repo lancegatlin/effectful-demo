@@ -4,14 +4,15 @@ import scala.language.higherKinds
 package object effectful {
   type Id[+A] = A
 
-  implicit class MonadicOps[E[_],A](val self: E[A]) extends AnyVal {
+  // todo: this conflicts with std TraversableOnce.map/flatMap PML
+  implicit class MonadicOpsPML[E[_],A](val self: E[A]) extends AnyVal {
     def map[B](f: A => B)(implicit E:EffectSystem[E]) : E[B] =
       E.map(self, f)
     def flatMap[B](f: A => E[B])(implicit E:EffectSystem[E]) : E[B]=
       E.flatMap(self,f)
   }
 
-  implicit class SequenceOps[E[_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
+  implicit class SequenceOpsPML[E[_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
     def sequence(implicit
       E:EffectSystem[E]
     ) : E[F[A]] = E.sequence(self)

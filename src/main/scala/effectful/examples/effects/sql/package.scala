@@ -7,7 +7,9 @@ import javax.xml.bind.DatatypeConverter
 import effectful._
 
 package object sql {
-  implicit def connectiontoContextAutoCommit(implicit connection: SqlDriver.Connection) : SqlDriver.Context.AutoCommit =
+  implicit def connectionToContextAutoCommit(implicit
+    connection: SqlDriver.Connection
+  ) : SqlDriver.Context.AutoCommit =
     SqlDriver.Context.AutoCommit(connection)
 
   implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {

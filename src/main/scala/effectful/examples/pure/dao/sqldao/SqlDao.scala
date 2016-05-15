@@ -193,6 +193,7 @@ class SqlDao[ID,A,E[_]](
 
 
   // todo: update metadata table too
+  // todo: this should be def that accepts implicit context to allow binding transaction below
   lazy val qUpdate =
     sql.prepare(
       s"UPDATE ${tableName.esc} SET ${fieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idFieldName.esc}=?"
@@ -212,6 +213,7 @@ class SqlDao[ID,A,E[_]](
     // Note: implicit keyword not currently allowed inside for-compre https://issues.scala-lang.org/browse/SI-2823
     sql.beginTransaction().flatMap { implicit transaction =>
       for {
+        // todo: this doesn't bind the transaction properly
         results <- records.map { case (id,a) => update(id,a) }.sequence
         _ <- sql.commit()
       } yield results.count(_ == true)

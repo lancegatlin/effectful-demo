@@ -13,6 +13,7 @@ object SqlVal {
   case class CHAR(
     fixedLength: Long
   )(
+    // todo: use sealed trait union type here of String | Reader that can convert to either
     val toCharStream: () => java.io.Reader,
     val toCharString: () => String
   ) extends SqlVal {
@@ -109,6 +110,7 @@ object SqlVal {
   case class BINARY(
     fixedSize: Long
   )(
+    // todo: use sealed trait union type here of Array[Byte] | InputStream that can convert to either
     val toBinaryStream: () => java.io.InputStream,
     val toByteArray: () => Array[Byte]
   ) extends SqlVal {

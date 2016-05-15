@@ -28,5 +28,6 @@ trait EffectSystem[E[_]] {
 
   def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]]) : E[F[A]]
 
+  // todo: move to effect service
   def delay(duration: FiniteDuration) : E[Unit]
 }

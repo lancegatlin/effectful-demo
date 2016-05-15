@@ -161,12 +161,14 @@ class JdbcSqlDriver(
         throw new NoSuchElementException(s"No cursor with id $id")
     }
 
+  // todo: move this into own file
   case class InternalCursor(
     resultSet: java.sql.ResultSet,
     id: Symbol = Symbol(uuids.toBase64(uuids.gen()))
   )(implicit
     val context: Context
   ) {
+    // todo: don't do this
     cursors.put(id, this)
 
     val metadata = resultSet.getMetaData
@@ -233,6 +235,7 @@ class JdbcSqlDriver(
 
     def close() : Unit = {
       resultSet.close()
+      // todo: remove this
       cursors.remove(id)
     }
 
@@ -297,6 +300,7 @@ class JdbcSqlDriver(
     idToInternalCursor(cursor.id).next()
 
   // Utility methods
+  // todo: move into own file
 
   def parseResultSetColumn(resultSet: ResultSet, col: Int, sqlType:SqlType) : SqlVal = {
     import SqlType._
