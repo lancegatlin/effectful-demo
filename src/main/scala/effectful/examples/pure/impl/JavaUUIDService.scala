@@ -35,8 +35,10 @@ class JavaUUIDService extends UUIDService[Id] {
   override def toString(uuid: UUID): String =
     toJavaUUID(uuid).toString
 
-  override def fromBase64(s: String): UUID =
-    UUID(Base64.decodeBase64(s))
+  override def fromBase64(s: String): Option[UUID] = {
+    val uuid = UUID(Base64.decodeBase64(s))
+    Try(toJavaUUID(uuid)).toOption.map(_ => uuid)
+  }
 
   override def toBase64(uuid: UUID): String =
     Base64.encodeBase64URLSafeString(uuid.bytes)
