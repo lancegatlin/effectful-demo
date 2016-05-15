@@ -15,8 +15,6 @@ trait SqlDriver[E[_]] {
   def prepare(statement: String)(implicit context: Context) : E[PreparedStatement]
   def executePreparedQuery(
     preparedStatement: PreparedStatement
-//    ,
-//    startRowNum : Int = 1
   )(
     rows: SqlRow*
   )(implicit
@@ -32,11 +30,7 @@ trait SqlDriver[E[_]] {
   ) : E[Int]
 
 
-  def executeQuery(
-    statement: String
-//    ,
-//    startRowNum : Int = 1
-  )(implicit context: Context) : E[Cursor]
+  def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
   def getCursorMetadata(cursor: Cursor) : E[CursorMetadata]
