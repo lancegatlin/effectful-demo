@@ -8,7 +8,7 @@ import effectful._
 
 package object sql {
   implicit def connectionToContextAutoCommit(implicit
-    connection: SqlDriver.Connection
+    connection: SqlDriver.ConnectionPool
   ) : SqlDriver.Context.AutoCommit =
     SqlDriver.Context.AutoCommit(connection)
 
@@ -17,7 +17,7 @@ package object sql {
       val _E = E
       new EffectInputStream[E,SqlDriver.SqlRow] {
         implicit val E = _E
-        override def next() = self.nextRow(cursor).map {
+        override def next() = self.nextCursor(cursor).map {
           case SqlDriver.Cursor.Row(_,_,row) => Some(row)
           case SqlDriver.Cursor.Empty(_) => None
         }

@@ -9,11 +9,11 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
   import SqlDriverCmd._
 
 
-  override def getConnection(url: String, username: String, password: String): FreeSqlDriverCmd[Connection] =
-    Cmd(GetConnection(url,username,password))
+  override def getConnectionPool(url: String, username: String, password: String): FreeSqlDriverCmd[ConnectionPool] =
+    Cmd(GetConnectionPool(url,username,password))
 
-  override def closeConnection(connection: Connection): FreeSqlDriverCmd[Unit] =
-    Cmd(CloseConnection(connection))
+  override def closeConnectionPool(connection: ConnectionPool): FreeSqlDriverCmd[Unit] =
+    Cmd(CloseConnectionPool(connection))
   
   
   override def beginTransaction()(implicit context: Context.AutoCommit): FreeSqlDriverCmd[Context.InTransaction] =
@@ -43,26 +43,11 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
     Cmd(ExecuteUpdate(statement,context))
 
 
-  override def getMetadata(cursor: Cursor): FreeSqlDriverCmd[CursorMetadata] =
-    Cmd(GetMetadata(cursor))
+  override def getCursorMetadata(cursor: Cursor): FreeSqlDriverCmd[CursorMetadata] =
+    Cmd(GetCursorMetadata(cursor))
 
-  override def seekAbsolute(cursor: Cursor, rowNum: Int): FreeSqlDriverCmd[Cursor] =
-    Cmd(SeekAbsolute(cursor, rowNum))
-
-  override def seekLast(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
-    Cmd(SeekLast(cursor))
-
-  override def nextRow(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
-    Cmd(NextRow(cursor))
-
-  override def seekRelative(cursor: Cursor, rowOffset: Int): FreeSqlDriverCmd[Cursor] =
-    Cmd(SeekRelative(cursor, rowOffset))
-
-  override def setSeekDir(cursor: Cursor, forward: Boolean): FreeSqlDriverCmd[Unit] =
-    Cmd(SetSeekDir(cursor, forward))
-
-  override def seekFirst(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
-    Cmd(SeekFirst(cursor))
+  override def nextCursor(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
+    Cmd(NextCursor(cursor))
 
   override def closeCursor(cursor: Cursor): FreeSqlDriverCmd[Unit] =
     Cmd(CloseCursor(cursor))

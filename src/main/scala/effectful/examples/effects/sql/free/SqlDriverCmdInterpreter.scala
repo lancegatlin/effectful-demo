@@ -15,18 +15,18 @@ class SqlDriverCmdInterpreter[E[_]](
     import sqlDriver._
 
     cmd match {
-      case GetConnection(
+      case GetConnectionPool(
         url,
         username,
         password
       ) =>
-        getConnection(
+        getConnectionPool(
           url = url,
           username = username,
           password = password
         )
-      case CloseConnection(connection) =>
-        closeConnection(connection)
+      case CloseConnectionPool(connection) =>
+        closeConnectionPool(connection)
 
       case BeginTransaction(context) =>
         beginTransaction()(context)
@@ -46,20 +46,10 @@ class SqlDriverCmdInterpreter[E[_]](
       case ExecuteUpdate(statement,context) =>
         executeUpdate(statement)(context)
 
-      case GetMetadata(cursor) =>
-        getMetadata(cursor)
-      case SeekAbsolute(cursor, rowNum) =>
-        seekAbsolute(cursor, rowNum)
-      case SeekRelative(cursor, rowOffset) =>
-        seekRelative(cursor, rowOffset)
-      case SeekFirst(cursor) =>
-        seekFirst(cursor)
-      case SeekLast(cursor) =>
-        seekLast(cursor)
-      case SetSeekDir(cursor, forward) =>
-        setSeekDir(cursor, forward)
-      case NextRow(cursor) =>
-        nextRow(cursor)
+      case GetCursorMetadata(cursor) =>
+        getCursorMetadata(cursor)
+      case NextCursor(cursor) =>
+        nextCursor(cursor)
       case CloseCursor(cursor) =>
         closeCursor(cursor)
     }

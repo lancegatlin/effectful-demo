@@ -40,7 +40,7 @@ class SqlDao[ID,A,E[_]](
   metadataTableName: String
 )(implicit
   E:EffectSystem[E],
-  connection: Connection,
+  connection: ConnectionPool,
   recordMapping: SqlDao.RecordMapping[ID,A],
   metadataMapping: SqlDao.RecordMapping[ID,RecordMetadata]
 ) extends Dao[ID,A,E] {

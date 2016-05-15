@@ -7,14 +7,14 @@ import SqlDriver._
 sealed trait SqlDriverCmd[R]
 
 object SqlDriverCmd {
-  case class GetConnection(
+  case class GetConnectionPool(
     url: String,
     username: String,
     password: String
-  ) extends SqlDriverCmd[Connection]
+  ) extends SqlDriverCmd[ConnectionPool]
 
-  case class CloseConnection(
-    connection: Connection
+  case class CloseConnectionPool(
+    connection: ConnectionPool
   ) extends SqlDriverCmd[Unit]
 
 
@@ -60,7 +60,7 @@ object SqlDriverCmd {
   ) extends SqlDriverCmd[Int]
 
 
-  case class GetMetadata(
+  case class GetCursorMetadata(
     cursor: Cursor
   ) extends SqlDriverCmd[CursorMetadata]
 
@@ -87,7 +87,7 @@ object SqlDriverCmd {
     forward: Boolean
   ) extends SqlDriverCmd[Unit]
 
-  case class NextRow(
+  case class NextCursor(
     cursor: Cursor
   ) extends SqlDriverCmd[Cursor]
 

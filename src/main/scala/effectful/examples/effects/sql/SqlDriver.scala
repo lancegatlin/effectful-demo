@@ -5,8 +5,8 @@ import scala.language.higherKinds
 trait SqlDriver[E[_]] {
   import SqlDriver._
 
-  def getConnection(url: String, username: String, password: String) : E[Connection]
-  def closeConnection(connection: Connection) : E[Unit]
+  def getConnectionPool(url: String, username: String, password: String) : E[ConnectionPool]
+  def closeConnectionPool(connectionPool: ConnectionPool) : E[Unit]
 
   def beginTransaction()(implicit context: Context.AutoCommit) : E[Context.InTransaction]
   def rollback()(implicit context: Context.InTransaction) : E[Unit]
@@ -15,6 +15,8 @@ trait SqlDriver[E[_]] {
   def prepare(statement: String)(implicit context: Context) : E[PreparedStatement]
   def executePreparedQuery(
     preparedStatement: PreparedStatement
+//    ,
+//    startRowNum : Int = 1
   )(
     rows: SqlRow*
   )(implicit
@@ -30,20 +32,16 @@ trait SqlDriver[E[_]] {
   ) : E[Int]
 
 
-  def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
+  def executeQuery(
+    statement: String
+//    ,
+//    startRowNum : Int = 1
+  )(implicit context: Context) : E[Cursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
+  def getCursorMetadata(cursor: Cursor) : E[CursorMetadata]
 
-  def getMetadata(cursor: Cursor) : E[CursorMetadata]
-
-  def seekAbsolute(cursor: Cursor, rowNum: Int) : E[Cursor]
-  def seekRelative(cursor: Cursor, rowOffset: Int) : E[Cursor]
-
-  def seekFirst(cursor: Cursor) : E[Cursor]
-  def seekLast(cursor: Cursor) : E[Cursor]
-  def setSeekDir(cursor: Cursor, forward: Boolean) : E[Unit]
-
-  def nextRow(cursor: Cursor) : E[Cursor]
+  def nextCursor(cursor: Cursor) : E[Cursor]
 
   def closeCursor(cursor: Cursor) : E[Unit]
 }
@@ -67,27 +65,21 @@ object SqlDriver {
     columns : IndexedSeq[ColumnMetadata]
   )
 
-  // todo: make these case classes with id
-  trait PreparedStatement {
-    def statement: String
-  }
-  
-  trait Connection {
-    def url: String
+  case class PreparedStatement(
+    id: Symbol,
+    statement: String
+  )
 
-    def isClosed : Boolean
-  }
-  
-  trait Transaction {
-    def isUncommitted: Boolean
-  }
+  case class ConnectionPool(
+    id: Symbol
+  )
   
   sealed trait Context {
-    def connection: Connection
+    def connectionPool: ConnectionPool
   }
   object Context {
-    case class AutoCommit(connection: Connection) extends Context
-    case class InTransaction(transaction: Transaction, connection: Connection) extends Context
+    case class AutoCommit(connectionPool: ConnectionPool) extends Context
+    case class InTransaction(id: Symbol, connectionPool: ConnectionPool) extends Context
   }
 
   sealed trait Cursor {
