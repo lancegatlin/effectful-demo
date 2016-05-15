@@ -41,10 +41,11 @@ class InMemoryDaoImpl[ID,A](
 
 
   // todo:
-  override def exists(id: ID): Id[Boolean] = ???
+  override def exists(id: ID): Id[Boolean] =
+    data.contains(id)
 
-  override def batchExists(id: Traversable[ID]): Id[Map[ID, Boolean]] = ???
-  
+  override def batchExists(ids: Traversable[ID]): Id[Set[ID]] =
+    ids.toSet intersect data.keySet
 
   override def findById(id: ID): Id[Option[(ID, A, RecordMetadata)]] =
     data.get(id)

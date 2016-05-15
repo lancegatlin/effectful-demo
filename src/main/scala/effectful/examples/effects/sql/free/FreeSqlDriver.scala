@@ -52,13 +52,13 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
   override def seekLast(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
     Cmd(SeekLast(cursor))
 
-  override def nextRow(cursor: Cursor): FreeSqlDriverCmd[Option[Cursor]] =
+  override def nextRow(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
     Cmd(NextRow(cursor))
 
   override def seekRelative(cursor: Cursor, rowOffset: Int): FreeSqlDriverCmd[Cursor] =
     Cmd(SeekRelative(cursor, rowOffset))
 
-  override def setSeekDir(cursor: Cursor, forward: Boolean): FreeSqlDriverCmd[Cursor] =
+  override def setSeekDir(cursor: Cursor, forward: Boolean): FreeSqlDriverCmd[Unit] =
     Cmd(SetSeekDir(cursor, forward))
 
   override def seekFirst(cursor: Cursor): FreeSqlDriverCmd[Cursor] =

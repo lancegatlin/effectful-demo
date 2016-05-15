@@ -32,6 +32,14 @@ trait EffectInputStream[E[_],A] { self =>
 }
 
 object EffectInputStream {
+  def empty[E[_],A](implicit E:EffectSystem[E]) = {
+    val _E = E
+    new EffectInputStream[E,A] {
+      override implicit val E = _E
+      val none : E[Option[A]] = E(None)
+      override def next(): E[Option[A]] = none
+    }
+  }
   def apply[E[_], A](
     f: () => E[Option[A]]
   )(implicit

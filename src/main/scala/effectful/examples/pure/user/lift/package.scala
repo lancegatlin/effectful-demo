@@ -2,7 +2,7 @@ package effectful.examples.pure.user
 
 import scala.language.higherKinds
 import effectful._
-import effectful.examples.pure.UUID
+import effectful.examples.pure.UUIDService.UUID
 
 import scala.concurrent.duration.Duration
 

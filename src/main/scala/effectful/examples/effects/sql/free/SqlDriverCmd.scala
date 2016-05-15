@@ -85,11 +85,11 @@ object SqlDriverCmd {
   case class SetSeekDir(
     cursor: Cursor,
     forward: Boolean
-  ) extends SqlDriverCmd[Cursor]
+  ) extends SqlDriverCmd[Unit]
 
   case class NextRow(
     cursor: Cursor
-  ) extends SqlDriverCmd[Option[Cursor]]
+  ) extends SqlDriverCmd[Cursor]
 
   case class CloseCursor(
     cursor: Cursor

@@ -2,8 +2,9 @@ package effectful.examples.pure.user
 
 import java.time.Instant
 
+import effectful.examples.pure.UUIDService.UUID
+
 import scala.language.higherKinds
-import effectful.examples.pure.UUID
 
 trait UserService[E[_]] {
   import UserService._

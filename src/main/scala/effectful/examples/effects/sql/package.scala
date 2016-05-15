@@ -15,7 +15,10 @@ package object sql {
       val _E = E
       new EffectInputStream[E,SqlDriver.SqlRow] {
         implicit val E = _E
-        override def next() = self.nextRow(cursor).map(_.map(_.current))
+        override def next() = self.nextRow(cursor).map {
+          case SqlDriver.Cursor.Row(_,_,row) => Some(row)
+          case SqlDriver.Cursor.Empty(_) => None
+        }
       }
     }
   }

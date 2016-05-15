@@ -1,27 +1,46 @@
 package effectful.examples.pure.impl
 
+import java.nio.ByteBuffer
 import java.util.{UUID => JavaUUID}
 
 import effectful._
-import effectful.examples.pure.{UUID, UUIDService}
+import effectful.examples.pure.UUIDService
+import org.apache.commons.codec.binary.Base64
 
 import scala.util.Try
 
-object JavaUUIDService {
-  case class Wrapper(value: JavaUUID) extends UUID {
-    override def compareTo(o: UUID): Int =
-      o match {
-        case wrapper:Wrapper =>
-          value.compareTo(wrapper.value)
-        case _ => throw new UnsupportedOperationException
-      }
-  }
-}
-
 class JavaUUIDService extends UUIDService[Id] {
-  import JavaUUIDService._
+  import UUIDService._
+
+  def toUUID(uuid: JavaUUID) = UUID(toBytes(uuid))
+
+  def toBytes(uuid: JavaUUID) : Array[Byte] = {
+    val bb = ByteBuffer.allocate(16)
+    bb.putLong(uuid.getMostSignificantBits)
+    bb.putLong(uuid.getLeastSignificantBits)
+    bb.array()
+  }
+
+  def toJavaUUID(uuid: UUID) : JavaUUID = {
+    val bb = ByteBuffer.wrap(uuid.bytes)
+    val msb = bb.getLong
+    val lsb = bb.getLong
+    new JavaUUID(msb,lsb)
+  }
+
   override def gen(): Id[UUID] =
-    Wrapper(JavaUUID.randomUUID())
-  override def parse(s: String): Id[Option[UUID]] =
-    Try(JavaUUID.fromString(s)).toOption.map(Wrapper)
+    toUUID(JavaUUID.randomUUID())
+
+
+  override def toString(uuid: UUID): String =
+    toJavaUUID(uuid).toString
+
+  override def fromBase64(s: String): UUID =
+    UUID(Base64.decodeBase64(s))
+
+  override def toBase64(uuid: UUID): String =
+    Base64.encodeBase64URLSafeString(uuid.bytes)
+
+  override def fromString(s: String): Id[Option[UUID]] =
+    Try(JavaUUID.fromString(s)).toOption.map(toUUID)
 }

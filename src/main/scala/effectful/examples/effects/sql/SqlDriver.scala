@@ -30,7 +30,7 @@ trait SqlDriver[E[_]] {
   ) : E[Int]
 
 
-  def executeQuery(statement: String)(implicit context: Context) : E[Cursor] // todo: option here?
+  def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
 
@@ -41,9 +41,9 @@ trait SqlDriver[E[_]] {
 
   def seekFirst(cursor: Cursor) : E[Cursor]
   def seekLast(cursor: Cursor) : E[Cursor]
-  def setSeekDir(cursor: Cursor, forward: Boolean) : E[Cursor]
+  def setSeekDir(cursor: Cursor, forward: Boolean) : E[Unit]
 
-  def nextRow(cursor: Cursor) : E[Option[Cursor]]
+  def nextRow(cursor: Cursor) : E[Cursor]
 
   def closeCursor(cursor: Cursor) : E[Unit]
 }
@@ -67,6 +67,7 @@ object SqlDriver {
     columns : IndexedSeq[ColumnMetadata]
   )
 
+  // todo: make these case classes with id
   trait PreparedStatement {
     def statement: String
   }
@@ -89,19 +90,22 @@ object SqlDriver {
     case class InTransaction(transaction: Transaction, connection: Connection) extends Context
   }
 
-  // todo: make this a case class? (other stuff case classes with string id field?)
-  // todo: handle no records result properly
-  trait Cursor {
-    def context: Context
-
-    def isBeforeFirst : Boolean
-    def isFirst : Boolean
-    def isLast: Boolean
-
-    def currentRowNum : Int
-    def current: SqlRow
-
-    def isClosed : Boolean
+  sealed trait Cursor {
+    def id: Symbol
+    def isEmpty : Boolean
+    def nonEmpty:  Boolean = !isEmpty
+  }
+  object Cursor {
+    case class Empty(id: Symbol) extends Cursor {
+      override def isEmpty = true
+    }
+    case class Row(
+      id: Symbol,
+      rowNum: Int,
+      row: SqlRow
+    ) extends Cursor {
+      override def isEmpty = false
+    }
   }
 
 }

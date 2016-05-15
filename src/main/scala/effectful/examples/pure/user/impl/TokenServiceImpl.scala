@@ -10,7 +10,8 @@ import effectful._
 import effectful.examples.pure.dao.Dao
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
-import effectful.examples.pure.{UUID, UUIDService}
+import effectful.examples.pure.UUIDService
+import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.query._
 import effectful.examples.pure.user.TokenService
 

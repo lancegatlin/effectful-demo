@@ -110,23 +110,39 @@ class SqlDao[ID,A,E[_]](
       result <- iterator.collect[Seq]()
     } yield result
 
-  // todo:
-//  lazy val qExists =
-//    sql.prepare(
-//      s"SELECT 1 FROM ${tableName.esc} WHERE ${idFieldName.esc}=?"
-//    ).map { ps =>
-//
-//      { id:ID =>
-//        for {
-//          cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
-//        } yield sqlToId(cursor.current(0))
-//      }
-//    }
-  override def exists(id: ID): E[Boolean] = ???
+  lazy val qExists =
+    sql.prepare(
+      s"SELECT 1 FROM ${tableName.esc} WHERE ${idFieldName.esc}=?"
+    ).map { ps =>
 
-  override def batchExists(id: Traversable[ID]): E[Map[ID, Boolean]] = ???
+      { id:ID =>
+        for {
+          cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
+        } yield {
+          cursor.nonEmpty
+        }
+      }
+    }
 
-  // todo: fix me this should be an update not actual delete
+  override def exists(id: ID): E[Boolean] =
+    for {
+      fq <- qExists
+      result <- fq(id)
+    } yield result
+
+  override def batchExists(ids: Traversable[ID]): E[Set[ID]] =
+    for {
+      cursor <- sql.executeQuery(
+        s"SELECT ${idFieldName.esc} FROM ${tableName.esc} WHERE ${idFieldName.esc} IN (${ids.map(id => idToSql(id).printSQL).mkString(",")}) "
+      )
+      result <- sql.iterator(cursor).map { row =>
+                  sqlToId(row(0))
+                }
+                .collect[Set]
+    } yield result
+
+
+  // todo: fix me this should be an update to metadata not actual delete
   lazy val qRemove = sql.prepare(esc"DELETE FROM $tableName WHERE $idFieldName=?").map { ps =>
     { id:ID =>
       for {
@@ -176,7 +192,7 @@ class SqlDao[ID,A,E[_]](
     } yield insertCount
 
 
-  // todo: update metadata table too if needed
+  // todo: update metadata table too
   lazy val qUpdate =
     sql.prepare(
       s"UPDATE ${tableName.esc} SET ${fieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idFieldName.esc}=?"
@@ -203,6 +219,7 @@ class SqlDao[ID,A,E[_]](
 
   override def upsert(id: ID, a: A): E[(Boolean, Boolean)] =
     for {
+      // todo: maybe faster to just update and see if it fails?
       idExists <- exists(id)
       result <- if(idExists) {
         update(id,a).map(result => (false,result))
@@ -213,6 +230,7 @@ class SqlDao[ID,A,E[_]](
 
   override def batchUpsert(records: Traversable[(ID, A)]): E[(Int, Int)] =
     for {
+      // todo: maybe faster to just update and see if it fails?
       idToExists <- batchExists(records.map(_._1))
       (toUpdate,toInsert) = records.partition { case (id,a) => idToExists(id) }
       eUpdates = batchUpdate(toUpdate)

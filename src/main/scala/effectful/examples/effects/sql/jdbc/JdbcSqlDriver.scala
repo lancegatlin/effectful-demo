@@ -2,11 +2,14 @@ package effectful.examples.effects.sql.jdbc
 
 import java.sql.{Connection => _, PreparedStatement => _, _}
 import java.time.{LocalDate, ZoneId, ZoneOffset}
+import java.util.NoSuchElementException
+import java.util.concurrent.ConcurrentHashMap
 
 import effectful._
 import effectful.examples.effects.sql._
 import org.apache.commons.io.IOUtils
 import SqlDriver._
+import effectful.examples.pure.UUIDService
 
 object JdbcSqlDriver {
   case class ConnectionInfo(
@@ -14,12 +17,6 @@ object JdbcSqlDriver {
     username: String,
     password: String
   )
-}
-
-class JdbcSqlDriver(
-  connectionPool: JdbcSqlDriver.ConnectionInfo => java.sql.Connection
-) extends SqlDriver[Id] {
-  import JdbcSqlDriver._
 
   case class InternalConnection(
     connectionInfo: ConnectionInfo,
@@ -29,6 +26,26 @@ class JdbcSqlDriver(
     override def isClosed =
       jdbcConnection.isClosed
   }
+
+  case class InternalTransaction(
+    transactionConnection: InternalConnection,
+    mainConnection: InternalConnection
+  ) extends Transaction {
+    override def isUncommitted: Boolean =
+      transactionConnection.isClosed == false
+  }
+
+  case class InternalPreparedStatement(
+    statement: String,
+    jdbcPreparedStatement: java.sql.PreparedStatement
+  ) extends PreparedStatement
+}
+
+class JdbcSqlDriver(
+  connectionPool: JdbcSqlDriver.ConnectionInfo => java.sql.Connection,
+  uuids: UUIDService[Id]
+) extends SqlDriver[Id] {
+  import JdbcSqlDriver._
 
   // Connection
 
@@ -48,14 +65,6 @@ class JdbcSqlDriver(
     connection.asInstanceOf[InternalConnection].jdbcConnection.close()
 
   // Transaction
-
-  case class InternalTransaction(
-    transactionConnection: InternalConnection,
-    mainConnection: InternalConnection
-  ) extends Transaction {
-    override def isUncommitted: Boolean =
-      transactionConnection.isClosed == false
-  }
 
   override def beginTransaction()(implicit context: Context.AutoCommit): Id[Context.InTransaction] = {
     val mainConnection = context.connection.asInstanceOf[InternalConnection]
@@ -88,11 +97,6 @@ class JdbcSqlDriver(
 
   // Prepared statement
 
-  case class InternalPreparedStatement(
-    statement: String,
-    jdbcPreparedStatement: java.sql.PreparedStatement
-  ) extends PreparedStatement
-
   override def prepare(
     statement: String
   )(implicit
@@ -124,11 +128,7 @@ class JdbcSqlDriver(
   ): Id[Cursor] = {
     val ps = preparedStatement.asInstanceOf[InternalPreparedStatement].jdbcPreparedStatement
     prepareBatches(ps,rows)
-    InternalCursor(
-      onNextSeekForward = true,
-      resultSet = ps.executeQuery(),
-      context = context
-    )
+    InternalCursor(ps.executeQuery()).currentCursor
   }
 
   // Immediate execution
@@ -139,11 +139,7 @@ class JdbcSqlDriver(
     context: Context
   ): Id[Cursor] = {
     val s = context.connection.asInstanceOf[InternalConnection].jdbcConnection.createStatement()
-    InternalCursor(
-      onNextSeekForward = true,
-      resultSet = s.executeQuery(statement),
-      context = context
-    )
+    InternalCursor(s.executeQuery(statement)).currentCursor
   }
 
   override def executeUpdate(
@@ -157,11 +153,22 @@ class JdbcSqlDriver(
 
   // Cursor
 
+  val cursors = new ConcurrentHashMap[Symbol,InternalCursor]()
+  def idToInternalCursor(id: Symbol) : InternalCursor =
+    Option(cursors.get(id)) match {
+      case Some(cursor) => cursor
+      case None =>
+        throw new NoSuchElementException(s"No cursor with id $id")
+    }
+
   case class InternalCursor(
-    onNextSeekForward: Boolean,
     resultSet: java.sql.ResultSet,
-    context: Context
-  ) extends Cursor {
+    id: Symbol = Symbol(uuids.toBase64(uuids.gen()))
+  )(implicit
+    val context: Context
+  ) {
+    cursors.put(id, this)
+
     val metadata = resultSet.getMetaData
     def columnCount = metadata.getColumnCount
 
@@ -196,149 +203,177 @@ class JdbcSqlDriver(
       }
     )
 
-    def isBeforeFirst = resultSet.isBeforeFirst
-    def isFirst = resultSet.isFirst
-    def isLast = resultSet.isLast
-
-    def currentRowNum = resultSet.getRow
-    def current = (1 to columnCount).map { col =>
-      parseResultSetColumn(resultSet,col,columnTypes(col))
+    if(resultSet.isBeforeFirst) {
+      resultSet.next()
     }
 
-    def isClosed = resultSet.isClosed
+    def currentCursor : Cursor = {
+      if(resultSet.isAfterLast() == false) {
+        Cursor.Row(
+          id = id,
+          rowNum = resultSet.getRow,
+          row =
+            (1 to columnCount).map { col =>
+              parseResultSetColumn(resultSet,col,columnTypes(col))
+            }
+        )
+      } else {
+        Cursor.Empty(id)
+      }
+    }
+
+    def next() : Cursor = {
+      if(resultSet.getFetchDirection == ResultSet.FETCH_FORWARD) {
+        resultSet.next()
+      } else {
+        resultSet.previous()
+      }
+      currentCursor
+    }
+
+    def close() : Unit = {
+      resultSet.close()
+      cursors.remove(id)
+    }
+
+    def seekFirst() : Cursor = {
+      resultSet.first()
+      currentCursor
+    }
+
+    def seekLast() : Cursor = {
+      resultSet.last()
+      currentCursor
+    }
+
+    def setSeekDir(forward: Boolean) : Unit = {
+      val fetchDir = if(forward) {
+        ResultSet.FETCH_FORWARD
+      } else {
+        ResultSet.FETCH_REVERSE
+      }
+      resultSet.setFetchDirection(fetchDir)
+    }
+
+    def seekAbsolute(rowNum: Int) : Cursor = {
+      if(resultSet.absolute(rowNum)) {
+        currentCursor
+      } else {
+        Cursor.Empty(id)
+      }
+    }
+
+    def seekRelative(rowOffset: Int) : Cursor = {
+      if(resultSet.relative(rowOffset)) {
+        currentCursor
+      } else {
+        Cursor.Empty(id)
+      }
+    }
   }
 
   override def getMetadata(cursor: Cursor): Id[CursorMetadata] =
-    cursor.asInstanceOf[InternalCursor].cursorMetadata
+    idToInternalCursor(cursor.id).cursorMetadata
 
-  override def seekAbsolute(cursor: Cursor, rowNum: Int): Id[Cursor] = {
-    cursor.asInstanceOf[InternalCursor].resultSet.absolute(rowNum)
-    cursor
-  }
+  override def seekAbsolute(cursor: Cursor, rowNum: Int): Id[Cursor] =
+    idToInternalCursor(cursor.id).seekAbsolute(rowNum)
 
-  override def seekRelative(cursor: Cursor, rowOffset: Int): Id[Cursor] = {
-    cursor.asInstanceOf[InternalCursor].resultSet.relative(rowOffset)
-    cursor
-  }
+  override def seekRelative(cursor: Cursor, rowOffset: Int): Id[Cursor] =
+    idToInternalCursor(cursor.id).seekRelative(rowOffset)
 
-  override def seekLast(cursor: Cursor): Id[Cursor] = {
-    cursor.asInstanceOf[InternalCursor].resultSet.last()
-    cursor
-  }
+  override def seekLast(cursor: Cursor): Id[Cursor] =
+    idToInternalCursor(cursor.id).seekLast()
 
-  override def seekFirst(cursor: Cursor): Id[Cursor] = {
-    cursor.asInstanceOf[InternalCursor].resultSet.first()
-    cursor
-  }
+  override def seekFirst(cursor: Cursor): Id[Cursor] =
+    idToInternalCursor(cursor.id).seekFirst()
 
-  override def setSeekDir(cursor: Cursor, forward: Boolean): Id[Cursor] = {
-    val fetchDir = if(forward) {
-      ResultSet.FETCH_FORWARD
-    } else {
-      ResultSet.FETCH_REVERSE
-    }
-    val internalCursor = cursor.asInstanceOf[InternalCursor]
-    internalCursor.resultSet.setFetchDirection(fetchDir)
-    internalCursor.copy(
-      onNextSeekForward = forward
-    )
-  }
+  override def setSeekDir(cursor: Cursor, forward: Boolean): Id[Unit] =
+    idToInternalCursor(cursor.id).setSeekDir(forward)
 
   override def closeCursor(cursor: Cursor): Id[Unit] =
-    cursor.asInstanceOf[InternalCursor].resultSet.close()
+    idToInternalCursor(cursor.id).close()
 
-
-  override def nextRow(cursor: Cursor): Id[Option[Cursor]] = {
-    val internalCursor = cursor.asInstanceOf[InternalCursor]
-    if(internalCursor.onNextSeekForward) {
-      internalCursor.resultSet.next()
-      if(internalCursor.resultSet.isAfterLast() == false) {
-        Some(internalCursor)
-      } else {
-        None
-      }
-    } else {
-      internalCursor.resultSet.previous()
-      if(internalCursor.resultSet.isBeforeFirst() == false) {
-        Some(internalCursor)
-      } else {
-        None
-      }
-    }
-  }
+  override def nextRow(cursor: Cursor): Id[Cursor] =
+    idToInternalCursor(cursor.id).next()
 
   // Utility methods
 
   def parseResultSetColumn(resultSet: ResultSet, col: Int, sqlType:SqlType) : SqlVal = {
     import SqlType._
-    sqlType match {
-      case CHAR(fixedSize) =>
-        SqlVal.CHAR(fixedSize, resultSet.getString(col))
-        // todo: stream "big" strings
-      case NCHAR(fixedSize) =>
-        SqlVal.NCHAR(fixedSize, resultSet.getString(col))
-      case VARCHAR(maxSize) =>
-        SqlVal.NCHAR(maxSize, resultSet.getString(col))
-      case NVARCHAR(maxSize) =>
-        SqlVal.NVARCHAR(maxSize, resultSet.getString(col))
-      case CLOB | NCLOB =>
-        val toCharStream = () => resultSet.getClob(col).getCharacterStream
-        val toCharString = () => IOUtils.toString(toCharStream())
-        SqlVal.CLOB()(
-          toCharStream = toCharStream,
-          toCharString = toCharString
-        )
-      case BINARY(fixedSize) =>
-        val toBinaryStream = () => resultSet.getBinaryStream(col)
-        val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-        SqlVal.BINARY(fixedSize)(
-          toBinaryStream = toBinaryStream,
-          toByteArray = toByteArray
-        )
-      case VARBINARY(maxSize) =>
-        val toBinaryStream = () => resultSet.getBinaryStream(col)
-        val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-        SqlVal.VARBINARY(maxSize)(
-          toBinaryStream = toBinaryStream,
-          toByteArray = toByteArray
-        )
-      case BLOB =>
-        val toBinaryStream = () => resultSet.getBlob(col).getBinaryStream
-        val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-        SqlVal.BLOB()(
-          toBinaryStream = toBinaryStream,
-          toByteArray = toByteArray
-        )
-      case BIT =>
-        SqlVal.BIT(resultSet.getBoolean(col))
-      case BOOLEAN =>
-        SqlVal.BOOLEAN(resultSet.getBoolean(col))
-      case TINYINT =>
-        SqlVal.TINYINT(resultSet.getShort(col))
-      case SMALLINT =>
-        SqlVal.SMALLINT(resultSet.getShort(col))
-      case INTEGER =>
-        SqlVal.INTEGER(resultSet.getInt(col))
-      case BIGINT =>
-        SqlVal.BIGINT(resultSet.getLong(col))
-      case REAL =>
-        SqlVal.REAL(resultSet.getFloat(col))
-      case DOUBLE =>
-        SqlVal.DOUBLE(resultSet.getDouble(col))
-      case NUMERIC(precision,scale) =>
-        SqlVal.NUMERIC(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
-      case DECIMAL(precision,scale) =>
-        SqlVal.DECIMAL(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
-      case DATE =>
-        val oldDate = resultSet.getDate(col)
-        val newDate = oldDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
-        SqlVal.DATE(newDate)
-      case TIME =>
-        val oldTime = resultSet.getTime(col)
-        val newTime = oldTime.toInstant.atZone(ZoneId.systemDefault()).toLocalTime
-        SqlVal.TIME(newTime)
-      case TIMESTAMP =>
-        SqlVal.TIMESTAMP(java.time.Instant.ofEpochMilli(resultSet.getTimestamp(col).getTime))
+    val sqlVal =
+      sqlType match {
+        case CHAR(fixedSize) =>
+          SqlVal.CHAR(fixedSize, resultSet.getString(col))
+          // todo: stream "big" strings
+        case NCHAR(fixedSize) =>
+          SqlVal.NCHAR(fixedSize, resultSet.getString(col))
+        case VARCHAR(maxSize) =>
+          SqlVal.NCHAR(maxSize, resultSet.getString(col))
+        case NVARCHAR(maxSize) =>
+          SqlVal.NVARCHAR(maxSize, resultSet.getString(col))
+        case CLOB | NCLOB =>
+          val toCharStream = () => resultSet.getClob(col).getCharacterStream
+          val toCharString = () => IOUtils.toString(toCharStream())
+          SqlVal.CLOB()(
+            toCharStream = toCharStream,
+            toCharString = toCharString
+          )
+        case BINARY(fixedSize) =>
+          val toBinaryStream = () => resultSet.getBinaryStream(col)
+          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
+          SqlVal.BINARY(fixedSize)(
+            toBinaryStream = toBinaryStream,
+            toByteArray = toByteArray
+          )
+        case VARBINARY(maxSize) =>
+          val toBinaryStream = () => resultSet.getBinaryStream(col)
+          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
+          SqlVal.VARBINARY(maxSize)(
+            toBinaryStream = toBinaryStream,
+            toByteArray = toByteArray
+          )
+        case BLOB =>
+          val toBinaryStream = () => resultSet.getBlob(col).getBinaryStream
+          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
+          SqlVal.BLOB()(
+            toBinaryStream = toBinaryStream,
+            toByteArray = toByteArray
+          )
+        case BIT =>
+          SqlVal.BIT(resultSet.getBoolean(col))
+        case BOOLEAN =>
+          SqlVal.BOOLEAN(resultSet.getBoolean(col))
+        case TINYINT =>
+          SqlVal.TINYINT(resultSet.getShort(col))
+        case SMALLINT =>
+          SqlVal.SMALLINT(resultSet.getShort(col))
+        case INTEGER =>
+          SqlVal.INTEGER(resultSet.getInt(col))
+        case BIGINT =>
+          SqlVal.BIGINT(resultSet.getLong(col))
+        case REAL =>
+          SqlVal.REAL(resultSet.getFloat(col))
+        case DOUBLE =>
+          SqlVal.DOUBLE(resultSet.getDouble(col))
+        case NUMERIC(precision,scale) =>
+          SqlVal.NUMERIC(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
+        case DECIMAL(precision,scale) =>
+          SqlVal.DECIMAL(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
+        case DATE =>
+          val oldDate = resultSet.getDate(col)
+          val newDate = oldDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
+          SqlVal.DATE(newDate)
+        case TIME =>
+          val oldTime = resultSet.getTime(col)
+          val newTime = oldTime.toInstant.atZone(ZoneId.systemDefault()).toLocalTime
+          SqlVal.TIME(newTime)
+        case TIMESTAMP =>
+          SqlVal.TIMESTAMP(java.time.Instant.ofEpochMilli(resultSet.getTimestamp(col).getTime))
+      }
+    if(resultSet.wasNull) {
+      SqlVal.NULL(sqlType)
+    } else {
+      sqlVal
     }
   }
   
@@ -468,4 +503,5 @@ class JdbcSqlDriver(
       case Types.TIMESTAMP => TIMESTAMP
     }
   }
+
 }

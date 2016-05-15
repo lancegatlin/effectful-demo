@@ -18,8 +18,8 @@ trait Dao[ID,A,E[_]] {
 
   /** @return TRUE if id is in use FALSE otherwise */
   def exists(id: ID) : E[Boolean]
-  /** @return empty sequence if all IDs exists otherwise a sequence of IDs that do not exist */
-  def batchExists(id: Traversable[ID]) : E[Map[ID,Boolean]]
+  /** @return empty sequence if all IDs exists otherwise the set of IDs that exist */
+  def batchExists(ids: Traversable[ID]) : E[Set[ID]]
 
   /** @return if id exists, some value otherwise none */
   def findById(id: ID) : E[Option[(ID,A,RecordMetadata)]]
