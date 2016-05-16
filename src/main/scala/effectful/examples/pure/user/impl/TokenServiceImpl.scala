@@ -26,7 +26,7 @@ object TokenServiceImpl {
   }
 }
 
-class TokenServiceImpl[E[+_]](
+class TokenServiceImpl[E[_]](
   logger: Logger[E],
   uuids: UUIDService[E],
   tokens: Dao[String,TokenService.TokenInfo,E],

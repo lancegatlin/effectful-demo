@@ -4,7 +4,7 @@ import effectful.examples.effects.sql._
 import SqlDriver._
 
 
-sealed trait SqlDriverCmd[+R]
+sealed trait SqlDriverCmd[R]
 
 object SqlDriverCmd {
   case class GetConnectionPool(

@@ -7,7 +7,7 @@ import effectful.examples.pure.UUIDService.UUID
 import scala.language.higherKinds
 import scala.concurrent.duration.Duration
 
-trait TokenService[E[+_]] {
+trait TokenService[E[_]] {
   import TokenService._
 
   def issue(

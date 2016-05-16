@@ -2,7 +2,7 @@ package effectful.examples.effects.sql
 
 import scala.language.higherKinds
 
-trait SqlDriver[E[+_]] {
+trait SqlDriver[E[_]] {
   import SqlDriver._
 
   def getConnectionPool(url: String, username: String, password: String) : E[ConnectionPool]

@@ -34,7 +34,7 @@ object SqlDao {
   }
 }
 
-class SqlDao[ID,A,E[+_]](
+class SqlDao[ID,A,E[_]](
   sql: SqlDriver[E],
   tableName: String,
   metadataTableName: String
@@ -92,7 +92,7 @@ class SqlDao[ID,A,E[+_]](
   override def find(query: Query[A]): E[Seq[(ID, A, RecordMetadata)]] =
     sql.iterateQuery(s"$qSelectRecordAndMetadata WHERE ${queryToSqlWhere(query)}")
       .map(parse)
-      .collect[IndexedSeq]()
+      .collect[IndexedSeq]().widen
 
   lazy val qFindAll = sql.prepare(qSelectRecordAndMetadata)
 

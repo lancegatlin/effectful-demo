@@ -7,7 +7,7 @@ import effectful.examples.pure.user._
 
 import scalaz.{-\/, \/, \/-}
 
-class UserLoginServiceImpl[E[+_]](
+class UserLoginServiceImpl[E[_]](
   logger: Logger[E],
   users: UserService[E],
   passwords: PasswordService[E],

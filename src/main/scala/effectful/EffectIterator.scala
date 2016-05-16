@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.language.higherKinds
 import scala.collection.generic.CanBuildFrom
 
-trait EffectIterator[E[+_],A] { self =>
+trait EffectIterator[E[_],A] { self =>
   implicit val E:EffectSystem[E]
 
   def map[B](f: A => B) : EffectIterator[E,B] =
@@ -37,7 +37,7 @@ trait EffectIterator[E[+_],A] { self =>
 }
 
 object EffectIterator {
-  def empty[E[+_],A](implicit E:EffectSystem[E]) = {
+  def empty[E[_],A](implicit E:EffectSystem[E]) = {
     val _E = E
     new EffectIterator[E,A] {
       override implicit val E = _E
@@ -45,7 +45,7 @@ object EffectIterator {
       override def next(): E[Option[A]] = none
     }
   }
-  def apply[E[+_], A](
+  def apply[E[_], A](
     f: () => E[Option[A]]
   )(implicit
     E: EffectSystem[E]
@@ -56,15 +56,15 @@ object EffectIterator {
       override def next() = f()
     }
   }
-  def computed[E[+_],A](a: A*)(implicit E:EffectSystem[E]) : EffectIterator[E,A] =
+  def computed[E[_],A](a: A*)(implicit E:EffectSystem[E]) : EffectIterator[E,A] =
     FromIterator(a.iterator)
 
-  def sequence[E[+_],A](
+  def sequence[E[_],A](
     eia: E[EffectIterator[E,A]]
   )(implicit E:EffectSystem[E]) : EffectIterator[E,A] =
     Sequence[E,A](eia)
 
-  case class Map[E[+_],A,B](
+  case class Map[E[_],A,B](
     base: EffectIterator[E,A],
     f: A => B
   )(implicit
@@ -73,7 +73,7 @@ object EffectIterator {
     override def next(): E[Option[B]] = base.next().map(_.map(f))
   }
 
-  case class FlatMap[E[+_],A,B](
+  case class FlatMap[E[_],A,B](
     base: EffectIterator[E,A],
     f: A => EffectIterator[E,B]
   )(implicit
@@ -111,7 +111,7 @@ object EffectIterator {
     }
   }
 
-  case class Append[E[+_],A](
+  case class Append[E[_],A](
     first: EffectIterator[E,A],
     second: EffectIterator[E,A]
   )(implicit
@@ -134,7 +134,7 @@ object EffectIterator {
       }
   }
 
-  case class FromIterator[E[+_],A](
+  case class FromIterator[E[_],A](
     values: Iterator[A]
   )(implicit
     val E: EffectSystem[E]
@@ -147,7 +147,7 @@ object EffectIterator {
       }
   }
 
-  case class Sequence[E[+_],A](
+  case class Sequence[E[_],A](
     eia: E[EffectIterator[E,A]]
   )(implicit
     val E: EffectSystem[E]

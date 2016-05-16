@@ -3,7 +3,7 @@ package effectful.examples.pure.user
 import scala.language.higherKinds
 import scalaz.\/
 
-trait UserLoginService[E[+_]] {
+trait UserLoginService[E[_]] {
   import UserLoginService._
 
   def login(username: String, password: String) : E[LoginFailure \/ Token]

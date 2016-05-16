@@ -2,7 +2,7 @@ package effectful.examples.pure
 
 import scala.language.higherKinds
 
-trait UUIDService[E[+_]] {
+trait UUIDService[E[_]] {
   import UUIDService._
 
   def gen() : E[UUID]

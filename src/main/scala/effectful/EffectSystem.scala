@@ -9,7 +9,7 @@ import scala.language.higherKinds
   *
   * @tparam E monad type
   */
-trait EffectSystem[E[+_]] {
+trait EffectSystem[E[_]] {
   def map[A,B](m: E[A], f: A => B) : E[B]
   def flatMap[A,B](m: E[A], f: A => E[B]) : E[B]
 
@@ -27,6 +27,8 @@ trait EffectSystem[E[+_]] {
   def apply[A](a: => A) : E[A]
 
   def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]]) : E[F[A]]
+
+  def widen[A,AA >: A](ea: E[A]) : E[AA]
 
   // def success(a: A) : E[A] ?
   // def failure(t: Throwable) : E[A] ?

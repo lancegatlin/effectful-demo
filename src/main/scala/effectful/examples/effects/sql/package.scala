@@ -13,7 +13,7 @@ package object sql {
   ) : SqlDriver.Context.AutoCommit =
     SqlDriver.Context.AutoCommit(connection)
 
-  implicit class SqlCursorPML[E[+_]](val self: SqlDriver[E]) extends AnyVal {
+  implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
     def iteratePreparedQuery(
       preparedStatement: PreparedStatement
     )(

@@ -13,7 +13,7 @@ import scala.language.higherKinds
   * @tparam A type of the record
   * @tparam E effect system
   */
-trait Dao[ID,A,E[+_]] {
+trait Dao[ID,A,E[_]] {
   import Dao._
 
   /** @return TRUE if id is in use FALSE otherwise */

@@ -2,7 +2,7 @@ package effectful.examples.effects.logging
 
 import scala.language.higherKinds
 
-trait Logger[E[+_]] {
+trait Logger[E[_]] {
   def trace(message: => String) : E[Unit]
   def trace(message: => String, cause: Throwable) : E[Unit]
   def debug(message: => String) : E[Unit]
