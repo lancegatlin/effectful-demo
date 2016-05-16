@@ -17,20 +17,19 @@ object JdbcSqlDriver {
   case class InternalPreparedStatement(
     id: Symbol,
     statement: String,
-    context: Context
+    jdbcPreparedStatement: java.sql.PreparedStatement,
+    jdbcConnection: java.sql.Connection
   )
 
   case class InternalTransaction(
     id: Symbol,
-    connection: java.sql.Connection,
-    preparedStatementIds: List[Symbol]
+    connection: java.sql.Connection
   )
 
 }
 
 class JdbcSqlDriver(
   getConnectionFromPool: JdbcSqlDriver.ConnectionInfo => java.sql.Connection,
-  getPreparedStatementFromPool: String => java.sql.PreparedStatement,
   uuids: UUIDService[Id]
 ) extends SqlDriver[Id] {
   import JdbcSqlDriver._
@@ -44,6 +43,7 @@ class JdbcSqlDriver(
     username: String,
     password: String
   ): Id[ConnectionPool] = {
+    // Note: since using connection pooling, just save connection info here
     val connectionInfo = ConnectionInfo(url,username,password)
     val connectionPool = ConnectionPool(
       id = genId()
@@ -55,20 +55,29 @@ class JdbcSqlDriver(
   override def closeConnectionPool(connectionPool: ConnectionPool): Id[Unit] =
     connectionInfos.remove(connectionPool.id)
 
+  def getJdbcConnection()(implicit context: Context) : java.sql.Connection = {
+    context match {
+      case Context.AutoCommit(connectionPool) =>
+        getConnectionFromPool(connectionInfos(connectionPool.id))
+      case Context.InTransaction(transactionId, _) =>
+        val internalTransaction = transactions(transactionId)
+        internalTransaction.connection
+    }
+  }
+
 
   // Transaction
 
   val transactions = new ConcurrentHashMap[Symbol,InternalTransaction]()
 
   override def beginTransaction()(implicit context: Context.AutoCommit): Id[Context.InTransaction] = {
-    // Note: getting another connection from pool for transaction to avoid dealing with "in transaction"
-    // state of main auto commit connection
+    // Note: getting another connection from pool per transaction to avoid dealing with "in transaction"
+    // state of sharing main auto commit connection
     val connection = getConnectionFromPool(connectionInfos(context.connectionPool.id))
     connection.setAutoCommit(false)
     val internalTransaction = InternalTransaction(
       id = genId(),
-      connection = connection,
-      preparedStatementIds = Nil
+      connection = connection
     )
     transactions.put(internalTransaction.id, internalTransaction)
     Context.InTransaction(
@@ -77,15 +86,7 @@ class JdbcSqlDriver(
     )
   }
 
-  def closePreparedStatement(id: Symbol) = {
-    jdbcPreparedStatements(id).close()
-    jdbcPreparedStatements.remove(id)
-  }
-
   def closeTransaction(internalTransaction: InternalTransaction) = {
-    internalTransaction
-      .preparedStatementIds
-      .foreach(closePreparedStatement)
     // Note: releases connection back to connection pool
     internalTransaction.connection.close()
     transactions.remove(internalTransaction.id)
@@ -105,32 +106,34 @@ class JdbcSqlDriver(
 
   // Prepared statement
 
-  val jdbcPreparedStatements = new ConcurrentHashMap[Symbol,java.sql.PreparedStatement]()
+  val preparedStatements = new ConcurrentHashMap[Symbol,InternalPreparedStatement]()
+
+  def closePreparedStatement(internalPreparedStatement: InternalPreparedStatement)(implicit context: Context) = {
+    internalPreparedStatement.jdbcPreparedStatement.close()
+    if(context.isInTransaction == false) {
+      internalPreparedStatement.jdbcConnection.close()
+    }
+    preparedStatements.remove(internalPreparedStatement.id)
+  }
 
   override def prepare(
     statement: String
   )(implicit
     context: Context
   ): Id[PreparedStatement] = {
-    context match {
-      case Context.AutoCommit(_) =>
-        // Prime for later so we don't have to hold a connection
-        getPreparedStatementFromPool(statement).close()
-        PreparedStatement(
-          id = genId(), // Note: id not really used in this impl
-          statement = statement
-        )
-      case Context.InTransaction(transactionId, _) =>
-        val internalTransaction = transactions(transactionId)
-        val jdbcPreparedStatement = internalTransaction.connection.prepareStatement(statement)
-        val id = genId()
-        jdbcPreparedStatements.put(id,jdbcPreparedStatement)
-        transactions.compute(id,)
-        PreparedStatement(
-          id = id,
-          statement = statement
-        )
-    }
+    val jdbcConnection = getJdbcConnection()
+    val jdbcPreparedStatement = jdbcConnection.prepareStatement(statement)
+    val id = genId()
+    preparedStatements.put(id,InternalPreparedStatement(
+      id = id,
+      statement = statement,
+      jdbcPreparedStatement = jdbcPreparedStatement,
+      jdbcConnection = jdbcConnection
+    ))
+    PreparedStatement(
+      id = id,
+      statement = statement
+    )
   }
 
   override def executePreparedUpdate(
@@ -140,24 +143,11 @@ class JdbcSqlDriver(
   )(implicit
     context: Context
   ): Id[Int] = {
-    def run(ps: java.sql.PreparedStatement) : Int = {
-      prepareBatches(ps,rows)
-      val updateCount = ps.executeUpdate()
-      ps.close()
-      updateCount
-    }
-
-    context match {
-      case Context.AutoCommit(_) =>
-        // Note: should already be in pool
-        val ps = getPreparedStatementFromPool(preparedStatement.statement)
-        run(ps)
-      case Context.InTransaction(transactionId, _) =>
-        val jdbcPreparedStatment = jdbcPreparedStatements(preparedStatement.id)
-        val retv = run(jdbcPreparedStatment)
-        retv
-    }
-
+    val internalPreparedStatement = preparedStatements(preparedStatement.id)
+    prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
+    val updateCount = internalPreparedStatement.jdbcPreparedStatement.executeUpdate()
+    closePreparedStatement(internalPreparedStatement)
+    updateCount
   }
 
   override def executePreparedQuery(
@@ -167,16 +157,12 @@ class JdbcSqlDriver(
   )(implicit
     context: Context
   ): Id[Cursor] = {
-    // Note: should already be in pool
-    val ps = getPreparedStatementFromPool(preparedStatement.statement)
-    prepareBatches(ps,rows)
-    ps.closeOnCompletion()
-    val internalCursor = ResultSetCursor(
-      id = genId(),
-      resultSet = ps.executeQuery()
+    val internalPreparedStatement = preparedStatements(preparedStatement.id)
+    prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
+    createCursor(
+      resultSet = internalPreparedStatement.jdbcPreparedStatement.executeQuery(),
+      onClose = { () => closePreparedStatement(internalPreparedStatement) }
     )
-    cursors.put(internalCursor.id, internalCursor)
-    internalCursor.next()
   }
 
   // Immediate execution
@@ -186,14 +172,17 @@ class JdbcSqlDriver(
   )(implicit
     context: Context
   ): Id[Cursor] = {
-    val connection = getConnectionFromPool(connectionInfos(context.connectionPool.id))
-    val jdbcStatement = connection.createStatement()
-    val internalCursor = ResultSetCursor(
-      id = genId(),
-      jdbcStatement.executeQuery(statement)
+    val jdbcConnection = getJdbcConnection()
+    val jdbcStatement = jdbcConnection.createStatement()
+    createCursor(
+      resultSet = jdbcStatement.executeQuery(statement),
+      onClose = { () =>
+        jdbcStatement.close()
+        if(context.isInTransaction == false) {
+          jdbcConnection.close()
+        }
+      }
     )
-    cursors.put(internalCursor.id, internalCursor)
-    internalCursor.next()
   }
 
   override def executeUpdate(
@@ -201,16 +190,29 @@ class JdbcSqlDriver(
   )(implicit
     context: Context
   ): Id[Int] = {
-    val connection = getConnectionFromPool(connectionInfos(context.connectionPool.id))
-    val jdbcStatement = connection.createStatement()
+    val jdbcConnection = getJdbcConnection()
+    val jdbcStatement = jdbcConnection.createStatement()
     val updateCount = jdbcStatement.executeUpdate(statement)
-    connection.close()
+    jdbcStatement.close()
+    if(context.isInTransaction == false) {
+      jdbcConnection.close()
+    }
     updateCount
   }
 
   // Cursor
 
-  val cursors = new ConcurrentHashMap[Symbol,ResultSetCursor]()
+  val cursors = new ConcurrentHashMap[Symbol,JdbcResultSetCursor]()
+
+  def createCursor(resultSet: java.sql.ResultSet, onClose: () => Unit) : Cursor = {
+    val internalCursor = JdbcResultSetCursor(
+      id = genId(),
+      resultSet = resultSet,
+      onClose = onClose
+    )
+    cursors.put(internalCursor.id, internalCursor)
+    internalCursor.next()
+  }
 
   override def getCursorMetadata(cursor: Cursor): Id[CursorMetadata] =
     cursors(cursor.id).getCursorMetadata

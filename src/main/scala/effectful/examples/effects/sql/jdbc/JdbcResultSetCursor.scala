@@ -3,11 +3,10 @@ package effectful.examples.effects.sql.jdbc
 import effectful.examples.effects.sql.SqlDriver._
 import JdbcSqlDriverOps._
 
-case class ResultSetCursor(
+case class JdbcResultSetCursor(
   id: Symbol,
-  resultSet: java.sql.ResultSet
-)(implicit
-  val context: Context
+  resultSet: java.sql.ResultSet,
+  onClose: () => Unit
 ) {
 
   val metadata = resultSet.getMetaData
@@ -56,6 +55,7 @@ case class ResultSetCursor(
       )
     } else {
       resultSet.close()
+      onClose()
       Cursor.Empty(id)
     }
   }

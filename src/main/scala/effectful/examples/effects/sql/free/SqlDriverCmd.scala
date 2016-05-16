@@ -64,29 +64,6 @@ object SqlDriverCmd {
     cursor: Cursor
   ) extends SqlDriverCmd[CursorMetadata]
 
-  case class SeekAbsolute(
-    cursor: Cursor,
-    rowNum: Int
-  ) extends SqlDriverCmd[Cursor]
-
-  case class SeekRelative(
-    cursor: Cursor,
-    rowOffset: Int
-  ) extends SqlDriverCmd[Cursor]
-
-  case class SeekFirst(
-    cursor: Cursor
-  ) extends SqlDriverCmd[Cursor]
-
-  case class SeekLast(
-    cursor: Cursor
-  ) extends SqlDriverCmd[Cursor]
-
-  case class SetSeekDir(
-    cursor: Cursor,
-    forward: Boolean
-  ) extends SqlDriverCmd[Unit]
-
   case class NextCursor(
     cursor: Cursor
   ) extends SqlDriverCmd[Cursor]

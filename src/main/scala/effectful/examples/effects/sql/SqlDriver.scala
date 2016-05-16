@@ -70,10 +70,15 @@ object SqlDriver {
   
   sealed trait Context {
     def connectionPool: ConnectionPool
+    def isInTransaction: Boolean
   }
   object Context {
-    case class AutoCommit(connectionPool: ConnectionPool) extends Context
-    case class InTransaction(id: Symbol, connectionPool: ConnectionPool) extends Context
+    case class AutoCommit(connectionPool: ConnectionPool) extends Context {
+      override def isInTransaction = false
+    }
+    case class InTransaction(id: Symbol, connectionPool: ConnectionPool) extends Context {
+      override def isInTransaction = true
+    }
   }
 
   sealed trait Cursor {
