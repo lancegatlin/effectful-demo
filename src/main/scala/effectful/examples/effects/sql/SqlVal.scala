@@ -2,163 +2,93 @@ package effectful.examples.effects.sql
 
 import org.apache.commons.io.IOUtils
 
+sealed trait CharData {
+  def toCharStream() : java.io.Reader
+  def toCharString() : String
+}
+object CharData {
+  def apply(reader: java.io.Reader) : IsReader = IsReader(reader)
+  def apply(data: String) : IsString = IsString(data)
+  
+  case class IsReader(reader: java.io.Reader) extends CharData {
+    override def toCharStream() = reader
+    override def toCharString() = IOUtils.toString(reader)
+  }
+  case class IsString(data: String) extends CharData {
+    override def toCharStream() = new java.io.StringReader(data)
+    override def toCharString() = data
+  }
+}
+
+sealed trait BinData {
+  def toBinStream() : java.io.InputStream
+  def toByteArray() : Array[Byte]
+}
+object BinData {
+  def apply(bin: java.io.InputStream) : IsBinStream = IsBinStream(bin)
+  def apply(data: Array[Byte]) : IsByteArray = IsByteArray(data)
+  
+  case class IsBinStream(bin: java.io.InputStream) extends BinData {
+    override def toBinStream() = bin
+    override def toByteArray() = IOUtils.toByteArray(bin)
+  }
+  case class IsByteArray(data: Array[Byte]) extends BinData {
+    override def toBinStream() = new java.io.ByteArrayInputStream(data)
+    override def toByteArray() = data
+  }
+}
+
 sealed trait SqlVal {
   def sqlType: SqlType
 }
 object SqlVal {
   // Mappings based on: https://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
-  // todo: support SqlTypes & Vals that are closer to underlying data instead of as interpreted by JDBC
 
   case class NULL(sqlType: SqlType) extends SqlVal
   case class CHAR(
-    fixedLength: Long
-  )(
-    // todo: use sealed trait union type here of String | Reader that can convert to either
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
+    fixedLength: Long,
+    data: CharData
   ) extends SqlVal {
     def sqlType = SqlType.CHAR(fixedLength)
   }
-  object CHAR {
-    def apply(value: String) : CHAR = CHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-    def apply(fixedLength: Long, value: String) : CHAR = CHAR(fixedLength)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
   case class NCHAR(
-    fixedLength: Long
-  )(
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
+    fixedLength: Long,
+    data: CharData
   ) extends SqlVal {
     def sqlType = SqlType.NCHAR(fixedLength)
   }
-  object NCHAR {
-    def apply(value: String) : NCHAR = NCHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-    def apply(fixedLength: Long, value: String) : NCHAR = NCHAR(fixedLength)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
   case class VARCHAR(
-    maxLength: Long
-  )(
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
+    maxLength: Long,
+    data: CharData
   ) extends SqlVal {
     def sqlType = SqlType.VARCHAR(maxLength)
   }
-  object VARCHAR {
-    def apply(value: String) : VARCHAR = VARCHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-    def apply(maxLength: Long, value: String) : VARCHAR = VARCHAR(maxLength)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
   case class NVARCHAR(
-    maxLength: Long
-  )(
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
+    maxLength: Long,
+    data: CharData
   ) extends SqlVal {
     def sqlType = SqlType.NVARCHAR(maxLength)
   }
-  object NVARCHAR {
-    def apply(value: String) : NVARCHAR = NVARCHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-    def apply(maxLength: Long, value: String) : NVARCHAR = NVARCHAR(maxLength)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
-  case class CLOB()(
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
-  ) extends SqlVal {
+  case class CLOB(data: CharData) extends SqlVal {
     def sqlType = SqlType.CLOB
   }
-  object CLOB {
-    def apply(value: String) : VARCHAR = VARCHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
-  case class NCLOB()(
-    val toCharStream: () => java.io.Reader,
-    val toCharString: () => String
-  ) extends SqlVal {
+  case class NCLOB(data: CharData) extends SqlVal {
     def sqlType = SqlType.NCLOB
   }
-  object NCLOB {
-    def apply(value: String) : VARCHAR = VARCHAR(0)(
-      toCharStream = () => new java.io.StringReader(value),
-      toCharString = () => value
-    )
-  }
   case class BINARY(
-    fixedSize: Long
-  )(
-    // todo: use sealed trait union type here of Array[Byte] | InputStream that can convert to either
-    val toBinaryStream: () => java.io.InputStream,
-    val toByteArray: () => Array[Byte]
+    fixedSize: Long,
+    data: BinData
   ) extends SqlVal {
     def sqlType = SqlType.BINARY(fixedSize)
   }
-  object BINARY {
-    def apply(bin: java.io.InputStream) : BINARY = BINARY(0)(
-      toBinaryStream = () => bin,
-      toByteArray = () => IOUtils.toByteArray(bin)
-    )
-    def apply(bytes: Array[Byte]) : BINARY = BINARY(0)(
-      toBinaryStream = () => new java.io.ByteArrayInputStream(bytes),
-      toByteArray = () => bytes
-    )
-  }
   case class VARBINARY(
-    maxSize: Long
-  )(
-    val toBinaryStream: () => java.io.InputStream,
-    val toByteArray: () => Array[Byte]
+    maxSize: Long,
+    data: BinData
   ) extends SqlVal {
     def sqlType = SqlType.VARBINARY(maxSize)
   }
-  object VARBINARY {
-    def apply(bin: java.io.InputStream) : BINARY = BINARY(0)(
-      toBinaryStream = () => bin,
-      toByteArray = () => IOUtils.toByteArray(bin)
-    )
-    def apply(bytes: Array[Byte]) : BINARY = BINARY(0)(
-      toBinaryStream = () => new java.io.ByteArrayInputStream(bytes),
-      toByteArray = () => bytes
-    )
-  }
-  case class BLOB()(
-    val toBinaryStream: () => java.io.InputStream,
-    val toByteArray: () => Array[Byte]
-  ) extends SqlVal {
+  case class BLOB(data: BinData) extends SqlVal {
     def sqlType = SqlType.BLOB
-  }
-  object BLOB {
-    def apply(bin: java.io.InputStream) : BINARY = BINARY(0)(
-      toBinaryStream = () => bin,
-      toByteArray = () => IOUtils.toByteArray(bin)
-    )
-    def apply(bytes: Array[Byte]) : BINARY = BINARY(0)(
-      toBinaryStream = () => new java.io.ByteArrayInputStream(bytes),
-      toByteArray = () => bytes
-    )
   }
   case class BOOLEAN(value: Boolean) extends SqlVal {
     def sqlType = SqlType.BOOLEAN
@@ -214,25 +144,25 @@ object SqlVal {
 
   /*
     case NULL(_ =>
-    case sql@CHAR(_) =>
-    case sql@VARCHAR(_) =>
-    case sql@CLOB() =>
-    case sql@NCLOB() =>
-    case sql@BINARY(_) =>
-    case sql@VARBINARY(_) =>
-    case sql@BLOB() =>
+    case CHAR(_,data) =>
+    case VARCHAR(_,data) =>
+    case CLOB(data) =>
+    case NCLOB(data) =>
+    case BINARY(_,data) =>
+    case VARBINARY(_,data) =>
+    case BLOB(data) =>
     case BOOLEAN(value) =>
-    case BIT(value: Boolean) =>
-    case TINYINT(value: Short) =>
-    case SMALLINT(value: Short) =>
-    case INTEGER(value: Int) =>
-    case BIGINT(value: Long) =>
-    case REAL(value: Float) =>
-    case DOUBLE(value: Double) =>
-    case sql@NUMERIC(value,_,_) =>
-    case sql@DECIMAL(value,_,_) =>
-    case sql@DATE(date) =>
-    case sql@TIME(time) =>
-    case sql@TIMESTAMP(timestamp) =>
+    case BIT(value) =>
+    case TINYINT(value) =>
+    case SMALLINT(value) =>
+    case INTEGER(value) =>
+    case BIGINT(value) =>
+    case REAL(value) =>
+    case DOUBLE(value) =>
+    case NUMERIC(value,_,_) =>
+    case DECIMAL(value,_,_) =>
+    case DATE(date) =>
+    case TIME(time) =>
+    case TIMESTAMP(timestamp) =>
   */
 }

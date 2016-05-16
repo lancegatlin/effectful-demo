@@ -2,53 +2,53 @@ package effectful.examples.effects.sql.jdbc
 
 import java.sql.{JDBCType, ResultSet, Types}
 import java.time.{LocalDate, ZoneId, ZoneOffset}
-
-import org.apache.commons.io.IOUtils
 import effectful.examples.effects.sql._
 import effectful.examples.effects.sql.SqlDriver._
 
 object JdbcSqlDriverOps {
+  val shouldStreamThreshold = 4096l
+
   def parseResultSetColumn(resultSet: ResultSet, col: Int, sqlType:SqlType) : SqlVal = {
+    def getCharData(size: Long, col: Int) =
+      if(size > shouldStreamThreshold) {
+        CharData.IsReader(resultSet.getCharacterStream(col))
+      } else {
+        CharData.IsString(resultSet.getString(col))
+      }
+    def getNCharData(size: Long, col: Int) =
+      if(size > shouldStreamThreshold) {
+        CharData.IsReader(resultSet.getNCharacterStream(col))
+      } else {
+        CharData.IsString(resultSet.getNString(col))
+      }
+    def getBinData(size: Long, col: Int) =
+      if(size > shouldStreamThreshold) {
+        BinData.IsBinStream(resultSet.getBinaryStream(col))
+      } else {
+        BinData.IsByteArray(resultSet.getBytes(col))
+      }
+
     import SqlType._
     val sqlVal =
       sqlType match {
         case CHAR(fixedSize) =>
-          SqlVal.CHAR(fixedSize, resultSet.getString(col))
-          // todo: stream "big" strings
+          SqlVal.CHAR(fixedSize, getCharData(fixedSize, col))
         case NCHAR(fixedSize) =>
-          SqlVal.NCHAR(fixedSize, resultSet.getString(col))
+          SqlVal.NCHAR(fixedSize, getNCharData(fixedSize, col))
         case VARCHAR(maxSize) =>
-          SqlVal.NCHAR(maxSize, resultSet.getString(col))
+          SqlVal.VARCHAR(maxSize, getCharData(maxSize, col))
         case NVARCHAR(maxSize) =>
-          SqlVal.NVARCHAR(maxSize, resultSet.getString(col))
-        case CLOB | NCLOB =>
-          val toCharStream = () => resultSet.getClob(col).getCharacterStream
-          val toCharString = () => IOUtils.toString(toCharStream())
-          SqlVal.CLOB()(
-            toCharStream = toCharStream,
-            toCharString = toCharString
-          )
+          SqlVal.NVARCHAR(maxSize, getNCharData(maxSize,col))
+        case CLOB =>
+          SqlVal.CLOB(getCharData(Long.MaxValue, col))
+        case NCLOB =>
+          SqlVal.NCLOB(getNCharData(Long.MaxValue, col))
         case BINARY(fixedSize) =>
-          val toBinaryStream = () => resultSet.getBinaryStream(col)
-          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-          SqlVal.BINARY(fixedSize)(
-            toBinaryStream = toBinaryStream,
-            toByteArray = toByteArray
-          )
+          SqlVal.BINARY(fixedSize, getBinData(fixedSize, col))
         case VARBINARY(maxSize) =>
-          val toBinaryStream = () => resultSet.getBinaryStream(col)
-          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-          SqlVal.VARBINARY(maxSize)(
-            toBinaryStream = toBinaryStream,
-            toByteArray = toByteArray
-          )
+          SqlVal.VARBINARY(maxSize, getBinData(maxSize, col))
         case BLOB =>
-          val toBinaryStream = () => resultSet.getBlob(col).getBinaryStream
-          val toByteArray = () => IOUtils.toByteArray(toBinaryStream())
-          SqlVal.BLOB()(
-            toBinaryStream = toBinaryStream,
-            toByteArray = toByteArray
-          )
+          SqlVal.BLOB(getBinData(Long.MaxValue, col))
         case BIT =>
           SqlVal.BIT(resultSet.getBoolean(col))
         case BOOLEAN =>
@@ -88,62 +88,78 @@ object JdbcSqlDriverOps {
   }
 
   def prepareBatches(ps: java.sql.PreparedStatement, rows: Seq[SqlRow]) : Unit = {
+    def setCharData(i: Int, data: CharData) : Unit = {
+      data match {
+        case CharData.IsReader(reader) =>
+          ps.setCharacterStream(i,reader)
+        case CharData.IsString(s) =>
+          ps.setString(i,s)
+      }
+    }
+    def setBinData(i: Int, data: BinData) : Unit = {
+      data match {
+        case BinData.IsBinStream(bin) =>
+          ps.setBinaryStream(i,bin)
+        case BinData.IsByteArray(bytes) =>
+          ps.setBytes(i,bytes)
+      }
+    }
+
     rows.foreach { row =>
       import SqlVal._
       row.iterator.zipWithIndex.foreach { case (sqlVal,i) =>
         sqlVal match {
           case NULL(sqlType) =>
             ps.setNull(i,sqlTypeToJdbcType(sqlType).ordinal)
-          case sql@CHAR(_) =>
-            // todo: use stream for "big" strings
-            ps.setString(i,sql.toCharString())
-          case sql@NCHAR(_) =>
-            ps.setString(i,sql.toCharString())
-          case sql@VARCHAR(_) =>
-            ps.setString(i,sql.toCharString())
-          case sql@NVARCHAR(_) =>
-            ps.setString(i,sql.toCharString())
-          case sql@CLOB() =>
-            ps.setClob(i,sql.toCharStream())
-          case sql@NCLOB() =>
-            ps.setClob(i,sql.toCharStream())
-          case sql@BINARY(_) =>
-            ps.setBlob(i,sql.toBinaryStream())
-          case sql@VARBINARY(_) =>
-            ps.setBlob(i,sql.toBinaryStream())
-          case sql@BLOB() =>
-            ps.setBlob(i,sql.toBinaryStream())
+          case CHAR(_,data) =>
+            setCharData(i,data)
+          case NCHAR(_,data) =>
+            setCharData(i,data)
+          case VARCHAR(_,data) =>
+            setCharData(i,data)
+          case NVARCHAR(_,data) =>
+            setCharData(i,data)
+          case CLOB(data) =>
+            ps.setClob(i,data.toCharStream())
+          case NCLOB(data) =>
+            ps.setNClob(i,data.toCharStream())
+          case BINARY(_,data) =>
+            setBinData(i,data)
+          case VARBINARY(_,data) =>
+            setBinData(i,data)
+          case BLOB(data) =>
+            ps.setBlob(i,data.toBinStream())
           case BOOLEAN(value) =>
             ps.setBoolean(i,value)
-          case BIT(value: Boolean) =>
+          case BIT(value) =>
             ps.setBoolean(i,value)
-          case TINYINT(value: Short) =>
+          case TINYINT(value) =>
             ps.setShort(i,value)
-          case SMALLINT(value: Short) =>
+          case SMALLINT(value) =>
             ps.setShort(i,value)
-          case INTEGER(value: Int) =>
+          case INTEGER(value) =>
             ps.setInt(i,value)
-          case BIGINT(value: Long) =>
+          case BIGINT(value) =>
             ps.setLong(i,value)
-          case REAL(value: Float) =>
+          case REAL(value) =>
             ps.setFloat(i,value)
-          case DOUBLE(value: Double) =>
+          case DOUBLE(value) =>
             ps.setDouble(i,value)
-          case sql@NUMERIC(value,_,_) =>
+          case NUMERIC(value,_,_) =>
             ps.setBigDecimal(i,value.underlying())
-          case sql@DECIMAL(value,_,_) =>
+          case DECIMAL(value,_,_) =>
             ps.setBigDecimal(i,value.underlying())
-          case sql@DATE(date) =>
+          case DATE(date) =>
             ps.setDate(i, new java.sql.Date(
               // todo: does this work??
               date.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli
             ))
-          case sql@TIME(time) =>
+          case TIME(time) =>
             ps.setTime(i, new java.sql.Time(
               // todo: does this work??
               time.atDate(LocalDate.ofEpochDay(0)).toInstant(ZoneOffset.UTC).toEpochMilli
             ))
-          case sql@TIMESTAMP(timestamp) =>
+          case TIMESTAMP(timestamp) =>
         }
       }
       ps.addBatch()
