@@ -54,7 +54,7 @@ class SqlDao[ID,A,E[_]](
     if(metadataTableSameAsRecord) {
       ""
     }  else {
-      esc"LEFT JOIN $tableName ON $metadataTableName.$idFieldName=$metadataTableName.$idFieldName"
+      esc"LEFT JOIN $metadataTableName ON $tableName.$idFieldName=$metadataTableName.$idFieldName"
     }
 
   val qSelectRecordAndMetadata =
@@ -62,7 +62,7 @@ class SqlDao[ID,A,E[_]](
       (fieldNames ++ metadataFieldNames).map(_.esc).mkString(",")
     } FROM ${tableName.esc} $sqlMaybeJoinMetadata"
 
-  def parse(cursor: Cursor) : EffectInputStream[E,(ID,A,RecordMetadata)] = {
+  def parse(cursor: Cursor) : EffectIterator[E,(ID,A,RecordMetadata)] = {
     sql.iterator(cursor).map { row =>
       val idCol = row.head
       val (recordRow, metadataRow) = row.tail.splitAt(fieldCount)

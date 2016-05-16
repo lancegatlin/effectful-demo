@@ -13,9 +13,9 @@ package object sql {
     SqlDriver.Context.AutoCommit(connection)
 
   implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
-    def iterator(cursor: SqlDriver.Cursor)(implicit E:EffectSystem[E]) : EffectInputStream[E,SqlDriver.SqlRow]= {
+    def iterator(cursor: SqlDriver.Cursor)(implicit E:EffectSystem[E]) : EffectIterator[E,SqlDriver.SqlRow]= {
       val _E = E
-      new EffectInputStream[E,SqlDriver.SqlRow] {
+      new EffectIterator[E,SqlDriver.SqlRow] {
         implicit val E = _E
         override def next() = self.nextCursor(cursor).map {
           case SqlDriver.Cursor.Row(_,_,row) => Some(row)
