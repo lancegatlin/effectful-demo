@@ -14,9 +14,16 @@ object JdbcSqlDriver {
     password: String
   )
 
+  case class InternalPreparedStatement(
+    id: Symbol,
+    statement: String,
+    context: Context
+  )
+
   case class InternalTransaction(
     id: Symbol,
-    connection: java.sql.Connection
+    connection: java.sql.Connection,
+    preparedStatementIds: List[Symbol]
   )
 
 }
@@ -52,49 +59,78 @@ class JdbcSqlDriver(
   // Transaction
 
   val transactions = new ConcurrentHashMap[Symbol,InternalTransaction]()
+
   override def beginTransaction()(implicit context: Context.AutoCommit): Id[Context.InTransaction] = {
-    val connection = getConnectionFromPool(connectionInfos(context.connectionPool.id))
     // Note: getting another connection from pool for transaction to avoid dealing with "in transaction"
     // state of main auto commit connection
+    val connection = getConnectionFromPool(connectionInfos(context.connectionPool.id))
     connection.setAutoCommit(false)
     val internalTransaction = InternalTransaction(
       id = genId(),
-      connection = connection
+      connection = connection,
+      preparedStatementIds = Nil
     )
+    transactions.put(internalTransaction.id, internalTransaction)
     Context.InTransaction(
       id = internalTransaction.id,
       connectionPool = context.connectionPool
     )
   }
 
+  def closePreparedStatement(id: Symbol) = {
+    jdbcPreparedStatements(id).close()
+    jdbcPreparedStatements.remove(id)
+  }
+
+  def closeTransaction(internalTransaction: InternalTransaction) = {
+    internalTransaction
+      .preparedStatementIds
+      .foreach(closePreparedStatement)
+    // Note: releases connection back to connection pool
+    internalTransaction.connection.close()
+    transactions.remove(internalTransaction.id)
+  }
+
   override def rollback()(implicit context: Context.InTransaction): Id[Unit] = {
-    val connection = transactions(context.id).connection
-    connection.rollback()
-    connection.close() // return to pool
-    transactions.remove(context.id)
+    val internalTransaction = transactions(context.id)
+    internalTransaction.connection.rollback()
+    closeTransaction(internalTransaction)
   }
 
   override def commit()(implicit context: Context.InTransaction): Id[Unit] = {
-    val connection = transactions(context.id).connection
-    connection.commit()
-    // Note: releases connection back to connection pool
-    connection.close()
-    transactions.remove(context.id)
+    val internalTransaction = transactions(context.id)
+    internalTransaction.connection.commit()
+    closeTransaction(internalTransaction)
   }
 
   // Prepared statement
+
+  val jdbcPreparedStatements = new ConcurrentHashMap[Symbol,java.sql.PreparedStatement]()
 
   override def prepare(
     statement: String
   )(implicit
     context: Context
   ): Id[PreparedStatement] = {
-    // Prime for later so we don't have to hold a connection
-    getPreparedStatementFromPool(statement).close()
-    PreparedStatement(
-      id = genId(), // Note: id not really used in this impl
-      statement = statement
-    )
+    context match {
+      case Context.AutoCommit(_) =>
+        // Prime for later so we don't have to hold a connection
+        getPreparedStatementFromPool(statement).close()
+        PreparedStatement(
+          id = genId(), // Note: id not really used in this impl
+          statement = statement
+        )
+      case Context.InTransaction(transactionId, _) =>
+        val internalTransaction = transactions(transactionId)
+        val jdbcPreparedStatement = internalTransaction.connection.prepareStatement(statement)
+        val id = genId()
+        jdbcPreparedStatements.put(id,jdbcPreparedStatement)
+        transactions.compute(id,)
+        PreparedStatement(
+          id = id,
+          statement = statement
+        )
+    }
   }
 
   override def executePreparedUpdate(
@@ -104,12 +140,24 @@ class JdbcSqlDriver(
   )(implicit
     context: Context
   ): Id[Int] = {
-    // Note: should already be in pool
-    val ps = getPreparedStatementFromPool(preparedStatement.statement)
-    prepareBatches(ps,rows)
-    val updateCount = ps.executeUpdate()
-    ps.close()
-    updateCount
+    def run(ps: java.sql.PreparedStatement) : Int = {
+      prepareBatches(ps,rows)
+      val updateCount = ps.executeUpdate()
+      ps.close()
+      updateCount
+    }
+
+    context match {
+      case Context.AutoCommit(_) =>
+        // Note: should already be in pool
+        val ps = getPreparedStatementFromPool(preparedStatement.statement)
+        run(ps)
+      case Context.InTransaction(transactionId, _) =>
+        val jdbcPreparedStatment = jdbcPreparedStatements(preparedStatement.id)
+        val retv = run(jdbcPreparedStatment)
+        retv
+    }
+
   }
 
   override def executePreparedQuery(
