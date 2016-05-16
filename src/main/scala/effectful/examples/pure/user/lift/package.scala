@@ -10,7 +10,7 @@ package object lift {
 
   implicit object LiftS_TokenService extends LiftS[TokenService] {
 
-  override def apply[E[_], F[_]](
+  override def apply[E[+_], F[+_]](
     s: TokenService[E]
   )(implicit
     E: EffectSystem[E],
@@ -33,7 +33,7 @@ package object lift {
   }
 
   implicit object LiftS_PasswordService extends LiftS[PasswordService] {
-    override def apply[E[_], F[_]](
+    override def apply[E[+_], F[+_]](
       s: PasswordService[E]
     )(implicit
       E: EffectSystem[E],

@@ -2,26 +2,26 @@ package effectful
 
 import scala.language.higherKinds
 
-trait Free[Cmd[_],A] {
+trait Free[Cmd[+_],+A] {
   def map[B](f: A => B) : Free[Cmd, B]
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B]
 }
 
 object Free {
 
-  case class Cmd[Cmd[_],A](Cmd: Cmd[A]) extends Free[Cmd,A] {
+  case class Cmd[Cmd[+_],+A](Cmd: Cmd[A]) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
       Map(this,f)
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
       FlatMap(this,f)
   }
-  case class Val[Cmd[_],A](value: A) extends Free[Cmd,A] {
+  case class Val[Cmd[+_],+A](value: A) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
       Val(f(value))
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
       f(value)
   }
-  case class Map[Cmd[_],A,B](
+  case class Map[Cmd[+_],A,+B](
     base: Free[Cmd,A],
     f: A => B
   ) extends Free[Cmd,B] {
@@ -30,7 +30,7 @@ object Free {
     override def flatMap[C](g: (B) => Free[Cmd, C]): Free[Cmd, C] =
       FlatMap(this, g)
   }
-  case class FlatMap[Cmd[_],A,B](
+  case class FlatMap[Cmd[+_],A,+B](
     base: Free[Cmd,A],
     f: A => Free[Cmd,B]
   ) extends Free[Cmd,B] {
@@ -40,7 +40,7 @@ object Free {
       FlatMap(base, f andThen(_.flatMap(g)))
   }
 
-  trait Interpreter[Cmd[_],E[_]] {
+  trait Interpreter[Cmd[+_],E[+_]] {
     implicit def E:EffectSystem[E]
 
     def apply[A](cmd: Cmd[A]) : E[A]

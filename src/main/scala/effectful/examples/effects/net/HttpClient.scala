@@ -2,7 +2,7 @@ package effectful.examples.effects.net
 
 import scala.language.higherKinds
 
-trait HttpClient[E[_]] {
+trait HttpClient[E[+_]] {
   import HttpClient._
 
   def get(request: Request) : E[Response]

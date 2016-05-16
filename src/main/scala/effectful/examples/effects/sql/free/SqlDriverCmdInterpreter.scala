@@ -5,7 +5,7 @@ import effectful.{EffectSystem, Free}
 import scala.language.higherKinds
 import effectful.examples.effects.sql._
 
-class SqlDriverCmdInterpreter[E[_]](
+class SqlDriverCmdInterpreter[E[+_]](
   sqlDriver: SqlDriver[E]                                   
 )(implicit
   val E:EffectSystem[E]

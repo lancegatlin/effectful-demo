@@ -5,14 +5,14 @@ package object effectful {
   type Id[+A] = A
 
   // todo: this conflicts with std TraversableOnce.map/flatMap PML
-  implicit class MonadicOpsPML[E[_],A](val self: E[A]) extends AnyVal {
+  implicit class MonadicOpsPML[E[+_],A](val self: E[A]) extends AnyVal {
     def map[B](f: A => B)(implicit E:EffectSystem[E]) : E[B] =
       E.map(self, f)
     def flatMap[B](f: A => E[B])(implicit E:EffectSystem[E]) : E[B]=
       E.flatMap(self,f)
   }
 
-  implicit class SequenceOpsPML[E[_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
+  implicit class SequenceOpsPML[E[+_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
     def sequence(implicit
       E:EffectSystem[E]
     ) : E[F[A]] = E.sequence(self)
@@ -33,7 +33,7 @@ package object effectful {
       Thread.sleep(duration.toMillis)
   }
 
-  implicit def liftE_Id[F[_]] : LiftE[Id,F] = new LiftE[Id,F] {
+  implicit def liftE_Id[F[+_]] : LiftE[Id,F] = new LiftE[Id,F] {
     override def apply[A](
       ea: => Id[A]
     )(implicit
@@ -42,16 +42,16 @@ package object effectful {
     ) : F[A] = F(ea)
   }
 
-  implicit class EffectSystemPml[E[_],A](val self: E[A]) extends AnyVal {
-    def liftE[F[_]](implicit
+  implicit class EffectSystemPml[E[+_],A](val self: E[A]) extends AnyVal {
+    def liftE[F[+_]](implicit
       E:EffectSystem[E],
       F:EffectSystem[F],
       liftE:LiftE[E,F]
     ) : F[A] = liftE(self)
   }
 
-  implicit class ServicePML[S[_[_]],E[_]](val self: S[E]) extends AnyVal {
-    def liftS[F[_]](implicit
+  implicit class ServicePML[S[_[+_]],E[+_]](val self: S[E]) extends AnyVal {
+    def liftS[F[+_]](implicit
       E:EffectSystem[E],
       F:EffectSystem[F],
       liftE:LiftE[E,F],

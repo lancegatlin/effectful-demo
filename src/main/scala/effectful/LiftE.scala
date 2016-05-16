@@ -8,7 +8,7 @@ import scala.language.higherKinds
   * @tparam E effect system monad
   * @tparam F a different effect system monad
   */
-trait LiftE[E[_],F[_]] {
+trait LiftE[E[+_],F[+_]] {
   /**
     * Lift the computation of an effect system monad into another
     * effect system monad.

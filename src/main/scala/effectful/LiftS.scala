@@ -8,7 +8,7 @@ import scala.language.higherKinds
   *
   * @tparam S the service
   */
-trait LiftS[S[_[_]]] {
+trait LiftS[S[_[+_]]] {
   /**
     * Create a new instance of a service that returns computations
     * in a different effect system by utilizing the supplied service and
@@ -23,7 +23,7 @@ trait LiftS[S[_[_]]] {
     * @return an instance of S[F] that utilizes the underlying S[E] to compute
     *         values by lifting all computed E[_] values into F[_]
     */
-  def apply[E[_],F[_]](
+  def apply[E[+_],F[+_]](
     s: S[E]
   )(implicit
     E:EffectSystem[E],

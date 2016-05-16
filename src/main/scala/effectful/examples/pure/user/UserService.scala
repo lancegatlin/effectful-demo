@@ -6,7 +6,7 @@ import effectful.examples.pure.UUIDService.UUID
 
 import scala.language.higherKinds
 
-trait UserService[E[_]] {
+trait UserService[E[+_]] {
   import UserService._
 
   def findByUsername(username: String) : E[Option[User]]

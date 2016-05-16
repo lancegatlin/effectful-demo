@@ -34,7 +34,7 @@ object SqlDao {
   }
 }
 
-class SqlDao[ID,A,E[_]](
+class SqlDao[ID,A,E[+_]](
   sql: SqlDriver[E],
   tableName: String,
   metadataTableName: String
@@ -57,17 +57,17 @@ class SqlDao[ID,A,E[_]](
       esc"LEFT JOIN $metadataTableName ON $tableName.$idFieldName=$metadataTableName.$idFieldName"
     }
 
+  val allFieldNames = fieldNames ++ metadataFieldNames
+
   val qSelectRecordAndMetadata =
     s"SELECT ${idFieldName.esc},${
-      (fieldNames ++ metadataFieldNames).map(_.esc).mkString(",")
+      allFieldNames.map(_.esc).mkString(",")
     } FROM ${tableName.esc} $sqlMaybeJoinMetadata"
 
-  def parse(cursor: Cursor) : EffectIterator[E,(ID,A,RecordMetadata)] = {
-    sql.iterator(cursor).map { row =>
-      val idCol = row.head
-      val (recordRow, metadataRow) = row.tail.splitAt(fieldCount)
-      (sqlToId(idCol), sqlRowToRecord(recordRow), metadataMapping.sqlRowToRecord(metadataRow))
-    }
+  def parse : SqlRow => (ID,A,RecordMetadata) = { row =>
+    val idCol = row.head
+    val (recordRow, metadataRow) = row.tail.splitAt(fieldCount)
+    (sqlToId(idCol), sqlRowToRecord(recordRow), metadataMapping.sqlRowToRecord(metadataRow))
   }
 
   lazy val qFindById =
@@ -75,18 +75,14 @@ class SqlDao[ID,A,E[_]](
         s"$qSelectRecordAndMetadata WHERE ${idFieldName.esc} = ?"
       ).map { ps =>
         { id: ID =>
-          for {
-            cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
-          } yield {
-            parse(cursor)
-          }
+          sql.iteratePreparedQuery(ps)(IndexedSeq(idToSql(id))).map(parse)
         }
       }
 
   override def findById(id: ID): E[Option[(ID, A, RecordMetadata)]] =
     for {
       fq <- qFindById
-      iterator <- fq(id)
+      iterator = fq(id)
       result <- iterator.headOption()
     } yield result
 
@@ -94,20 +90,16 @@ class SqlDao[ID,A,E[_]](
   def queryToSqlWhere(query: Query[A]) : String = ???
 
   override def find(query: Query[A]): E[Seq[(ID, A, RecordMetadata)]] =
-    for {
-      cursor <- sql.executeQuery(s"$qSelectRecordAndMetadata WHERE ${queryToSqlWhere(query)}")
-      iterator = parse(cursor)
-      result <- iterator.collect[Seq]()
-    } yield result
+    sql.iterateQuery(s"$qSelectRecordAndMetadata WHERE ${queryToSqlWhere(query)}")
+      .map(parse)
+      .collect[IndexedSeq]()
 
   lazy val qFindAll = sql.prepare(qSelectRecordAndMetadata)
 
   override def findAll(start: Int, batchSize: Int): E[Seq[(ID, A, RecordMetadata)]] =
     for {
       fq <- qFindAll
-      cursor <- sql.executePreparedQuery(fq)()
-      iterator = parse(cursor)
-      result <- iterator.collect[Seq]()
+      result <- sql.iteratePreparedQuery(fq)().map(parse).collect[IndexedSeq]
     } yield result
 
   lazy val qExists =
@@ -131,15 +123,9 @@ class SqlDao[ID,A,E[_]](
     } yield result
 
   override def batchExists(ids: Traversable[ID]): E[Set[ID]] =
-    for {
-      cursor <- sql.executeQuery(
-        s"SELECT ${idFieldName.esc} FROM ${tableName.esc} WHERE ${idFieldName.esc} IN (${ids.map(id => idToSql(id).printSQL).mkString(",")}) "
-      )
-      result <- sql.iterator(cursor).map { row =>
-                  sqlToId(row(0))
-                }
-                .collect[Set]
-    } yield result
+    sql.iterateQuery(
+      s"SELECT ${idFieldName.esc} FROM ${tableName.esc} WHERE ${idFieldName.esc} IN (${ids.map(id => idToSql(id).printSQL).mkString(",")}) "
+    ).map(row => sqlToId(row(0))).collect[Set]
 
 
   // todo: fix me this should be an update to metadata not actual delete

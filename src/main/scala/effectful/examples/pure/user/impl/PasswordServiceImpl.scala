@@ -6,7 +6,7 @@ import scala.concurrent.duration.FiniteDuration
 import effectful._
 import effectful.examples.pure.user.PasswordService
 
-class PasswordServiceImpl[E[_]](
+class PasswordServiceImpl[E[+_]](
   passwordMismatchDelay: FiniteDuration
 )(implicit
   E:EffectSystem[E]

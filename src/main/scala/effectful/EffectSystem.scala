@@ -9,7 +9,7 @@ import scala.language.higherKinds
   *
   * @tparam E monad type
   */
-trait EffectSystem[E[_]] {
+trait EffectSystem[E[+_]] {
   def map[A,B](m: E[A], f: A => B) : E[B]
   def flatMap[A,B](m: E[A], f: A => E[B]) : E[B]
 

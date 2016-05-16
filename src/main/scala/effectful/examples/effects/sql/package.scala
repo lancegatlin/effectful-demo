@@ -5,6 +5,7 @@ import scala.language.implicitConversions
 import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
 import effectful._
+import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
   implicit def connectionToContextAutoCommit(implicit
@@ -12,14 +13,36 @@ package object sql {
   ) : SqlDriver.Context.AutoCommit =
     SqlDriver.Context.AutoCommit(connection)
 
-  implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
-    def iterator(cursor: SqlDriver.Cursor)(implicit E:EffectSystem[E]) : EffectIterator[E,SqlDriver.SqlRow]= {
-      val _E = E
-      new EffectIterator[E,SqlDriver.SqlRow] {
-        implicit val E = _E
-        override def next() = self.nextCursor(cursor).map {
-          case SqlDriver.Cursor.Row(_,_,row) => Some(row)
-          case SqlDriver.Cursor.Empty(_) => None
+  implicit class SqlCursorPML[E[+_]](val self: SqlDriver[E]) extends AnyVal {
+    def iteratePreparedQuery(
+      preparedStatement: PreparedStatement
+    )(
+      rows: SqlRow*
+    )(implicit
+      context: Context,
+      E:EffectSystem[E]
+    ) : EffectIterator[E,SqlRow] = {
+      iterator({ () => self.executePreparedQuery(preparedStatement)(rows:_*) })
+    }
+
+    def iterateQuery(
+      statement: String
+    )(implicit
+      context: Context,
+      E:EffectSystem[E]
+    ) : EffectIterator[E,SqlRow] = {
+      iterator({ () => self.executeQuery(statement) })
+    }
+
+    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:EffectSystem[E]) : EffectIterator[E,SqlRow]= {
+      EffectIterator.sequence {
+        for {
+          cursor <- fetchCursor()
+        } yield EffectIterator[E,SqlRow] { () =>
+          self.nextCursor(cursor).map {
+            case Cursor.Row(_,_,row) => Some(row)
+            case Cursor.Empty(_) => None
+          }
         }
       }
     }
