@@ -38,14 +38,12 @@ object SqlDriverCmd {
 
   case class ExecutePreparedQuery(
     preparedStatement: PreparedStatement,
-    rows: Seq[SqlRow],
-    context: Context
+    rows: Seq[SqlRow]
   ) extends SqlDriverCmd[Cursor]
 
   case class ExecutePreparedUpdate(
     preparedStatement: PreparedStatement,
-    rows: Seq[SqlRow],
-    context: Context
+    rows: Seq[SqlRow]
   ) extends SqlDriverCmd[Int]
 
 

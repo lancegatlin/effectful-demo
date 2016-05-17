@@ -37,10 +37,10 @@ class SqlDriverCmdInterpreter[E[_]](
 
       case Prepare(statement,context) =>
         prepare(statement)(context)
-      case ExecutePreparedQuery(preparedStatement, rows, context) =>
-        executePreparedQuery(preparedStatement)(rows:_*)(context)
-      case ExecutePreparedUpdate(preparedStatement, rows, context) =>
-        executePreparedUpdate(preparedStatement)(rows:_*)(context)
+      case ExecutePreparedQuery(preparedStatement, rows) =>
+        executePreparedQuery(preparedStatement)(rows:_*)
+      case ExecutePreparedUpdate(preparedStatement, rows) =>
+        executePreparedUpdate(preparedStatement)(rows:_*)
       case ExecuteQuery(statement,context) =>
         executeQuery(statement)(context)
       case ExecuteUpdate(statement,context) =>

@@ -17,16 +17,12 @@ trait SqlDriver[E[_]] {
     preparedStatement: PreparedStatement
   )(
     rows: SqlRow*
-  )(implicit
-    context: Context
-  ) : E[Cursor]
+  ): E[Cursor]
 
   def executePreparedUpdate(
     preparedStatement: PreparedStatement
   )(
     rows: SqlRow*
-  )(implicit
-    context: Context
   ) : E[Int]
 
 
@@ -67,7 +63,10 @@ object SqlDriver {
   case class ConnectionPool(
     id: Symbol
   )
-  
+
+  def autoCommit(implicit connectionPool: ConnectionPool) : Context.AutoCommit =
+    Context.AutoCommit(connectionPool)
+
   sealed trait Context {
     def connectionPool: ConnectionPool
     def isInTransaction: Boolean

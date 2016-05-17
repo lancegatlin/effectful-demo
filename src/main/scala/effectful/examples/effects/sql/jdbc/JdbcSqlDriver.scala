@@ -19,6 +19,8 @@ object JdbcSqlDriver {
     statement: String,
     jdbcPreparedStatement: java.sql.PreparedStatement,
     jdbcConnection: java.sql.Connection
+  )(implicit
+    val context: Context
   )
 
   case class InternalTransaction(
@@ -140,13 +142,11 @@ class JdbcSqlDriver(
     preparedStatement: PreparedStatement
   )(
     rows: SqlRow*
-  )(implicit
-    context: Context
   ): Id[Int] = {
     val internalPreparedStatement = preparedStatements(preparedStatement.id)
     prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
     val updateCount = internalPreparedStatement.jdbcPreparedStatement.executeUpdate()
-    closePreparedStatement(internalPreparedStatement)
+    closePreparedStatement(internalPreparedStatement)(internalPreparedStatement.context)
     updateCount
   }
 
@@ -154,14 +154,12 @@ class JdbcSqlDriver(
     preparedStatement: PreparedStatement
   )(
     rows: SqlRow*
-  )(implicit
-    context: Context
   ): Id[Cursor] = {
     val internalPreparedStatement = preparedStatements(preparedStatement.id)
     prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
     createCursor(
       resultSet = internalPreparedStatement.jdbcPreparedStatement.executeQuery(),
-      onClose = { () => closePreparedStatement(internalPreparedStatement) }
+      onClose = { () => closePreparedStatement(internalPreparedStatement)(internalPreparedStatement.context) }
     )
   }
 

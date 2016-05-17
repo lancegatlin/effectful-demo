@@ -8,10 +8,10 @@ import effectful._
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
-  implicit def connectionToContextAutoCommit(implicit
-    connection: SqlDriver.ConnectionPool
-  ) : SqlDriver.Context.AutoCommit =
-    SqlDriver.Context.AutoCommit(connection)
+//  implicit def connectionToContextAutoCommit(implicit
+//    connection: SqlDriver.ConnectionPool
+//  ) : SqlDriver.Context.AutoCommit =
+//    SqlDriver.Context.AutoCommit(connection)
 
   implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
     def iteratePreparedQuery(
@@ -19,7 +19,6 @@ package object sql {
     )(
       rows: SqlRow*
     )(implicit
-      context: Context,
       E:EffectSystem[E]
     ) : EffectIterator[E,SqlRow] = {
       iterator({ () => self.executePreparedQuery(preparedStatement)(rows:_*) })
@@ -46,6 +45,35 @@ package object sql {
         }
       }
     }
+
+    def autoCommit[A](
+      f: Context.AutoCommit => E[A]
+    )(implicit
+      e:EffectSystem[E],
+      connectionPool: ConnectionPool
+    ) : E[A] = f(Context.AutoCommit(connectionPool))
+
+    def inTransaction[A](
+      f: Context.InTransaction => E[A]
+    )(implicit
+      E:EffectSystem[E],
+      connectionPool: ConnectionPool
+    ) : E[A] =
+      for {
+        transaction <- self.beginTransaction()(Context.AutoCommit(connectionPool))
+        result <- {
+          try {
+            for {
+              result <- f(transaction)
+              _ <- self.commit()(transaction)
+            } yield result
+          } catch {
+            // Yes, really catch all throwable
+            case t : Throwable =>
+              self.rollback()(transaction).map(_ => throw t)
+          }
+        }
+      } yield result
   }
 
   implicit class SqlValPML(val self: SqlVal) extends AnyVal {
