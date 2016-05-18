@@ -62,15 +62,16 @@ package object sql {
       for {
         transaction <- self.beginTransaction()(Context.AutoCommit(connectionPool))
         result <- {
-          try {
+          E.Try {
             for {
               result <- f(transaction)
               _ <- self.commit()(transaction)
             } yield result
-          } catch {
-            // Yes, really catch all throwable
+          }{
             case t : Throwable =>
-              self.rollback()(transaction).map(_ => throw t)
+              for {
+                _ <- self.rollback()(transaction)
+              } yield throw t
           }
         }
       } yield result

@@ -30,6 +30,23 @@ trait EffectSystem[E[_]] {
 
   def widen[A,AA >: A](ea: E[A]) : E[AA]
 
+  /**
+    * Replacement for standard try/catch blocks. Using this method ensures
+    * proper handling of exceptions for both effect systems that capture
+    * exception and those that don't.
+    *
+    * Note: the try/catch block does not properly catch exceptions from
+    * effect systems that capture exceptions inside their monad E[A],
+    * such as Try, Future or scalaz.Task. Using a try/catch block around
+    * an effect system such as Future will execute the catch block.
+    *
+    * @param f code block to catch exceptions from
+    * @param _catch exception handler
+    * @tparam A type of expression
+    * @return an instance of E
+    */
+  def Try[A](f: => E[A])(_catch: PartialFunction[Throwable, E[A]]) : E[A]
+
   // def success(a: A) : E[A] ?
   // def failure(t: Throwable) : E[A] ?
   // todo: move to effect service (DelayService)
