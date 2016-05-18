@@ -34,7 +34,7 @@ package object sql {
     }
 
     def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:EffectSystem[E]) : EffectIterator[E,SqlRow]= {
-      EffectIterator.sequence {
+      EffectIterator.flatten {
         for {
           cursor <- fetchCursor()
         } yield EffectIterator[E,SqlRow] { () =>

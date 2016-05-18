@@ -55,6 +55,7 @@ class JdbcSqlDriver(
   }
 
   override def closeConnectionPool(connectionPool: ConnectionPool): Id[Unit] =
+    // Note: not cleaning up dangling here depending on caller to do the right thing
     connectionInfos.remove(connectionPool.id)
 
   def getJdbcConnection()(implicit context: Context) : java.sql.Connection = {
@@ -91,6 +92,7 @@ class JdbcSqlDriver(
   def closeTransaction(internalTransaction: InternalTransaction) = {
     // Note: releases connection back to connection pool
     internalTransaction.connection.close()
+    // todo: could have race condition here
     transactions.remove(internalTransaction.id)
   }
 
@@ -115,6 +117,7 @@ class JdbcSqlDriver(
     if(context.isInTransaction == false) {
       internalPreparedStatement.jdbcConnection.close()
     }
+    // todo: could have race condition here
     preparedStatements.remove(internalPreparedStatement.id)
   }
 
@@ -143,6 +146,7 @@ class JdbcSqlDriver(
   )(
     rows: SqlRow*
   ): Id[Int] = {
+    // todo: think about race conditions here
     val internalPreparedStatement = preparedStatements(preparedStatement.id)
     prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
     val updateCount = internalPreparedStatement.jdbcPreparedStatement.executeUpdate()

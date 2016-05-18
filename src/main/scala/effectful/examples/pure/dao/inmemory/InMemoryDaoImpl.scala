@@ -40,7 +40,6 @@ class InMemoryDaoImpl[ID,A](
   }
 
 
-  // todo:
   override def exists(id: ID): Id[Boolean] =
     data.contains(id)
 

@@ -59,10 +59,10 @@ object EffectIterator {
   def computed[E[_],A](a: A*)(implicit E:EffectSystem[E]) : EffectIterator[E,A] =
     FromIterator(a.iterator)
 
-  def sequence[E[_],A](
+  def flatten[E[_],A](
     eia: E[EffectIterator[E,A]]
   )(implicit E:EffectSystem[E]) : EffectIterator[E,A] =
-    Sequence[E,A](eia)
+    Flatten[E,A](eia)
 
   case class Map[E[_],A,B](
     base: EffectIterator[E,A],
@@ -147,7 +147,7 @@ object EffectIterator {
       }
   }
 
-  case class Sequence[E[_],A](
+  case class Flatten[E[_],A](
     eia: E[EffectIterator[E,A]]
   )(implicit
     val E: EffectSystem[E]

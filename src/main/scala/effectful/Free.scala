@@ -2,6 +2,15 @@ package effectful
 
 import scala.language.higherKinds
 
+/**
+  * A free monad
+  *
+  * Note: provided to keep this lib independent of scalaz. Feel free to use
+  * scalaz.Free instead
+  *
+  * @tparam Cmd a type of command
+  * @tparam A monad type
+  */
 trait Free[Cmd[_],A] {
   def map[B](f: A => B) : Free[Cmd, B]
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B]

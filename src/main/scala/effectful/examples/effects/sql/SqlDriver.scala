@@ -2,6 +2,7 @@ package effectful.examples.effects.sql
 
 import scala.language.higherKinds
 
+// todo: mutating methods should just take id and not full case class
 trait SqlDriver[E[_]] {
   import SqlDriver._
 

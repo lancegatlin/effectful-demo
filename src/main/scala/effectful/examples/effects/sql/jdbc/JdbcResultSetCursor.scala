@@ -24,8 +24,10 @@ case class JdbcResultSetCursor(
   }
 
   def getCursorMetadata = CursorMetadata(
-    schemaName = metadata.getSchemaName(0),
-    tableName = metadata.getSchemaName(0),
+    // todo: does this work?
+    schemaName = metadata.getSchemaName(1),
+    // todo: does this work?
+    tableName = metadata.getSchemaName(1),
     columns = (1 to columnCount).map { i =>
       import metadata._
       ColumnMetadata(
