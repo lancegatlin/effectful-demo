@@ -45,9 +45,8 @@ package object effectful {
       a
     override def sequence[F[AA] <: Traversable[AA], A](fea: F[Id[A]]): Id[F[A]] =
       fea
-    override def delay(duration: FiniteDuration): Id[Unit] =
-      Thread.sleep(duration.toMillis)
-    override def widen[A, AA >: A](ea: Id[A]): Id[AA] = ea
+    override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
+      ea
     override def Try[A](f: => Id[A])(_catch: PartialFunction[Throwable, Id[A]]): Id[A] =
       try { f } catch _catch
   }

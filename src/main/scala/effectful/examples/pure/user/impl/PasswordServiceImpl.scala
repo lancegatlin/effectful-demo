@@ -2,11 +2,14 @@ package effectful.examples.pure.user.impl
 
 import scala.language.higherKinds
 import org.jasypt.digest.PooledStringDigester
+
 import scala.concurrent.duration.FiniteDuration
 import effectful._
+import effectful.examples.effects.delay.DelayService
 import effectful.examples.pure.user.PasswordService
 
 class PasswordServiceImpl[E[_]](
+  delayService: DelayService[E],
   passwordMismatchDelay: FiniteDuration
 )(implicit
   E:EffectSystem[E]
@@ -20,7 +23,7 @@ class PasswordServiceImpl[E[_]](
       E(true)
     } else {
       // Delay if password didn't match
-      E.delay(passwordMismatchDelay).map(_ => false)
+      delayService.delay(passwordMismatchDelay).map(_ => false)
     }
   }
 

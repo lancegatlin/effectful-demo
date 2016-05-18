@@ -1,6 +1,5 @@
 package effectful
 
-import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 /**
@@ -72,6 +71,4 @@ trait EffectSystem[E[_]] {
 
   // def success(a: A) : E[A] ?
   // def failure(t: Throwable) : E[A] ?
-  // todo: move to effect service (DelayService)
-  def delay(duration: FiniteDuration) : E[Unit]
 }
