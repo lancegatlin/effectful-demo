@@ -38,7 +38,7 @@ trait EffectSystem[E[_]] {
     * Note: the try/catch block does not properly catch exceptions from
     * effect systems that capture exceptions inside their monad E[A],
     * such as Try, Future or scalaz.Task. Using a try/catch block around
-    * an effect system such as Future will execute the catch block.
+    * an effect system such as Future will never execute the catch block.
     *
     * @param f code block to catch exceptions from
     * @param _catch exception handler
