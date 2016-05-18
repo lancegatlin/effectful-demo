@@ -8,6 +8,7 @@ package object effectful {
   type Id[A] = A
 
   // todo: this conflicts with std TraversableOnce.map/flatMap implicit class
+  // todo: how does scalaz handle this?
   /**
     * Add the map/flatMap/widen methods to any effect system monad that
     * simply forward the call to the implicit EffectSystem type-class
