@@ -8,6 +8,8 @@ import scala.concurrent.duration.Duration
 
 package object lift {
 
+  // todo: all other services
+
   implicit object LiftS_TokenService extends LiftS[TokenService] {
 
   override def apply[E[_], F[_]](

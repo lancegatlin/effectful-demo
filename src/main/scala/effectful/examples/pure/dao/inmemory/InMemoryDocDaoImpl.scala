@@ -4,18 +4,18 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
 import effectful._
-import effectful.examples.pure.dao.Dao
-import effectful.examples.pure.dao.Dao.RecordMetadata
+import effectful.examples.pure.dao.DocDao
+import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 
-object InMemoryDaoImpl {
+object InMemoryDocDaoImpl {
   class DuplicateKeyException(message: String) extends Exception(message)
 }
 
-class InMemoryDaoImpl[ID,A](
+class InMemoryDocDaoImpl[ID,A](
   initial: Map[ID,A]
-) extends Dao[ID,A,Id] {
-  import InMemoryDaoImpl._
+) extends DocDao[ID,A,Id] {
+  import InMemoryDocDaoImpl._
 
   def mkMetadata() = RecordMetadata(
     created = Instant.now,

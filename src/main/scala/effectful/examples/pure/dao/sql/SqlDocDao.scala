@@ -1,33 +1,33 @@
-package effectful.examples.pure.dao.sqldao
+package effectful.examples.pure.dao.sql
 
-import java.time.{Instant, LocalDate}
 
 import scala.language.higherKinds
+import java.time.Instant
 import effectful._
 import effectful.examples.effects.sql._
-import effectful.examples.pure.dao.Dao
-import effectful.examples.pure.dao.Dao.RecordMetadata
+import effectful.examples.pure.dao.DocDao
+import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 import SqlDriver._
 
-object SqlDao {
+object SqlDocDao {
   case class FieldColumnMapping(
     fieldName: String,
     columnIndex: Int,
     columnName: String
   )
   case class RecordMapping[ID,A](
-    dataFields: Seq[FieldColumnMapping],
+    recordFields: Seq[FieldColumnMapping],
     idField: FieldColumnMapping
   )(implicit
     val idToSql: ID => SqlVal,
     val sqlToId: SqlVal => ID,
-    val recordToSqlRow: A => IndexedSeq[SqlVal],
-    val sqlRowToRecord: IndexedSeq[SqlVal] => A
+    val recordToSqlRow: A => SqlRow,
+    val sqlRowToRecord: SqlRow => A
   ) {
-    def dataFieldCount = dataFields.size
-    val dataFieldsOrdered = dataFields.sortBy(_.columnIndex)
-    val allFields = idField +: dataFields
+    def recordFieldCount = recordFields.size
+    val recordFieldsOrdered = recordFields.sortBy(_.columnIndex)
+    val allFields = idField +: recordFields
     val allFieldsOrdered = allFields.sortBy(_.columnIndex)
   }
 
@@ -39,29 +39,29 @@ object SqlDao {
   }
 }
 
-class SqlDao[ID,A,E[_]](
+class SqlDocDao[ID,A,E[_]](
   sql: SqlDriver[E],
   tableName: String,
   metadataTableName: String
 )(implicit
   E:EffectSystem[E],
   connectionPool: ConnectionPool,
-  recordMapping: SqlDao.RecordMapping[ID,A],
-  metadataMapping: SqlDao.RecordMapping[ID,RecordMetadata]
-) extends Dao[ID,A,E] {
-  import SqlDao._
+  recordMapping: SqlDocDao.RecordMapping[ID,A],
+  metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
+) extends DocDao[ID,A,E] {
+  import SqlDocDao._
   import recordMapping._
 
   val metadataTableSameAsRecord = tableName == metadataTableName
 
-  val dataFieldNames = dataFields.map(_.fieldName)
-  val meta_dataFieldNames =
-    metadataMapping.dataFields.map(_.fieldName)
+  val recordFieldNames = recordFields.map(_.fieldName)
+  val meta_recordFieldNames =
+    metadataMapping.recordFields.map(_.fieldName)
 
-  val dataFieldNameToColName =
-    dataFields.map(m => (m.fieldName,m.columnName)).toMap
-  val meta_dataFieldNameToColName =
-    metadataMapping.dataFields.map(m => (m.fieldName,m.columnName)).toMap
+  val recordFieldNameToColName =
+    recordFields.map(m => (m.fieldName,m.columnName)).toMap
+  val meta_recordFieldNameToColName =
+    metadataMapping.recordFields.map(m => (m.fieldName,m.columnName)).toMap
 
   val idColName = idField.columnName
 
@@ -77,23 +77,24 @@ class SqlDao[ID,A,E[_]](
 //    dataFieldNames.filterNot(_ == idFieldName) ++
 //    meta_dataFieldNames
 
-  val selectDataCols = {
-    dataFieldsOrdered.map(f => esc"$tableName.${f.columnName}") ++
+  // both record & metadata
+  val selectAllRecordCols = {
+    recordFieldsOrdered.map(f => esc"$tableName.${f.columnName}") ++
     // leave out metadata table id column
-    metadataMapping.dataFieldsOrdered.map(f => esc"$metadataTableName.${f.columnName}")
+    metadataMapping.recordFieldsOrdered.map(f => esc"$metadataTableName.${f.columnName}")
   }.mkString(",")
 
   val qSelectFullRecord =
-    s"SELECT ${tableName.esc}.${idColName.esc},$selectDataCols FROM ${tableName.esc} $sqlMaybeJoinMetadata"
+    s"SELECT ${tableName.esc}.${idColName.esc},$selectAllRecordCols FROM ${tableName.esc} $sqlMaybeJoinMetadata"
 
-  val removedColName = meta_dataFieldNameToColName("removed")
-  val lastUpdatedColName = meta_dataFieldNameToColName("lastUpdated")
+  val removedColName = meta_recordFieldNameToColName("removed")
+  val lastUpdatedColName = meta_recordFieldNameToColName("lastUpdated")
 
-  val allDataFieldCount = dataFieldCount + 1 + metadataMapping.dataFieldCount
+  val allFieldCount = recordFieldCount + 1 + metadataMapping.recordFieldCount
 
   def parseFullRecord : SqlRow => (ID,A,RecordMetadata) = { row =>
     val idCol = row.head
-    val (recordRow, metadataRow) = row.tail.splitAt(dataFieldCount)
+    val (recordRow, metadataRow) = row.tail.splitAt(recordFieldCount)
     (sqlToId(idCol), sqlRowToRecord(recordRow), metadataMapping.sqlRowToRecord(metadataRow))
   }
 
@@ -195,7 +196,7 @@ class SqlDao[ID,A,E[_]](
   def prepInsert(implicit context: Context) =
     if(metadataTableSameAsRecord) {
       sql.prepare(
-        s"INSERT INTO ${tableName.esc} VALUES(${("?" * allDataFieldCount + 1).mkString(",")})"
+        s"INSERT INTO ${tableName.esc} VALUES(${("?" * allFieldCount + 1).mkString(",")})"
       ).map { ps =>
 
         { (values:Seq[(ID,A)]) =>
@@ -207,10 +208,10 @@ class SqlDao[ID,A,E[_]](
     } else {
       // Maybe run in parallel
       val ep1 = sql.prepare(
-          s"INSERT INTO ${tableName.esc} VALUES(${("?" * dataFieldCount + 1).mkString(",")})"
+          s"INSERT INTO ${tableName.esc} VALUES(${("?" * recordFieldCount + 1).mkString(",")})"
         )
       val ep2 = sql.prepare(
-          s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * metadataMapping.dataFieldCount + 1).mkString(",")})"
+          s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * metadataMapping.recordFieldCount + 1).mkString(",")})"
         )
       for {
         prepMainInsert <- ep1
@@ -248,7 +249,7 @@ class SqlDao[ID,A,E[_]](
       ???
     } else {
       val ep1 = sql.prepare(
-        s"UPDATE ${tableName.esc} SET ${dataFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
+        s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
       )
       val ep2 = sql.prepare(
         s"UPDATE ${metadataTableName.esc} SET ${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"

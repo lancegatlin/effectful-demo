@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration
 import effectful._
-import effectful.examples.pure.dao.Dao
+import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.UUIDService
@@ -29,7 +29,7 @@ object TokenServiceImpl {
 class TokenServiceImpl[E[_]](
   logger: Logger[E],
   uuids: UUIDService[E],
-  tokens: Dao[String,TokenService.TokenInfo,E],
+  tokens: DocDao[String,TokenService.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
   E:EffectSystem[E]

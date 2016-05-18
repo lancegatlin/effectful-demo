@@ -13,8 +13,8 @@ import scala.language.higherKinds
   * @tparam A type of the record
   * @tparam E effect system
   */
-trait Dao[ID,A,E[_]] {
-  import Dao._
+trait DocDao[ID,A,E[_]] {
+  import DocDao._
 
   /** @return TRUE if id is in use FALSE otherwise */
   def exists(id: ID) : E[Boolean]
@@ -46,7 +46,7 @@ trait Dao[ID,A,E[_]] {
   def batchRemove(ids: Traversable[ID]) : E[Int]
 }
 
-object Dao {
+object DocDao {
   case class RecordMetadata(
     created: Instant,
     lastUpdated: Instant,
