@@ -4,7 +4,18 @@ import scala.language.higherKinds
 
 /**
   * A type-class for an effect system's monad that can be used to
-  * capture and isolate the effects of a computation
+  * capture and isolate the effects of a computation.
+  *
+  * Exactly what kinds of effects are captured (such as logging or IO)
+  * and how the computation itself is eventually computed depends on the
+  * effect system's monad. Some monads may lazily execute computations,
+  * some may distribute code to be executed asynchronously and others
+  * may simply capture the program for later execution or serialization.
+  * For monads that execute code, some monads may capture exceptions
+  * explicitly and others may simply throw them in the callers thread.
+  *
+  * Some common effect system monads: Try, Future, scalaz.Task,
+  * scalaz.IO, scalaz.Writer, free monad, identity monad (type Id[A] = A)
   *
   * @tparam E monad type
   */
@@ -13,7 +24,7 @@ trait EffectSystem[E[_]] {
   def flatMap[A,B](m: E[A], f: A => E[B]) : E[B]
 
   /**
-    * Create an instance of E that can capture the effects of
+    * Create an instance of E that may capture the effects of
     * a computation of a value
     *
     * Note1: computation may fail with an exception and may
@@ -40,7 +51,7 @@ trait EffectSystem[E[_]] {
   def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]]) : E[F[A]]
 
   /**
-    * Effect system's monad should be covariant, however, to preserve compatability
+    * Effect system's monad should be covariant, however, to preserve compatibility
     * with scalaz, EffectSystem declares E as invariant. This method restores covariance
     * when needed. It should ideally be implemented in a way that has no or minimal runtime
     * impact.
@@ -53,22 +64,23 @@ trait EffectSystem[E[_]] {
   def widen[A,AA >: A](ea: E[A]) : E[AA]
 
   /**
-    * Replacement for standard try/catch blocks. Using this method ensures
-    * proper handling of exceptions for both effect systems that capture
-    * exception and those that don't.
+    * Replacement for standard try/catch blocks when using an effect
+    * system's monad. Using this method ensures proper handling of
+    * exceptions for monads that capture exception and for those
+    * that don't.
     *
     * Note: the try/catch block does not properly catch exceptions from
     * effect systems that capture exceptions inside their monad E[A],
     * such as Try, Future or scalaz.Task. Using a try/catch block around
     * an effect system such as Future will never execute the catch block.
     *
-    * @param f code block to catch exceptions from
+    * @param _try code block to catch exceptions from
     * @param _catch exception handler
     * @tparam A type of expression
     * @return an instance of E
     */
-  def Try[A](f: => E[A])(_catch: PartialFunction[Throwable, E[A]]) : E[A]
+  def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]]) : E[A]
 
-  // def success(a: A) : E[A] ?
-  // def failure(t: Throwable) : E[A] ?
+  // todo: def success(a: A) : E[A] ?
+  // todo: def failure(t: Throwable) : E[A] ?
 }

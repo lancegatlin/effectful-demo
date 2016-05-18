@@ -1,4 +1,3 @@
-import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 package object effectful {
