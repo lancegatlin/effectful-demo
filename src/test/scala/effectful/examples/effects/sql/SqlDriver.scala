@@ -2,26 +2,25 @@ package effectful.examples.effects.sql
 
 import scala.language.higherKinds
 
-// todo: mutating methods should just take id and not full case class
 trait SqlDriver[E[_]] {
   import SqlDriver._
 
-  def getConnectionPool(url: String, username: String, password: String) : E[ConnectionPool]
-  def closeConnectionPool(connectionPool: ConnectionPool) : E[Unit]
+  def initConnectionPool(connectionInfo: ConnectionInfo) : E[ConnectionPoolId]
+  def closeConnectionPool(connectionPoolId: ConnectionPoolId) : E[Unit]
 
   def beginTransaction()(implicit context: Context.AutoCommit) : E[Context.InTransaction]
   def rollback()(implicit context: Context.InTransaction) : E[Unit]
   def commit()(implicit context: Context.InTransaction) : E[Unit]
 
-  def prepare(statement: String)(implicit context: Context) : E[PreparedStatement]
+  def prepare(statement: String)(implicit context: Context) : E[PreparedStatementId]
   def executePreparedQuery(
-    preparedStatement: PreparedStatement
+    preparedStatementId: PreparedStatementId
   )(
     rows: SqlRow*
   ): E[Cursor]
 
   def executePreparedUpdate(
-    preparedStatement: PreparedStatement
+    preparedStatementId: PreparedStatementId
   )(
     rows: SqlRow*
   ) : E[Int]
@@ -30,11 +29,11 @@ trait SqlDriver[E[_]] {
   def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
-  def getCursorMetadata(cursor: Cursor) : E[CursorMetadata]
+  def getCursorMetadata(cursorId: CursorId) : E[CursorMetadata]
 
-  def nextCursor(cursor: Cursor) : E[Cursor]
+  def nextCursor(cursorId: CursorId) : E[Cursor]
 
-  def closeCursor(cursor: Cursor) : E[Unit]
+  def closeCursor(cursorId: CursorId) : E[Unit]
 }
 
 object SqlDriver {
@@ -56,42 +55,45 @@ object SqlDriver {
     columns : IndexedSeq[ColumnMetadata]
   )
 
-  case class PreparedStatement(
-    id: Symbol,
-    statement: String
-  )
+  type PreparedStatementId = Symbol
 
-  case class ConnectionPool(
-    id: Symbol
+  case class ConnectionInfo(
+    url: String,
+    username: String,
+    password: String
   )
-
-  def autoCommit(implicit connectionPool: ConnectionPool) : Context.AutoCommit =
-    Context.AutoCommit(connectionPool)
+  
+  type ConnectionPoolId = Symbol
+  
+  def autoCommit(implicit connectionPoolId: ConnectionPoolId) : Context.AutoCommit =
+    Context.AutoCommit(connectionPoolId)
 
   sealed trait Context {
-    def connectionPool: ConnectionPool
+    def connectionPoolId: ConnectionPoolId
     def isInTransaction: Boolean
   }
   object Context {
-    case class AutoCommit(connectionPool: ConnectionPool) extends Context {
+    case class AutoCommit(connectionPoolId: ConnectionPoolId) extends Context {
       override def isInTransaction = false
     }
-    case class InTransaction(id: Symbol, connectionPool: ConnectionPool) extends Context {
+    case class InTransaction(id: Symbol, connectionPoolId: ConnectionPoolId) extends Context {
       override def isInTransaction = true
     }
   }
 
+  type CursorId = Symbol
+
   sealed trait Cursor {
-    def id: Symbol
+    def id: CursorId
     def isEmpty : Boolean
     def nonEmpty:  Boolean = !isEmpty
   }
   object Cursor {
-    case class Empty(id: Symbol) extends Cursor {
+    case class Empty(id: CursorId) extends Cursor {
       override def isEmpty = true
     }
     case class Row(
-      id: Symbol,
+      id: CursorId,
       rowNum: Int,
       row: SqlRow
     ) extends Cursor {

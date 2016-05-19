@@ -42,15 +42,23 @@ object SqlDocDao {
 class SqlDocDao[ID,A,E[_]](
   sql: SqlDriver[E],
   tableName: String,
-  metadataTableName: String
+  metadataTableName: String,
+  url: String,
+  username: String,
+  password: String
 )(implicit
   E:EffectSystem[E],
-  connectionPool: ConnectionPool,
   recordMapping: SqlDocDao.RecordMapping[ID,A],
   metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
 ) extends DocDao[ID,A,E] {
   import SqlDocDao._
   import recordMapping._
+
+  implicit val eConnectionPool = sql.initConnectionPool(
+    url = url,
+    username = username,
+    password = password
+  )
 
   val metadataTableSameAsRecord = tableName == metadataTableName
 

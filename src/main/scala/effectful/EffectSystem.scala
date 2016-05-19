@@ -1,5 +1,6 @@
 package effectful
 
+import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
 /**
@@ -38,19 +39,6 @@ trait EffectSystem[E[_]] {
   def apply[A](a: => A) : E[A]
 
   /**
-    * Sequence a collection of effects into an effect of the collection
-    *
-    * Note: this method is unnecessary if using scalaz and is here for
-    * compatibility if not using scalaz
-    *
-    * @param fea collection of effects
-    * @tparam F collection type
-    * @tparam A type contained in collection
-    * @return
-    */
-  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]]) : E[F[A]]
-
-  /**
     * Effect system's monad should be covariant, however, to preserve compatibility
     * with scalaz, EffectSystem declares E as invariant. This method restores covariance
     * when needed. It should ideally be implemented in a way that has no or minimal runtime
@@ -62,6 +50,19 @@ trait EffectSystem[E[_]] {
     * @return ea cast to E[AA]
     */
   def widen[A,AA >: A](ea: E[A]) : E[AA]
+
+  /**
+    * Sequence a collection of effects into an effect of the collection
+    *
+    * Note: this method is unnecessary if using scalaz and is here for
+    * compatibility if not using scalaz
+    *
+    * @param fea collection of effects
+    * @tparam F collection type
+    * @tparam A type contained in collection
+    * @return
+    */
+  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]) : E[F[A]]
 
   /**
     * Replacement for standard try/catch blocks when using an effect

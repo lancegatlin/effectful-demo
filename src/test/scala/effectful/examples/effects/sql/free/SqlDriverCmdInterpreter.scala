@@ -20,7 +20,7 @@ class SqlDriverCmdInterpreter[E[_]](
         username,
         password
       ) =>
-        getConnectionPool(
+        initConnectionPool(
           url = url,
           username = username,
           password = password

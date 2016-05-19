@@ -1,3 +1,4 @@
+import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
 package object effectful {
@@ -27,7 +28,8 @@ package object effectful {
     */
   implicit class SequenceOpsPML[E[_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
     def sequence(implicit
-      E:EffectSystem[E]
+      E:EffectSystem[E],
+      cbf: CanBuildFrom[Nothing, A, F[A]]
     ) : E[F[A]] = E.sequence(self)
   }
 
@@ -42,7 +44,7 @@ package object effectful {
       f(m)
     override def apply[A](a: => A): Id[A] =
       a
-    override def sequence[F[AA] <: Traversable[AA], A](fea: F[Id[A]]): Id[F[A]] =
+    override def sequence[F[AA] <: Traversable[AA], A](fea: F[Id[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): Id[F[A]] =
       fea
     override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
       ea
