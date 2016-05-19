@@ -7,20 +7,7 @@ import SqlDriver._
 sealed trait SqlDriverCmd[R]
 
 object SqlDriverCmd {
-  case class GetConnectionPool(
-    url: String,
-    username: String,
-    password: String
-  ) extends SqlDriverCmd[ConnectionPool]
-
-  case class CloseConnectionPool(
-    connection: ConnectionPool
-  ) extends SqlDriverCmd[Unit]
-
-
-  case class BeginTransaction(
-    context: Context.AutoCommit
-  ) extends SqlDriverCmd[Context.InTransaction]
+  case object BeginTransaction extends SqlDriverCmd[Context.InTransaction]
 
   case class Commit(
     context: Context.InTransaction
@@ -34,15 +21,15 @@ object SqlDriverCmd {
   case class Prepare(
     statement: String,
     context: Context
-  ) extends SqlDriverCmd[PreparedStatement]
+  ) extends SqlDriverCmd[PreparedStatementId]
 
   case class ExecutePreparedQuery(
-    preparedStatement: PreparedStatement,
+    preparedStatementId: PreparedStatementId,
     rows: Seq[SqlRow]
   ) extends SqlDriverCmd[Cursor]
 
   case class ExecutePreparedUpdate(
-    preparedStatement: PreparedStatement,
+    preparedStatementId: PreparedStatementId,
     rows: Seq[SqlRow]
   ) extends SqlDriverCmd[Int]
 
@@ -59,15 +46,15 @@ object SqlDriverCmd {
 
 
   case class GetCursorMetadata(
-    cursor: Cursor
+    cursorId: CursorId
   ) extends SqlDriverCmd[CursorMetadata]
 
   case class NextCursor(
-    cursor: Cursor
+    cursorId: CursorId
   ) extends SqlDriverCmd[Cursor]
 
   case class CloseCursor(
-    cursor: Cursor
+    cursorId: CursorId
   ) extends SqlDriverCmd[Unit]
 
 }

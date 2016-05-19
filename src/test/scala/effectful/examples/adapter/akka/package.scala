@@ -1,5 +1,6 @@
 package effectful.examples.adapter
 
+import scala.language.higherKinds
 import effectful.examples.effects.logging.writer.LogWriter
 import effectful.{EffectSystem, LiftE}
 

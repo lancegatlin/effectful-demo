@@ -5,10 +5,7 @@ import scala.language.higherKinds
 trait SqlDriver[E[_]] {
   import SqlDriver._
 
-  def initConnectionPool(connectionInfo: ConnectionInfo) : E[ConnectionPoolId]
-  def closeConnectionPool(connectionPoolId: ConnectionPoolId) : E[Unit]
-
-  def beginTransaction()(implicit context: Context.AutoCommit) : E[Context.InTransaction]
+  def beginTransaction() : E[Context.InTransaction]
   def rollback()(implicit context: Context.InTransaction) : E[Unit]
   def commit()(implicit context: Context.InTransaction) : E[Unit]
 
@@ -57,26 +54,14 @@ object SqlDriver {
 
   type PreparedStatementId = Symbol
 
-  case class ConnectionInfo(
-    url: String,
-    username: String,
-    password: String
-  )
-  
-  type ConnectionPoolId = Symbol
-  
-  def autoCommit(implicit connectionPoolId: ConnectionPoolId) : Context.AutoCommit =
-    Context.AutoCommit(connectionPoolId)
-
   sealed trait Context {
-    def connectionPoolId: ConnectionPoolId
     def isInTransaction: Boolean
   }
   object Context {
-    case class AutoCommit(connectionPoolId: ConnectionPoolId) extends Context {
+    case object AutoCommit extends Context {
       override def isInTransaction = false
     }
-    case class InTransaction(id: Symbol, connectionPoolId: ConnectionPoolId) extends Context {
+    case class InTransaction(id: Symbol) extends Context {
       override def isInTransaction = true
     }
   }

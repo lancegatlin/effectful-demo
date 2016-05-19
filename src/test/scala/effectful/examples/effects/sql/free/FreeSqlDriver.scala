@@ -9,15 +9,8 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
   import SqlDriverCmd._
 
 
-  override def getConnectionPool(url: String, username: String, password: String): FreeSqlDriverCmd[ConnectionPool] =
-    Cmd(GetConnectionPool(url,username,password))
-
-  override def closeConnectionPool(connection: ConnectionPool): FreeSqlDriverCmd[Unit] =
-    Cmd(CloseConnectionPool(connection))
-  
-  
-  override def beginTransaction()(implicit context: Context.AutoCommit): FreeSqlDriverCmd[Context.InTransaction] =
-    Cmd(BeginTransaction(context))
+  override def beginTransaction(): FreeSqlDriverCmd[Context.InTransaction] =
+    Cmd(BeginTransaction)
 
   override def commit()(implicit context: Context.InTransaction): FreeSqlDriverCmd[Unit] =
     Cmd(Commit(context))
@@ -26,14 +19,14 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
     Cmd(Rollback(context))
 
 
-  override def prepare(statement: String)(implicit context: Context): FreeSqlDriverCmd[PreparedStatement] =
+  override def prepare(statement: String)(implicit context: Context): FreeSqlDriverCmd[PreparedStatementId] =
     Cmd(Prepare(statement, context))
 
-  override def executePreparedQuery(preparedStatement: PreparedStatement)(rows: SqlRow*): FreeSqlDriverCmd[Cursor] =
-    Cmd(ExecutePreparedQuery(preparedStatement,rows))
+  override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Cursor] =
+    Cmd(ExecutePreparedQuery(preparedStatementId,rows))
 
-  override def executePreparedUpdate(preparedStatement: PreparedStatement)(rows: SqlRow*): FreeSqlDriverCmd[Int] =
-    Cmd(ExecutePreparedUpdate(preparedStatement,rows))
+  override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Int] =
+    Cmd(ExecutePreparedUpdate(preparedStatementId,rows))
 
 
   override def executeQuery(statement: String)(implicit context: Context): FreeSqlDriverCmd[Cursor] =
@@ -43,12 +36,12 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
     Cmd(ExecuteUpdate(statement,context))
 
 
-  override def getCursorMetadata(cursor: Cursor): FreeSqlDriverCmd[CursorMetadata] =
-    Cmd(GetCursorMetadata(cursor))
+  override def getCursorMetadata(cursorId: CursorId): FreeSqlDriverCmd[CursorMetadata] =
+    Cmd(GetCursorMetadata(cursorId))
 
-  override def nextCursor(cursor: Cursor): FreeSqlDriverCmd[Cursor] =
-    Cmd(NextCursor(cursor))
+  override def nextCursor(cursorId: CursorId): FreeSqlDriverCmd[Cursor] =
+    Cmd(NextCursor(cursorId))
 
-  override def closeCursor(cursor: Cursor): FreeSqlDriverCmd[Unit] =
-    Cmd(CloseCursor(cursor))
+  override def closeCursor(cursorId: CursorId): FreeSqlDriverCmd[Unit] =
+    Cmd(CloseCursor(cursorId))
 }

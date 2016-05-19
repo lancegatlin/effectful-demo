@@ -54,12 +54,6 @@ class SqlDocDao[ID,A,E[_]](
   import SqlDocDao._
   import recordMapping._
 
-  implicit val eConnectionPool = sql.initConnectionPool(
-    url = url,
-    username = username,
-    password = password
-  )
-
   val metadataTableSameAsRecord = tableName == metadataTableName
 
   val recordFieldNames = recordFields.map(_.fieldName)
@@ -176,7 +170,7 @@ class SqlDocDao[ID,A,E[_]](
   def prepMarkRemoved(implicit context: Context) =
     sql.prepare(
       s"UPDATE ${metadataTableName.esc} SET ${removedColName.esc}=? WHERE ${idColName.esc}=?"
-    )(autoCommit).map { ps =>
+    ).map { ps =>
 
       { (id:ID) =>
         sql.executePreparedUpdate(ps)(

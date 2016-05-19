@@ -15,21 +15,8 @@ class SqlDriverCmdInterpreter[E[_]](
     import sqlDriver._
 
     cmd match {
-      case GetConnectionPool(
-        url,
-        username,
-        password
-      ) =>
-        initConnectionPool(
-          url = url,
-          username = username,
-          password = password
-        )
-      case CloseConnectionPool(connection) =>
-        closeConnectionPool(connection)
-
-      case BeginTransaction(context) =>
-        beginTransaction()(context)
+      case BeginTransaction =>
+        beginTransaction()
       case Rollback(context) =>
         rollback()(context)
       case Commit(context) =>
@@ -37,21 +24,21 @@ class SqlDriverCmdInterpreter[E[_]](
 
       case Prepare(statement,context) =>
         prepare(statement)(context)
-      case ExecutePreparedQuery(preparedStatement, rows) =>
-        executePreparedQuery(preparedStatement)(rows:_*)
-      case ExecutePreparedUpdate(preparedStatement, rows) =>
-        executePreparedUpdate(preparedStatement)(rows:_*)
+      case ExecutePreparedQuery(preparedStatementId, rows) =>
+        executePreparedQuery(preparedStatementId)(rows:_*)
+      case ExecutePreparedUpdate(preparedStatementId, rows) =>
+        executePreparedUpdate(preparedStatementId)(rows:_*)
       case ExecuteQuery(statement,context) =>
         executeQuery(statement)(context)
       case ExecuteUpdate(statement,context) =>
         executeUpdate(statement)(context)
 
-      case GetCursorMetadata(cursor) =>
-        getCursorMetadata(cursor)
-      case NextCursor(cursor) =>
-        nextCursor(cursor)
-      case CloseCursor(cursor) =>
-        closeCursor(cursor)
+      case GetCursorMetadata(cursorId) =>
+        getCursorMetadata(cursorId)
+      case NextCursor(cursorId) =>
+        nextCursor(cursorId)
+      case CloseCursor(cursorId) =>
+        closeCursor(cursorId)
     }
   }
 

@@ -15,13 +15,13 @@ package object sql {
 
   implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
     def iteratePreparedQuery(
-      preparedStatement: PreparedStatement
+      preparedStatementId: PreparedStatementId
     )(
       rows: SqlRow*
     )(implicit
       E:EffectSystem[E]
     ) : EffectIterator[E,SqlRow] = {
-      iterator({ () => self.executePreparedQuery(preparedStatement)(rows:_*) })
+      iterator({ () => self.executePreparedQuery(preparedStatementId)(rows:_*) })
     }
 
     def iterateQuery(
@@ -38,7 +38,7 @@ package object sql {
         for {
           cursor <- fetchCursor()
         } yield EffectIterator[E,SqlRow] { () =>
-          self.nextCursor(cursor).map {
+          self.nextCursor(cursor.id).map {
             case Cursor.Row(_,_,row) => Some(row)
             case Cursor.Empty(_) => None
           }
@@ -47,20 +47,18 @@ package object sql {
     }
 
     def autoCommit[A](
-      f: Context.AutoCommit => E[A]
+      f: Context.AutoCommit.type => E[A]
     )(implicit
-      e:EffectSystem[E],
-      connectionPool: ConnectionPool
-    ) : E[A] = f(Context.AutoCommit(connectionPool))
+      e:EffectSystem[E]
+    ) : E[A] = f(Context.AutoCommit)
 
     def inTransaction[A](
       f: Context.InTransaction => E[A]
     )(implicit
-      E:EffectSystem[E],
-      connectionPool: ConnectionPool
+      E:EffectSystem[E]
     ) : E[A] =
       for {
-        transaction <- self.beginTransaction()(Context.AutoCommit(connectionPool))
+        transaction <- self.beginTransaction()
         result <- {
           E.Try {
             for {
