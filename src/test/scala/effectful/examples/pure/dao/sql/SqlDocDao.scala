@@ -17,6 +17,7 @@ object SqlDocDao {
     columnName: String
   )
   case class RecordMapping[ID,A](
+    tableName: String,
     recordFields: Seq[FieldColumnMapping],
     idField: FieldColumnMapping
   )(implicit
@@ -41,19 +42,15 @@ object SqlDocDao {
 
 class SqlDocDao[ID,A,E[_]](
   sql: SqlDriver[E],
-  tableName: String,
-  metadataTableName: String,
-  url: String,
-  username: String,
-  password: String
-)(implicit
-  E:EffectSystem[E],
   recordMapping: SqlDocDao.RecordMapping[ID,A],
   metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
+)(implicit
+  E:EffectSystem[E]
 ) extends DocDao[ID,A,E] {
   import SqlDocDao._
   import recordMapping._
 
+  val metadataTableName = metadataMapping.tableName
   val metadataTableSameAsRecord = tableName == metadataTableName
 
   val recordFieldNames = recordFields.map(_.fieldName)

@@ -113,4 +113,14 @@ package object sql {
       }
     }
   }
+
+  implicit class SqlValPML(val self: SqlVal) extends AnyVal {
+    def fromSql[A](implicit f: SqlVal => A) : A =
+      f(self)
+  }
+
+  implicit class EverythingPML[A](val self: A) extends AnyVal {
+    def toSql(implicit f: A => SqlVal) : SqlVal =
+      f(self)
+  }
 }

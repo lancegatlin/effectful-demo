@@ -145,7 +145,9 @@ object SqlVal {
   /*
     case NULL(_ =>
     case CHAR(_,data) =>
+    case NCHAR(_,data) =>
     case VARCHAR(_,data) =>
+    case NVARCHAR(_,data) =>
     case CLOB(data) =>
     case NCLOB(data) =>
     case BINARY(_,data) =>

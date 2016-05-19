@@ -6,5 +6,6 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.2" % "test",
   "ch.qos.logback" % "logback-classic" % "1.1.7",
   "org.scalaz" %% "scalaz-core" % "7.2.2" % "test",
-  "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.0" % "test",
+  "com.mchange" % "c3p0" % "0.9.5.2" % "test"
 )
