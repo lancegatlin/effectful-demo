@@ -41,18 +41,15 @@ object AkkaFutureExample {
     override def map[A, B](m: E[A], f: (A) => B): E[B] =
       m.map(_.map(f))
     override def flatMap[A, B](m: E[A], f: (A) => E[B]): E[B] = {
-      import scalaz.std.list._
-      // todo: how to generalize this?
-      m.flatMap { writer =>
-        val (entries,a) = writer.run
-        f(a).map(_.flatMap(a => LogWriter(entries,a)))
-      }
+      import scalaz._,Scalaz._
+      // todo: is this monstrosity correct?
+      m.flatMap(_.map(f).sequence.map(_.flatMap(identity)))
     }
 
     override def Try[A](_try: =>E[A])(_catch: PartialFunction[Throwable, E[A]]): E[A] =
       _try.recoverWith(_catch)
 
-    override def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]): E[A] =
+    override def TryAnd[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]): E[A] =
       _try.recoverWith(_catch).flatMap(a => _finally.map(_ => a))
 
     override def widen[A, AA >: A](ea: E[A]): E[AA] =

@@ -18,6 +18,9 @@ package object akka {
     override def Try[A](_try: =>Future[A])(_catch: PartialFunction[Throwable, Future[A]]): Future[A] =
       _try.recoverWith(_catch)
 
+    override def TryAnd[A](_try: => Future[A])(_catch: PartialFunction[Throwable, Future[A]])(_finally: => Future[Unit]): Future[A] =
+      _try.recoverWith(_catch).flatMap(a => _finally.map(_ => a))
+
     override def widen[A, AA >: A](ea: Future[A]): Future[AA] =
       ea
 

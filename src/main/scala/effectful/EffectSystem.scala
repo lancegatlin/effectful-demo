@@ -108,7 +108,7 @@ trait EffectSystem[E[_]] {
     * @tparam A type of expression
     * @return an instance of E
     */
-  def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]) : E[A]
+  def TryAnd[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]) : E[A]
 
   // todo: def success(a: A) : E[A] ?
   // todo: def failure(t: Throwable) : E[A] ?

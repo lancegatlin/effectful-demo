@@ -51,7 +51,7 @@ package object effectful {
     override def Try[A](_try: => Id[A])(_catch: PartialFunction[Throwable, Id[A]]): Id[A] =
       try { _try } catch _catch
 
-    override def Try[A](_try: => Id[A])(_catch: PartialFunction[Throwable, Id[A]])(_finally: => Id[Unit]): Id[A] =
+    override def TryAnd[A](_try: => Id[A])(_catch: PartialFunction[Throwable, Id[A]])(_finally: => Id[Unit]): Id[A] =
       try { _try } catch _catch finally _finally
   }
 

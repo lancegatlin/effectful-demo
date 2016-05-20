@@ -20,7 +20,7 @@ package object writer {
       m.flatMap(f)
     override def Try[A](_try: =>LogWriter[A])(_catch: PartialFunction[Throwable, LogWriter[A]]): LogWriter[A] =
       try { _try } catch _catch
-    override def Try[A](_try: => LogWriter[A])(_catch: PartialFunction[Throwable, LogWriter[A]])(_finally: => LogWriter[Unit]): LogWriter[A] =
+    override def TryAnd[A](_try: => LogWriter[A])(_catch: PartialFunction[Throwable, LogWriter[A]])(_finally: => LogWriter[Unit]): LogWriter[A] =
       try { _try } catch _catch finally _finally
 
     override def widen[A, AA >: A](ea: LogWriter[A]): LogWriter[AA] =
