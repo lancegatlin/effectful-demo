@@ -44,7 +44,7 @@ package object sql {
     case Some(a) => f(a)
     case None =>
       // todo: how to handle this properly - don't know intended sql type here?
-      val sqlType : SqlType = _
+      val sqlType : SqlType = null
       NULL(sqlType)
   }
 
@@ -107,6 +107,24 @@ package object sql {
       columnName = "token"
     )
   )
+
+  implicit val sqlRowToRecordMetadata : SqlRow => RecordMetadata = { row =>
+    RecordMetadata(
+      created = row(0).fromSql[java.time.Instant],
+      lastUpdated = row(1).fromSql[java.time.Instant],
+      removed = row(2).fromSql[Option[java.time.Instant]]
+    )
+  }
+
+  implicit val recordMetadataToSqlRow : RecordMetadata => SqlRow = { v =>
+    import v._
+
+    IndexedSeq(
+      created.toSql,
+      lastUpdated.toSql,
+      removed.toSql
+    )
+  }
 
   val tokenInfoMetadataRecordMapping = RecordMapping[String,RecordMetadata](
     tableName = "tokens",

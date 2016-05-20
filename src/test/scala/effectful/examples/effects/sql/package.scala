@@ -112,9 +112,6 @@ package object sql {
         case TIMESTAMP(timestamp) => quotes(DateTimeFormatter.ISO_INSTANT.format(timestamp))
       }
     }
-  }
-
-  implicit class SqlValPML(val self: SqlVal) extends AnyVal {
     def fromSql[A](implicit f: SqlVal => A) : A =
       f(self)
   }

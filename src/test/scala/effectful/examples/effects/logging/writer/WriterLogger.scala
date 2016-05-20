@@ -33,6 +33,9 @@ class WriterLogger(name: String) extends Logger[LogWriter] {
 
   override def error(message: =>String, cause: Throwable): LogWriter[Unit] =
     Writer(LogEntry(name,LogLevel.Error,message,Some(cause)) :: Nil,())
+}
 
-
+object WriterLogger {
+  def apply(name: String) : WriterLogger =
+    new WriterLogger(name)
 }

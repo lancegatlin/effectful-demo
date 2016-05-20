@@ -2,6 +2,7 @@ package effectful.examples.pure.user
 
 import java.time.Instant
 
+import effectful.{EffectSystem, LiftE, LiftS}
 import effectful.examples.pure.UUIDService.UUID
 
 import scala.language.higherKinds
@@ -42,4 +43,27 @@ object TokenService {
     lastValidated: Instant,
     expiresOn: Instant
   )
+
+  implicit object LiftS_TokenService extends LiftS[TokenService] {
+
+    override def apply[E[_], F[_]](
+      s: TokenService[E]
+    )(implicit
+      E: EffectSystem[E],
+      F: EffectSystem[F],
+      liftE: LiftE[E, F]
+    ): TokenService[F] =
+      new TokenService[F] {
+        override def issue(userId: UUID, deviceId: Option[UUID], expireAfter: Option[Duration]): F[(Token,TokenInfo)] =
+          liftE(s.issue(userId,deviceId,expireAfter))
+        override def validate(token: Token): F[Option[TokenInfo]] =
+          liftE(s.validate(token))
+        override def forceAllExpire(userId: UUID, exceptTokens: Token*): F[Boolean] =
+          liftE(s.forceAllExpire(userId,exceptTokens:_*))
+        override def find(token: Token): F[Option[TokenInfo]] =
+          liftE(s.find(token))
+        override def forceExpire(token: Token): F[Unit] =
+          liftE(s.forceExpire(token))
+      }
+  }
 }

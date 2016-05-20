@@ -1,6 +1,8 @@
 package effectful.examples.effects.sql
 
 import scala.language.higherKinds
+import effectful._
+import effectful.examples.effects.sql.SqlDriver.Context.InTransaction
 
 trait SqlDriver[E[_]] {
   import SqlDriver._
@@ -86,4 +88,37 @@ object SqlDriver {
     }
   }
 
+  implicit object LiftS_SqlDriver extends LiftS[SqlDriver] {
+    override def apply[E[_], F[_]](
+      s: SqlDriver[E]
+    )(implicit
+      E: EffectSystem[E],
+      F: EffectSystem[F],
+      liftE: LiftE[E, F]
+    ): SqlDriver[F] =
+      new SqlDriver[F] {
+        override def beginTransaction(): F[InTransaction] =
+          liftE(s.beginTransaction())
+        override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Int] =
+          liftE(s.executePreparedUpdate(preparedStatementId)(rows:_*))
+        override def nextCursor(cursorId: CursorId): F[Cursor] =
+          liftE(s.nextCursor(cursorId))
+        override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Cursor] =
+          liftE(s.executePreparedQuery(preparedStatementId)(rows:_*))
+        override def getCursorMetadata(cursorId: CursorId): F[CursorMetadata] =
+          liftE(s.getCursorMetadata(cursorId))
+        override def closeCursor(cursorId: CursorId): F[Unit] =
+          liftE(s.closeCursor(cursorId))
+        override def rollback()(implicit context: InTransaction): F[Unit] =
+          liftE(s.rollback())
+        override def executeQuery(statement: String)(implicit context: Context): F[Cursor] =
+          liftE(s.executeQuery(statement))
+        override def executeUpdate(statement: String)(implicit context: Context): F[Int] =
+          liftE(s.executeUpdate(statement))
+        override def prepare(statement: String)(implicit context: Context): F[PreparedStatementId] =
+          liftE(s.prepare(statement))
+        override def commit()(implicit context: InTransaction): F[Unit] =
+          liftE(s.commit())
+      }
+  }  
 }
