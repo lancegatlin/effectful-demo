@@ -92,6 +92,24 @@ trait EffectSystem[E[_]] {
     */
   def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]]) : E[A]
 
+  /**
+    * Replacement for standard try/catch blocks when using an effect
+    * system's monad. Using this method ensures proper handling of
+    * exceptions for monads that capture exception and for those
+    * that don't.
+    *
+    * Note: the try/catch block does not properly catch exceptions from
+    * effect systems that capture exceptions inside their monad E[A],
+    * such as Try, Future or scalaz.Task. Using a try/catch block around
+    * an effect system such as Future will never execute the catch block.
+    *
+    * @param _try code block to catch exceptions from
+    * @param _catch exception handler
+    * @tparam A type of expression
+    * @return an instance of E
+    */
+  def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]) : E[A]
+
   // todo: def success(a: A) : E[A] ?
   // todo: def failure(t: Throwable) : E[A] ?
 }

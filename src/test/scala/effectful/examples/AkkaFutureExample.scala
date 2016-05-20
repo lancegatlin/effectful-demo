@@ -9,7 +9,7 @@ import effectful.examples.effects.logging.writer.{LogWriter, WriterLogger}
 import effectful.examples.effects.sql.jdbc.JdbcSqlDriver
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
-import effectful.examples.pure.user.impl.{PasswordServiceImpl, TokenServiceImpl}
+import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.TokenService
 
@@ -52,20 +52,11 @@ object AkkaFutureExample {
     override def Try[A](_try: =>E[A])(_catch: PartialFunction[Throwable, E[A]]): E[A] =
       _try.recoverWith(_catch)
 
+    override def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]): E[A] =
+      _try.recoverWith(_catch).flatMap(a => _finally.map(_ => a))
+
     override def widen[A, AA >: A](ea: E[A]): E[AA] =
       ea.asInstanceOf[E[AA]]
-
-//    override def sequence[F[AA] <: Traversable[AA], A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): E[F[A]] = {
-//      import scalaz._,Scalaz._
-//      val baseBuilder = cbf()
-//      baseBuilder.sizeHint(fea)
-//      fea.foldLeft(E(baseBuilder)) { (fBuilder,ea) =>
-//        for {
-//          builder <- fBuilder
-//          a <- ea
-//        } yield builder += a
-//      }
-//    }
 
     override def apply[A](a: => A): E[A] =
       Future(LogWriter(a))

@@ -48,8 +48,11 @@ package object effectful {
       fea
     override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
       ea
-    override def Try[A](f: => Id[A])(_catch: PartialFunction[Throwable, Id[A]]): Id[A] =
-      try { f } catch _catch
+    override def Try[A](_try: => Id[A])(_catch: PartialFunction[Throwable, Id[A]]): Id[A] =
+      try { _try } catch _catch
+
+    override def Try[A](_try: => Id[A])(_catch: PartialFunction[Throwable, Id[A]])(_finally: => Id[Unit]): Id[A] =
+      try { _try } catch _catch finally _finally
   }
 
   /**
