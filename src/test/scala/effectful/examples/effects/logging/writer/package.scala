@@ -10,6 +10,8 @@ package object writer {
   object LogWriter {
     def apply[A](a: A) : LogWriter[A] =
       scalaz.Writer(Nil, a)
+    def apply[A](entries: List[LogEntry], a: A) : LogWriter[A] =
+      scalaz.Writer(entries, a)
   }
 
   implicit object EffectSystem_LogWriter extends EffectSystem[LogWriter] {
@@ -21,8 +23,8 @@ package object writer {
       try { _try } catch _catch
     override def widen[A, AA >: A](ea: LogWriter[A]): LogWriter[AA] =
       ea.asInstanceOf[LogWriter[AA]]
-    override def sequence[F[AA] <: Traversable[AA], A](fea: F[LogWriter[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): LogWriter[F[A]] =
-      fea.sequence
+//    override def sequence[F[AA] <: Traversable[AA], A](fea: F[LogWriter[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): LogWriter[F[A]] =
+//      fea.sequence
     override def apply[A](a: => A): LogWriter[A] =
       LogWriter(a)
   }

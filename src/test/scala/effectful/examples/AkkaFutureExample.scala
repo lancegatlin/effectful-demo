@@ -40,8 +40,14 @@ object AkkaFutureExample {
   implicit object E extends EffectSystem[E] {
     override def map[A, B](m: E[A], f: (A) => B): E[B] =
       m.map(_.map(f))
-    override def flatMap[A, B](m: E[A], f: (A) => E[B]): E[B] =
-      ???
+    override def flatMap[A, B](m: E[A], f: (A) => E[B]): E[B] = {
+      import scalaz.std.list._
+      // todo: how to generalize this?
+      m.flatMap { writer =>
+        val (entries,a) = writer.run
+        f(a).map(_.flatMap(a => LogWriter(entries,a)))
+      }
+    }
 
     override def Try[A](_try: =>E[A])(_catch: PartialFunction[Throwable, E[A]]): E[A] =
       _try.recoverWith(_catch)
@@ -49,24 +55,31 @@ object AkkaFutureExample {
     override def widen[A, AA >: A](ea: E[A]): E[AA] =
       ea.asInstanceOf[E[AA]]
 
-    override def sequence[F[AA] <: Traversable[AA], A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): E[F[A]] = {
-      import scalaz._,Scalaz._
-      
-    }
+//    override def sequence[F[AA] <: Traversable[AA], A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]): E[F[A]] = {
+//      import scalaz._,Scalaz._
+//      val baseBuilder = cbf()
+//      baseBuilder.sizeHint(fea)
+//      fea.foldLeft(E(baseBuilder)) { (fBuilder,ea) =>
+//        for {
+//          builder <- fBuilder
+//          a <- ea
+//        } yield builder += a
+//      }
+//    }
 
     override def apply[A](a: => A): E[A] =
       Future(LogWriter(a))
   }
 
   val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
-    sql = sqlDriver.liftS[E],
+    sql = sqlDriver.liftS,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
   val tokenService = new TokenServiceImpl[E](
-    logger = WriterLogger("tokenService").liftS[E],
-    uuids = uuidService.liftS[E],
+    logger = WriterLogger("tokenService").liftS,
+    uuids = uuidService.liftS,
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )

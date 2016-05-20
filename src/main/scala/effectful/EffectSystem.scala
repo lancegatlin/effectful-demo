@@ -62,7 +62,17 @@ trait EffectSystem[E[_]] {
     * @tparam A type contained in collection
     * @return
     */
-  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]) : E[F[A]]
+  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]) : E[F[A]] = {
+    implicit val E = this
+    val baseBuilder = cbf()
+    baseBuilder.sizeHint(fea)
+    fea.foldLeft(apply(baseBuilder)) { (fBuilder,ea) =>
+      for {
+        builder <- fBuilder
+        a <- ea
+      } yield builder += a
+    }.map(_.result())
+  }
 
   /**
     * Replacement for standard try/catch blocks when using an effect
