@@ -99,3 +99,41 @@ trait EffectSystem[E[_]] {
   // todo: def success(a: A) : E[A] ?
   // todo: def failure(t: Throwable) : E[A] ?
 }
+
+object EffectSystem {
+
+  /**
+    * An effect system that doesn't capture exceptions in the effect system's monad
+    * @tparam E monad type
+    */
+  trait NoExceptionCapture[E[_]] extends EffectSystem[E] {
+    override def Try[A](
+     _try: =>E[A]
+    )(
+     _catch: PartialFunction[Throwable, E[A]]
+    ): E[A] =
+      try { _try } catch _catch
+
+    override def TryFinally[A,U](
+      _try: => E[A]
+    )(
+      _catch: PartialFunction[Throwable, E[A]]
+    )(
+      _finally: => E[U]
+    ): E[A] =
+      try { _try } catch _catch finally _finally
+
+  }
+
+  /**
+    * An effect system that immediately executes its computations. It's values
+    * can be traversed without side effects.
+    * @tparam E monad type
+    */
+  trait Immediate[E[_]] extends EffectSystem[E] {
+    def foreach[A,U](ea: E[A])(f: A => U) : Unit
+
+    def flatSequence[F[_],A,B](ea: E[A])(f: A => F[E[B]])(implicit F:EffectSystem[F]) : F[E[B]]
+  }
+
+}

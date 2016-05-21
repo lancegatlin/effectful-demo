@@ -5,7 +5,7 @@ import scala.language.higherKinds
 trait Nested[F[_],G[_]] extends EffectSystem[({ type FG[A] = F[G[A]]})#FG] {
 
   implicit val F:EffectSystem[F]
-  implicit val G:Immediate[G]
+  implicit val G:EffectSystem.Immediate[G]
 
   def map[A, B](m: F[G[A]])(f: (A) => B) =
     F.map(m)(ea => G.map(ea)(f))
@@ -25,7 +25,7 @@ trait Nested[F[_],G[_]] extends EffectSystem[({ type FG[A] = F[G[A]]})#FG] {
 object Nested {
   def apply[F[_],G[_]](implicit
     F:EffectSystem[F],
-    G:Immediate[G]
+    G:EffectSystem.Immediate[G]
   ) : Nested[F,G] = {
     val _F = F
     val _G = G

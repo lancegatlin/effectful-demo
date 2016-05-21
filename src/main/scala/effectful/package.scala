@@ -57,7 +57,7 @@ package object effectful {
     * Implementation of EffectSystem type-class for the identity effect system
     * (which uses the identity monad)
     */
-  implicit object EffectSystem_Id extends Immediate[Id] {
+  implicit object EffectSystem_Id extends EffectSystem.Immediate[Id] with EffectSystem.NoExceptionCapture[Id] {
     override def map[A, B](m: Id[A])(f: (A) => B): Id[B] =
       f(m)
     override def flatMap[A, B](m: Id[A])(f: (A) => Id[B]): Id[B] =

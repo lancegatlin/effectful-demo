@@ -1,7 +1,7 @@
 package effectful.examples.effects.logging
 
 import scala.language.higherKinds
-import effectful.{EffectSystem, Immediate}
+import effectful.EffectSystem
 
 import scalaz._
 import Scalaz._
@@ -16,7 +16,7 @@ package object writer {
   }
 
 
-  implicit object EffectSystem_LogWriter extends Immediate[LogWriter] {
+  implicit object EffectSystem_LogWriter extends EffectSystem.Immediate[LogWriter] with EffectSystem.NoExceptionCapture[LogWriter] {
     override def map[A, B](m: LogWriter[A])(f: (A) => B): LogWriter[B] =
       m.map(f)
     override def flatMap[A, B](m: LogWriter[A])(f: (A) => LogWriter[B]): LogWriter[B] =
