@@ -49,7 +49,7 @@ object AkkaFutureExample {
     override def Try[A](_try: =>E[A])(_catch: PartialFunction[Throwable, E[A]]): E[A] =
       _try.recoverWith(_catch)
 
-    override def TryAnd[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]): E[A] =
+    override def TryFinally[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]): E[A] =
       _try.recoverWith(_catch).flatMap(a => _finally.map(_ => a))
 
     override def widen[A, AA >: A](ea: E[A]): E[AA] =
