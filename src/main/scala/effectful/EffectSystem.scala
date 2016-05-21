@@ -1,6 +1,5 @@
 package effectful
 
-import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
 /**
@@ -21,8 +20,8 @@ import scala.language.higherKinds
   * @tparam E monad type
   */
 trait EffectSystem[E[_]] {
-  def map[A,B](m: E[A], f: A => B) : E[B]
-  def flatMap[A,B](m: E[A], f: A => E[B]) : E[B]
+  def map[A,B](m: E[A])(f: A => B) : E[B]
+  def flatMap[A,B](m: E[A])(f: A => E[B]) : E[B]
 
   /**
     * Create an instance of E that may capture the effects of
@@ -52,29 +51,6 @@ trait EffectSystem[E[_]] {
   def widen[A,AA >: A](ea: E[A]) : E[AA]
 
   /**
-    * Sequence a collection of effects into an effect of the collection
-    *
-    * Note: this method is unnecessary if using scalaz and is here for
-    * compatibility if not using scalaz
-    *
-    * @param fea collection of effects
-    * @tparam F collection type
-    * @tparam A type contained in collection
-    * @return
-    */
-  def sequence[F[AA] <: Traversable[AA],A](fea: F[E[A]])(implicit cbf: CanBuildFrom[Nothing, A, F[A]]) : E[F[A]] = {
-    implicit val E = this
-    val baseBuilder = cbf()
-    baseBuilder.sizeHint(fea)
-    fea.foldLeft(apply(baseBuilder)) { (fBuilder,ea) =>
-      for {
-        builder <- fBuilder
-        a <- ea
-      } yield builder += a
-    }.map(_.result())
-  }
-
-  /**
     * Replacement for standard try/catch blocks when using an effect
     * system's monad. Using this method ensures proper handling of
     * exceptions for monads that capture exception and for those
@@ -90,15 +66,19 @@ trait EffectSystem[E[_]] {
     * @tparam A type of expression
     * @return an instance of E
     */
-  def Try[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]]) : E[A]
+  def Try[A](
+    _try: => E[A]
+  )(
+    _catch: PartialFunction[Throwable, E[A]]
+  ) : E[A]
 
   /**
-    * Replacement for standard try/catch blocks when using an effect
+    * Replacement for standard try/catch/finally blocks when using an effect
     * system's monad. Using this method ensures proper handling of
     * exceptions for monads that capture exception and for those
     * that don't.
     *
-    * Note: the try/catch block does not properly catch exceptions from
+    * Note: the try/catch/finally block does not properly catch exceptions from
     * effect systems that capture exceptions inside their monad E[A],
     * such as Try, Future or scalaz.Task. Using a try/catch block around
     * an effect system such as Future will never execute the catch block.
@@ -108,7 +88,13 @@ trait EffectSystem[E[_]] {
     * @tparam A type of expression
     * @return an instance of E
     */
-  def TryFinally[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[Unit]) : E[A]
+  def TryFinally[A,U](
+    _try: => E[A]
+  )(
+    _catch: PartialFunction[Throwable, E[A]]
+  )(
+    _finally: => E[U]
+  ) : E[A]
 
   // todo: def success(a: A) : E[A] ?
   // todo: def failure(t: Throwable) : E[A] ?
