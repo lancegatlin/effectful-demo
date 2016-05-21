@@ -1,10 +1,13 @@
 package effectful.examples.effects.logging.writer
 
+import java.time.Instant
+
 case class LogEntry(
   logger: String, 
   level: LogLevel,
   message: String, 
-  cause: Option[Throwable]
+  cause: Option[Throwable],
+  timestamp: Instant
 )
 
 sealed trait LogLevel
