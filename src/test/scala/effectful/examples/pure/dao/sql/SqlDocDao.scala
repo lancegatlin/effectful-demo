@@ -3,12 +3,15 @@ package effectful.examples.pure.dao.sql
 
 import scala.language.higherKinds
 import java.time.Instant
+
 import effectful._
 import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 import SqlDriver._
+import effectful.examples.effects.par.ParSystem
+import effectful.examples.effects.par._
 
 object SqlDocDao {
   case class FieldColumnMapping(
@@ -43,7 +46,8 @@ class SqlDocDao[ID,A,E[_]](
   recordMapping: SqlDocDao.RecordMapping[ID,A],
   metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
 )(implicit
-  E:EffectSystem[E]
+  E:EffectSystem[E],
+  P: ParSystem[E]
 ) extends DocDao[ID,A,E] {
   import SqlDocDao._
   import recordMapping._
@@ -204,26 +208,28 @@ class SqlDocDao[ID,A,E[_]](
       }
     } else {
       // Maybe run in parallel
-      val ep1 = sql.prepare(
-          s"INSERT INTO ${tableName.esc} VALUES(${("?" * recordFieldCount + 1).mkString(",")})"
-        )
-      val ep2 = sql.prepare(
-          s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * metadataMapping.recordFieldCount + 1).mkString(",")})"
-        )
       for {
-        prepMainInsert <- ep1
-        prepMetadataInsert <-  ep2
+        tuple <- E.par(
+          sql.prepare(
+            s"INSERT INTO ${tableName.esc} VALUES(${("?" * recordFieldCount + 1).mkString(",")})"
+          ),
+          sql.prepare(
+            s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * metadataMapping.recordFieldCount + 1).mkString(",")})"
+          )
+        )
+        (prepMainInsert,prepMetadataInsert) = tuple
       } yield { (values: Seq[(ID, A)]) =>
         // Maybe run in parallel
-        val e1 = sql.executePreparedUpdate(prepMainInsert)(values.map { case (id,a) =>
-            recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
-          }:_*)
-        val e2 = sql.executePreparedUpdate(prepMetadataInsert)(values.map { case (id,a) =>
-            recordFormat.toSqlVal(id) +: metadataMapping.recordFormat.toSqlRow(newMetadata)
-          }:_*)
         for {
-          mainInsertCount <- e1
-          metadataInsertCount <- e2
+          tuple <- E.par(
+              sql.executePreparedUpdate(prepMainInsert)(values.map { case (id,a) =>
+              recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
+            }:_*),
+            sql.executePreparedUpdate(prepMetadataInsert)(values.map { case (id,a) =>
+              recordFormat.toSqlVal(id) +: metadataMapping.recordFormat.toSqlRow(newMetadata)
+            }:_*)
+          )
+          (mainInsertCount,metadataInsertCount) = tuple
         } yield mainInsertCount
       }
     }
@@ -245,15 +251,16 @@ class SqlDocDao[ID,A,E[_]](
     if(metadataTableSameAsRecord) {
       ???
     } else {
-      val ep1 = sql.prepare(
-        s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
-      )
-      val ep2 = sql.prepare(
-        s"UPDATE ${metadataTableName.esc} SET ${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"
-      )
       for {
-        prepMainUpdate <- ep1
-        prepMetaUpdate <- ep2
+        tuple <- E.par(
+          sql.prepare(
+            s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
+          ),
+          sql.prepare(
+            s"UPDATE ${metadataTableName.esc} SET ${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"
+          )
+        )
+        (prepMainUpdate,prepMetaUpdate) = tuple
       } yield { (id:ID,a:A) =>
         for {
           mainUpdateCount <- sql.executePreparedUpdate(prepMainUpdate)(
