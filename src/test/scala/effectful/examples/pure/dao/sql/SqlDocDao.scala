@@ -16,15 +16,13 @@ object SqlDocDao {
     columnIndex: Int,
     columnName: String
   )
+  // todo: simple DDL generator
   case class RecordMapping[ID,A](
     tableName: String,
     recordFields: Seq[FieldColumnMapping],
     idField: FieldColumnMapping
-  )(implicit
-    val idToSql: ID => SqlVal,
-    val sqlToId: SqlVal => ID,
-    val recordToSqlRow: A => SqlRow,
-    val sqlRowToRecord: SqlRow => A
+  )(
+    val recordFormat: SqlRecordFormat[ID,A]
   ) {
     def recordFieldCount = recordFields.size
     val recordFieldsOrdered = recordFields.sortBy(_.columnIndex)
@@ -94,7 +92,7 @@ class SqlDocDao[ID,A,E[_]](
   def parseFullRecord : SqlRow => (ID,A,RecordMetadata) = { row =>
     val idCol = row.head
     val (recordRow, metadataRow) = row.tail.splitAt(recordFieldCount)
-    (sqlToId(idCol), sqlRowToRecord(recordRow), metadataMapping.sqlRowToRecord(metadataRow))
+    (recordFormat.fromSqlVal(idCol), recordFormat.fromSqlRow(recordRow), metadataMapping.recordFormat.fromSqlRow(metadataRow))
   }
 
   def prepFindById(implicit context: SqlDriver.Context) =
@@ -102,7 +100,7 @@ class SqlDocDao[ID,A,E[_]](
         s"$qSelectFullRecord WHERE ${idColName.esc}=?"
       ).map { ps =>
         { (id:ID) =>
-            sql.iteratePreparedQuery(ps)(IndexedSeq(idToSql(id)))
+            sql.iteratePreparedQuery(ps)(IndexedSeq(recordFormat.toSqlVal(id)))
               .map(parseFullRecord)
               .headOption()
         }
@@ -144,7 +142,7 @@ class SqlDocDao[ID,A,E[_]](
     ).map { ps =>
       { (id:ID) =>
         for {
-          cursor <- sql.executePreparedQuery(ps)(IndexedSeq(idToSql(id)))
+          cursor <- sql.executePreparedQuery(ps)(IndexedSeq(recordFormat.toSqlVal(id)))
         } yield cursor.nonEmpty
       }
     }
@@ -157,9 +155,9 @@ class SqlDocDao[ID,A,E[_]](
   override def batchExists(ids: Traversable[ID]): E[Set[ID]] =
     sql.autoCommit { implicit autoCommit =>
       sql.iterateQuery(
-        s"SELECT ${idColName.esc} FROM ${tableName.esc} WHERE ${idColName.esc} IN (${ids.map(id => idToSql(id).printSQL).mkString(",")}) "
+        s"SELECT ${idColName.esc} FROM ${tableName.esc} WHERE ${idColName.esc} IN (${ids.map(id => recordFormat.toSqlVal(id).printSQL).mkString(",")}) "
       )
-        .map(row => sqlToId(row(0)))
+        .map(row => recordFormat.fromSqlVal(row(0)))
         .collect[Set]
     }
 
@@ -171,7 +169,7 @@ class SqlDocDao[ID,A,E[_]](
 
       { (id:ID) =>
         sql.executePreparedUpdate(ps)(
-          IndexedSeq(idToSql(id),SqlVal.TIMESTAMP(Instant.now()))
+          IndexedSeq(recordFormat.toSqlVal(id),SqlVal.TIMESTAMP(Instant.now()))
         ).map(_ == 1)
       }
     }
@@ -200,7 +198,7 @@ class SqlDocDao[ID,A,E[_]](
 
         { (values:Seq[(ID,A)]) =>
           sql.executePreparedUpdate(ps)(values.map { case (id,a) =>
-            (idToSql(id) +: recordToSqlRow(a)) ++ metadataMapping.recordToSqlRow(newMetadata)
+            (recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)) ++ metadataMapping.recordFormat.toSqlRow(newMetadata)
           }:_*)
         }
       }
@@ -218,10 +216,10 @@ class SqlDocDao[ID,A,E[_]](
       } yield { (values: Seq[(ID, A)]) =>
         // Maybe run in parallel
         val e1 = sql.executePreparedUpdate(prepMainInsert)(values.map { case (id,a) =>
-            idToSql(id) +: recordToSqlRow(a)
+            recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
           }:_*)
         val e2 = sql.executePreparedUpdate(prepMetadataInsert)(values.map { case (id,a) =>
-            idToSql(id) +: metadataMapping.recordToSqlRow(newMetadata)
+            recordFormat.toSqlVal(id) +: metadataMapping.recordFormat.toSqlRow(newMetadata)
           }:_*)
         for {
           mainInsertCount <- e1
@@ -259,10 +257,10 @@ class SqlDocDao[ID,A,E[_]](
       } yield { (id:ID,a:A) =>
         for {
           mainUpdateCount <- sql.executePreparedUpdate(prepMainUpdate)(
-            recordToSqlRow(a)
+            recordFormat.toSqlRow(a)
           )
           metaUpdateCount <- sql.executePreparedUpdate(prepMetaUpdate)(
-            IndexedSeq(idToSql(id),SqlVal.TIMESTAMP(Instant.now()))
+            IndexedSeq(recordFormat.toSqlVal(id),SqlVal.TIMESTAMP(Instant.now()))
           )
         } yield mainUpdateCount == 1
       }

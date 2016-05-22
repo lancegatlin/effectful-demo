@@ -31,7 +31,13 @@ package object effectful {
     * @tparam F collection type
     * @tparam A type contained in collection
     */
-  implicit class SequenceOpsPML[E[_],F[AA] <: Traversable[AA],A](val self: F[E[A]]) extends AnyVal {
+  implicit class SequenceOpsPML[
+    E[_],
+    F[AA] <: Traversable[AA],
+    A
+  ](
+    val self: F[E[A]]
+  ) extends AnyVal {
     /**
       * Sequence a collection of effects into an effect of the collection
       *
@@ -58,16 +64,30 @@ package object effectful {
     * (which uses the identity monad)
     */
   implicit object EffectSystem_Id extends EffectSystem.Immediate[Id] with EffectSystem.NoExceptionCapture[Id] {
-    override def map[A, B](m: Id[A])(f: (A) => B): Id[B] =
+    override def map[A, B](
+      m: Id[A]
+    )(
+      f: (A) => B
+    ): Id[B] =
       f(m)
-    override def flatMap[A, B](m: Id[A])(f: (A) => Id[B]): Id[B] =
+    override def flatMap[A, B](
+      m: Id[A]
+    )(
+      f: (A) => Id[B]
+    ): Id[B] =
       f(m)
     override def apply[A](a: => A): Id[A] =
       a
     override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
       ea
-    def foreach[A,U](ea: Id[A])(f: (A) => U) = f(ea)
-    def flatSequence[F[_], A, B](ea: Id[A])(f: (A) => F[Id[B]])(implicit F: EffectSystem[F]) =
+    def foreach[A,U](ea: Id[A])(f: (A) => U) : Unit =
+      f(ea)
+
+    def flatSequence[F[_], A, B](
+      ea: Id[A]
+    )(
+      f: (A) => F[Id[B]]
+    )(implicit F: EffectSystem[F]) : F[Id[B]] =
       f(ea)
   }
 

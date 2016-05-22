@@ -4,15 +4,11 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
+
 import effectful._
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
-//  implicit def connectionToContextAutoCommit(implicit
-//    connection: SqlDriver.ConnectionPool
-//  ) : SqlDriver.Context.AutoCommit =
-//    SqlDriver.Context.AutoCommit(connection)
-
   implicit class SqlCursorPML[E[_]](val self: SqlDriver[E]) extends AnyVal {
     def iteratePreparedQuery(
       preparedStatementId: PreparedStatementId
@@ -112,12 +108,23 @@ package object sql {
         case TIMESTAMP(timestamp) => quotes(DateTimeFormatter.ISO_INSTANT.format(timestamp))
       }
     }
-    def fromSql[A](implicit f: SqlVal => A) : A =
-      f(self)
+    def as[S <: SqlVal] : S =
+      self.asInstanceOf[S]
+
+    def asNullable[S <: SqlVal] : Option[S] =
+      self match {
+        case SqlVal.NULL(_) => None
+        case _ => Some(self.as[S])
+      }
   }
 
-  implicit class EverythingPML[A](val self: A) extends AnyVal {
-    def toSql(implicit f: A => SqlVal) : SqlVal =
-      f(self)
+  implicit class OptionSqlValPML(val self: Option[SqlVal]) extends AnyVal {
+    def orSqlNull : SqlVal =
+      self match {
+        case Some(v) => v
+          // todo:
+        case None => SqlVal.NULL(null)
+      }
   }
+
 }

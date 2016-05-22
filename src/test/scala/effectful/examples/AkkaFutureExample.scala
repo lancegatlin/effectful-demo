@@ -27,6 +27,9 @@ object AkkaFutureExample {
   pool.setMinPoolSize(5)
   pool.setAcquireIncrement(5)
   pool.setMaxPoolSize(20)
+  // todo: use in-memory h2
+  // todo: generate schema
+  // todo: initialize with schema
 
   val sqlDriver = new JdbcSqlDriver(
     getConnectionFromPool = pool.getConnection,

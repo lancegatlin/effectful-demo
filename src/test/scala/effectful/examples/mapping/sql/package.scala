@@ -1,82 +1,55 @@
 package effectful.examples.mapping
 
+import org.apache.commons.codec.binary.Base64
 import effectful.examples.effects.sql.SqlDriver.SqlRow
 import effectful.examples.effects.sql._
 import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.DocDao.RecordMetadata
+import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.TokenService.TokenInfo
-import org.apache.commons.codec.binary.Base64
 
 package object sql {
   import SqlVal._
 
-  def failedToParse(sqlVal: SqlVal) =
-    new IllegalArgumentException(s"Failed to parse $sqlVal")
+  implicit val charDataFormat_UUID = new CharDataFormat[UUID] {
+    def toCharData(a: UUID) =
+      CharData(Base64.encodeBase64String(a.bytes))
 
-  implicit val sqlValToString : SqlVal => String = {
-    case CHAR(_,data) => data.toCharString()
-    case NCHAR(_,data) => data.toCharString()
-    case VARCHAR(_,data) => data.toCharString()
-    case NVARCHAR(_,data) => data.toCharString()
-    case v => throw failedToParse(v)
+    def fromCharData(data: CharData) =
+      UUID(Base64.decodeBase64(data.toCharString()))
   }
 
-  implicit val stringToSqlVal : String => SqlVal = { s =>
-    // todo: think about how to write string data - no knowledge of exact column string type here
-    SqlVal.NVARCHAR(0,CharData(s))
+  val sqlRecordFormat_TokenInfo = new SqlRecordFormat[String,TokenInfo] {
+
+    def toSqlVal(a: String) =
+      SqlVal.VARCHAR(30,CharData(a))
+
+    def fromSqlVal(v: SqlVal) =
+      v.as[VARCHAR].data.toCharString()
+
+    def toSqlRow(a: TokenInfo) = {
+      import a._
+
+      IndexedSeq(
+        VARCHAR(30,userId.toCharData),
+        deviceId.map(uuid => VARCHAR(30,uuid.toCharData)).orSqlNull,
+        TIMESTAMP(lastValidated),
+        TIMESTAMP(expiresOn)
+      )
+    }
+
+    def fromSqlRow(row: SqlRow) = {
+      TokenInfo(
+        userId = row(0).as[VARCHAR].data.to[UUID],
+        deviceId = row(1).asNullable[VARCHAR].map(_.data.to[UUID]),
+        lastValidated = row(2).as[TIMESTAMP].timestamp,
+        expiresOn = row(3).as[TIMESTAMP].timestamp
+      )
+    }
   }
 
-  implicit val sqlValToUUID : SqlVal => UUID = { v =>
-     UUID(Base64.decodeBase64(v.fromSql[String]))
-  }
-
-  implicit val uuidToSqlVal : UUID => SqlVal = { v =>
-    Base64.encodeBase64String(v.bytes).toSql
-  }
-
-  implicit def sqlValToOption[A](implicit f: SqlVal => A) : SqlVal => Option[A] = {
-    case NULL(_) => None
-    case v => Some(f(v))
-  }
-
-  implicit def optionToSqlVal[A](implicit f: A => SqlVal) : Option[A] => SqlVal = {
-    case Some(a) => f(a)
-    case None =>
-      // todo: how to handle this properly - don't know intended sql type here?
-      val sqlType : SqlType = null
-      NULL(sqlType)
-  }
-
-  implicit val sqlValToInstant : SqlVal => java.time.Instant = {
-    case TIMESTAMP(instant) => instant
-    case v => throw failedToParse(v)
-  }
-
-  implicit val instantToSqlVal : java.time.Instant => SqlVal = { v =>
-    TIMESTAMP(v)
-  }
-
-  implicit val sqlRowToTokenInfo : SqlRow => TokenInfo = { row =>
-    TokenInfo(
-      userId = row(0).fromSql[UUID],
-      deviceId = row(1).fromSql[Option[UUID]],
-      lastValidated = row(2).fromSql[java.time.Instant],
-      expiresOn = row(3).fromSql[java.time.Instant]
-    )
-  }
-
-  implicit val tokenInfoToSqlRow : TokenInfo => SqlRow = { v =>
-    import v._
-
-    IndexedSeq(
-      userId.toSql,
-      deviceId.toSql,
-      lastValidated.toSql,
-      expiresOn.toSql
-    )
-  }
-
+  // todo: make a macro to generate this
   val tokenInfoRecordMapping = RecordMapping[String,TokenInfo](
     tableName = "tokens",
     recordFields = Seq(
@@ -106,26 +79,29 @@ package object sql {
       columnIndex = 1,
       columnName = "token"
     )
-  )
+  )(sqlRecordFormat_TokenInfo)
 
-  implicit val sqlRowToRecordMetadata : SqlRow => RecordMetadata = { row =>
-    RecordMetadata(
-      created = row(0).fromSql[java.time.Instant],
-      lastUpdated = row(1).fromSql[java.time.Instant],
-      removed = row(2).fromSql[Option[java.time.Instant]]
-    )
+  val sqlRowFormat_RecordMetadata = new SqlRowFormat[RecordMetadata] {
+    def toSqlRow(a: RecordMetadata) = {
+      import a._
+
+      IndexedSeq(
+        TIMESTAMP(created),
+        TIMESTAMP(lastUpdated),
+        removed.map(TIMESTAMP).orSqlNull
+      )
+    }
+
+    def fromSqlRow(row: SqlRow) = {
+      RecordMetadata(
+        created = row(0).as[TIMESTAMP].timestamp,
+        lastUpdated = row(1).as[TIMESTAMP].timestamp,
+        removed = row(2).asNullable[TIMESTAMP].map(_.timestamp)
+      )
+    }
   }
 
-  implicit val recordMetadataToSqlRow : RecordMetadata => SqlRow = { v =>
-    import v._
-
-    IndexedSeq(
-      created.toSql,
-      lastUpdated.toSql,
-      removed.toSql
-    )
-  }
-
+  // todo: make a macro to generate this
   val tokenInfoMetadataRecordMapping = RecordMapping[String,RecordMetadata](
     tableName = "tokens",
     recordFields = Seq(
@@ -150,6 +126,9 @@ package object sql {
       columnIndex = 1,
       columnName = "token"
     )
-  )
+  )(SqlRecordFormat(
+    idFormat = sqlRecordFormat_TokenInfo,
+    rowFormat = sqlRowFormat_RecordMetadata
+  ))
 
 }
