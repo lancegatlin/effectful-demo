@@ -6,6 +6,8 @@ package object effectful {
     * Identity monad
     */
   type Id[A] = A
+
+  // todo: figure out how this sugar is declared in emm
 //  type |:[F[_],G[_]] = F[G[_]]
 //  val |: = Nested
 

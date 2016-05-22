@@ -98,6 +98,8 @@ trait EffectSystem[E[_]] {
 
   // todo: def success(a: A) : E[A] ?
   // todo: def failure(t: Throwable) : E[A] ?
+  // todo: combine with ParSystem?
+  // todo: move Try/TryFinally to ExceptionSystem?
 }
 
 object EffectSystem {
@@ -126,8 +128,8 @@ object EffectSystem {
   }
 
   /**
-    * An effect system that immediately executes its computations. It's values
-    * can be traversed without side effects.
+    * An effect system that immediately executes its computations. After computation,
+    * the monad's values can be traversed without side effects.
     * @tparam E monad type
     */
   trait Immediate[E[_]] extends EffectSystem[E] {

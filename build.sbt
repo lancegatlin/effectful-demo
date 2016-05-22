@@ -7,5 +7,6 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.7",
   "org.scalaz" %% "scalaz-core" % "7.2.2" % "test",
   "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-  "com.mchange" % "c3p0" % "0.9.5.2" % "test"
+  "com.mchange" % "c3p0" % "0.9.5.2" % "test",
+  "net.s_mach" %% "concurrent" % "1.1.0" % "test"
 )
