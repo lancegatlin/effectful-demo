@@ -92,6 +92,20 @@ package object effectful {
       f(ea)
   }
 
+  implicit def effectSystem_Free[Cmd[_]] = new EffectSystem[({ type E[AA] = Free[Cmd,AA] })#E] {
+    def map[A, B](m: Free[Cmd, A])(f: (A) => B) = ???
+
+    def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) = ???
+
+    def Try[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) = ???
+
+    def widen[A, AA >: A](ea: Free[Cmd, A]) = ???
+
+    def apply[A](a: => A) = ???
+
+    def TryFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) = ???
+  }
+
   /**
     * Automatically create a LiftE type-class instance that can
     * lift from identity effect system into any other effect system
