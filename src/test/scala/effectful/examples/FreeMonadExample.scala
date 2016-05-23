@@ -1,15 +1,18 @@
 package effectful.examples
 
 import effectful._
-import effectful.examples.effects.logging.free.{FreeLoggingCmd, LoggingCmd}
+import effectful.examples.effects.logging.free.{FreeLogger, FreeLoggingCmd, LoggingCmd}
 import effectful.examples.effects.par.impl.FakeParSystem
 import effectful.examples.effects.sql.free.{FreeSqlDriver, FreeSqlDriverCmd, SqlDriverCmd}
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.pure.user.TokenService
 import effectful.examples.mapping.sql._
+import effectful.examples.pure.user.impl.TokenServiceImpl
 
 import scalaz.\/
+import scala.concurrent.duration._
+
 
 object FreeMonadExample {
 
@@ -50,25 +53,13 @@ object FreeMonadExample {
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
-  //  val sqlDriver = new JdbcSqlDriver(
-//    getConnectionFromPool = pool.getConnection,
-//    uuids = uuidService
-//  )
-//
-//
-//  val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
-//    sql = sqlDriver.liftS,
-//    recordMapping = tokenInfoRecordMapping,
-//    metadataMapping = tokenInfoMetadataRecordMapping
-//  )
-//
-//  val tokenService = new TokenServiceImpl[E](
-//    logger = WriterLogger("tokenService").liftS,
-//    uuids = uuidService.liftS,
-//    tokens = tokenDao,
-//    tokenDefaultDuration = 10.days
-//  )
-//
+  val tokenService = new TokenServiceImpl[E](
+    logger = new FreeLogger("tokenService").liftS,
+    uuids = uuidService.liftS,
+    tokens = tokenDao,
+    tokenDefaultDuration = 10.days
+  )
+
 //  val delayService = new AsyncDelayService()
 //
 //  val passwordService = new PasswordServiceImpl[E](
