@@ -12,6 +12,7 @@ import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
+import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.user.TokenService
 import s_mach.concurrent.ScheduledExecutionContext
 
@@ -65,5 +66,21 @@ object AkkaFutureExample {
     passwordMismatchDelay = 5.seconds
   )
 
+  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
+    sql = sqlDriver.liftS,
+    //todo:
+    recordMapping = ???, //userDataRecordMapping,
+    metadataMapping = ??? // userDataMetadataRecordMapping
+  )
+  val userService = new UserServiceImpl[Future](
+    users = userDao,
+    passwordService = passwordService
+  )
 
+  val userLoginService = new UserLoginServiceImpl[Future](
+    logger = WriterLogger("userLoginService").liftS,
+    users = userService,
+    tokens = tokenService,
+    passwords = passwordService
+  )
 }

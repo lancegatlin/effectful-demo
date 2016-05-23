@@ -19,7 +19,7 @@ trait UserService[E[_]] {
     password: String
   ) : E[Boolean]
   def rename(userId: UUID, newUsername: String) : E[Boolean]
-  def remove(userId: User) : E[Boolean]
+  def remove(userId: UUID) : E[Boolean]
  }
 
 object UserService {
