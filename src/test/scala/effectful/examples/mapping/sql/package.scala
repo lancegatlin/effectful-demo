@@ -8,6 +8,7 @@ import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.TokenService.TokenInfo
+import effectful.examples.pure.user.impl.UserServiceImpl.UserData
 
 package object sql {
   import SqlVal._
@@ -131,4 +132,80 @@ package object sql {
     rowFormat = sqlRowFormat_RecordMetadata
   ))
 
+  val sqlRecordFormat_UserData = new SqlRecordFormat[UUID,UserData] {
+
+    def toSqlVal(a: UUID) =
+      SqlVal.VARCHAR(30,a.toCharData)
+
+    def fromSqlVal(v: SqlVal) =
+      v.as[VARCHAR].data.to[UUID]
+
+    def toSqlRow(a: UserData) = {
+      import a._
+
+      IndexedSeq(
+        VARCHAR(255,username.toCharData),
+        VARCHAR(255,passwordDigest.toCharData)
+      )
+    }
+
+    def fromSqlRow(row: SqlRow) = {
+      UserData(
+        username = row(0).as[VARCHAR].data.toCharString(),
+        passwordDigest = row(1).as[VARCHAR].data.toCharString()
+      )
+    }
+  }
+
+  val userDataRecordMapping = RecordMapping[UUID,UserData](
+    tableName = "users",
+    recordFields = Seq(
+      FieldColumnMapping(
+        fieldName = "username",
+        columnIndex = 3,
+        columnName = "username"
+      ),
+      FieldColumnMapping(
+        fieldName = "passwordDigest",
+        columnIndex = 4,
+        columnName = "password_digest"
+      )
+    ),
+    idField = FieldColumnMapping(
+      fieldName = "id",
+      columnIndex = 1,
+      columnName = "id"
+    )
+  )(sqlRecordFormat_UserData)
+
+  // todo: make a macro to generate this
+  val userDataMetadataRecordMapping = RecordMapping[UUID,RecordMetadata](
+    tableName = "users",
+    recordFields = Seq(
+      FieldColumnMapping(
+        fieldName = "created",
+        columnIndex = 6,
+        columnName = "created"
+      ),
+      FieldColumnMapping(
+        fieldName = "lastUpdated",
+        columnIndex = 7,
+        columnName = "last_updated"
+      ),
+      FieldColumnMapping(
+        fieldName = "removed",
+        columnIndex = 8,
+        columnName = "removed"
+      )
+    ),
+    idField = FieldColumnMapping(
+      fieldName = "id",
+      columnIndex = 1,
+      columnName = "id"
+    )
+  )(SqlRecordFormat(
+    idFormat = sqlRecordFormat_UserData,
+    rowFormat = sqlRowFormat_RecordMetadata
+  ))
+  
 }

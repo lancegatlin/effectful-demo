@@ -67,11 +67,8 @@ object AkkaFutureExample {
 
   val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
     sql = sqlDriver.liftS,
-    //todo:
-    recordMapping = ???,
-    //userDataRecordMapping,
-    metadataMapping = ???
-    // userDataMetadataRecordMapping
+    recordMapping = userDataRecordMapping,
+    metadataMapping = userDataMetadataRecordMapping
   )
   val userService = new UserServiceImpl[E](
     users = userDao,

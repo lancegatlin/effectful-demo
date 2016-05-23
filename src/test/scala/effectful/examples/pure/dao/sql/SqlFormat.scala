@@ -34,6 +34,17 @@ trait CharDataFormat[A] {
   def fromCharData(data: CharData) : A
 }
 
+object CharDataFormat {
+  implicit val charDataFormat_String = new CharDataFormat[String] {
+    def toCharData(a: String) = CharData(a)
+    def fromCharData(data: CharData) = data.toCharString()
+  }
+  implicit val charDataFormat_Reader = new CharDataFormat[java.io.Reader] {
+    def toCharData(a: java.io.Reader) = CharData(a)
+    def fromCharData(data: CharData) = data.toCharStream()
+  }
+}
+
 trait BinDataFormat[A] {
   def toBinData(a: A) : BinData
   def fromBinData(data: BinData) : A
