@@ -1,6 +1,5 @@
 package effectful.examples.pure.user.impl
 
-import scala.language.higherKinds
 import effectful._
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.user._

@@ -1,6 +1,5 @@
 package effectful
 
-import scala.language.higherKinds
 
 /**
   * A type-class for lifting the computation of an effect system monad into

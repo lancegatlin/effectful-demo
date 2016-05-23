@@ -10,3 +10,15 @@ libraryDependencies ++= Seq(
   "com.mchange" % "c3p0" % "0.9.5.2" % "test",
   "net.s_mach" %% "concurrent" % "1.1.0" % "test"
 )
+
+scalacOptions ++= Seq(
+  "-feature",
+  "-unchecked",
+  "-deprecation",
+//  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused-import",
+  "-Xfatal-warnings",
+  "-Xlint",
+  "-language:higherKinds"
+)

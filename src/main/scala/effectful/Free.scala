@@ -1,6 +1,5 @@
 package effectful
 
-import scala.language.higherKinds
 
 /**
   * A free monad
@@ -18,7 +17,7 @@ trait Free[Cmd[_],A] {
 
 object Free {
 
-  case class Cmd[Cmd[_],A](Cmd: Cmd[A]) extends Free[Cmd,A] {
+  case class Command[Cmd[_],A](Cmd: Cmd[A]) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
       Map(this,f)
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
@@ -58,7 +57,7 @@ object Free {
       def loop[B]: Free[Cmd, B] => E[B] = {
         case Free.Val(a) => E(a)
         // Intellij erroneous errors here
-        case Free.Cmd(cmd) => apply(cmd)
+        case Free.Command(cmd) => apply(cmd)
         case Free.Map(base, f) => loop(base).map(f)
         case Free.FlatMap(base, f) => loop(base).flatMap(inner => loop(f(inner)))
       }

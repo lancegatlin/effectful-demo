@@ -1,6 +1,5 @@
 package effectful.examples.effects.sql.jdbc
 
-import java.sql.{Connection => _, PreparedStatement => _, _}
 import java.util.concurrent.ConcurrentHashMap
 import effectful._
 import effectful.examples.effects.sql._

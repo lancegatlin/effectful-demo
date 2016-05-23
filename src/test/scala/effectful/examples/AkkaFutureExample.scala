@@ -1,6 +1,5 @@
 package effectful.examples
 
-import scala.language.higherKinds
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import effectful._
 import effectful.examples.adapter.akka._
@@ -61,23 +60,25 @@ object AkkaFutureExample {
 
   val delayService = new AsyncDelayService()
 
-  val passwordService = new PasswordServiceImpl[Future](
-    delayService = delayService,
+  val passwordService = new PasswordServiceImpl[E](
+    delayService = delayService.liftS,
     passwordMismatchDelay = 5.seconds
   )
 
   val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
     sql = sqlDriver.liftS,
     //todo:
-    recordMapping = ???, //userDataRecordMapping,
-    metadataMapping = ??? // userDataMetadataRecordMapping
+    recordMapping = ???,
+    //userDataRecordMapping,
+    metadataMapping = ???
+    // userDataMetadataRecordMapping
   )
-  val userService = new UserServiceImpl[Future](
+  val userService = new UserServiceImpl[E](
     users = userDao,
     passwordService = passwordService
   )
 
-  val userLoginService = new UserLoginServiceImpl[Future](
+  val userLoginService = new UserLoginServiceImpl[E](
     logger = WriterLogger("userLoginService").liftS,
     users = userService,
     tokens = tokenService,

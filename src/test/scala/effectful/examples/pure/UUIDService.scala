@@ -2,7 +2,6 @@ package effectful.examples.pure
 
 import effectful._
 
-import scala.language.higherKinds
 
 trait UUIDService[E[_]] {
   import UUIDService._

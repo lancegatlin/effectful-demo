@@ -3,6 +3,7 @@ package effectful.examples.effects.sql
 import org.apache.commons.io.IOUtils
 
 sealed trait CharData {
+  //todo: can't use Reader -- refactor this to work through EffectIterator w/SqlDriver.readStreamChunk
   def toCharStream() : java.io.Reader
   def toCharString() : String
 }
@@ -21,6 +22,7 @@ object CharData {
 }
 
 sealed trait BinData {
+  //todo: can't use InputStream -- refactor this to work through EffectIterator w/SqlDriver.readStreamChunk
   def toBinStream() : java.io.InputStream
   def toByteArray() : Array[Byte]
 }
@@ -44,6 +46,7 @@ sealed trait SqlVal {
 object SqlVal {
   // Mappings based on: https://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
 
+  // Note: sqlType is required by JDBC PreparedStatement.setNull
   case class NULL(sqlType: SqlType) extends SqlVal
   case class CHAR(
     fixedLength: Long,

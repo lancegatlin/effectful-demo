@@ -110,6 +110,9 @@ object JdbcSqlDriverOps {
       row.iterator.zipWithIndex.foreach { case (sqlVal,i) =>
         sqlVal match {
           case NULL(sqlType) =>
+            // todo: fixing this up to use metadata to lookup type of column
+            // todo: would allow removing SqlVal.sqlType which causes a bunch
+            // todo: of awkwardness in other parts of the code
             ps.setNull(i,sqlTypeToJdbcType(sqlType).ordinal)
           case CHAR(_,data) =>
             setCharData(i,data)
@@ -200,7 +203,7 @@ object JdbcSqlDriverOps {
     jdbcType: Int,
     scale: Int,
     precision: Int,
-    width: Int
+    width: Long
   ) : SqlType = {
     import SqlType._
 

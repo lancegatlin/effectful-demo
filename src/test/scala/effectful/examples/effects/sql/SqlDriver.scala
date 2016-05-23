@@ -1,6 +1,5 @@
 package effectful.examples.effects.sql
 
-import scala.language.higherKinds
 import effectful._
 import effectful.examples.effects.sql.SqlDriver.Context.InTransaction
 
@@ -33,6 +32,16 @@ trait SqlDriver[E[_]] {
   def nextCursor(cursorId: CursorId) : E[Cursor]
 
   def closeCursor(cursorId: CursorId) : E[Unit]
+
+  //todo: add input stream reading calls here? maybe spin off StreamService?
+  // case class Chunk(bytes: Array[Byte], index: Int)
+  // case class ReadStream(chunkSize: Int, totalSize: Option[Int], bytesReadSoFar: Int)
+  // case class WriteStream(maxChunkSize: Int, bytesWrittenSoFar: Int)
+  // def getStreamInfo(streamId: StreamId) : E[Stream]
+  // def readStreamChunk(streamId: StreamId, index: Int) : E[Chunk]
+  // def readNextStreamChunk(streamId: StreamId) : E[Option[Chunk]]
+  // def writeStreamChunk(streamId: StreamId, chunk: Chunk) : E[Boolean]
+  // def closeStream(streamId: StreamId) : E[Unit]
 }
 
 object SqlDriver {

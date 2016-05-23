@@ -5,7 +5,6 @@ import java.time.Instant
 import effectful._
 import query.Query
 
-import scala.language.higherKinds
 
 /**
   * A simple document store

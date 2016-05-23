@@ -10,38 +10,38 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
 
 
   override def beginTransaction(): FreeSqlDriverCmd[Context.InTransaction] =
-    Cmd(BeginTransaction)
+    Command(BeginTransaction)
 
   override def commit()(implicit context: Context.InTransaction): FreeSqlDriverCmd[Unit] =
-    Cmd(Commit(context))
+    Command(Commit(context))
   
   override def rollback()(implicit context: Context.InTransaction): FreeSqlDriverCmd[Unit] =
-    Cmd(Rollback(context))
+    Command(Rollback(context))
 
 
   override def prepare(statement: String)(implicit context: Context): FreeSqlDriverCmd[PreparedStatementId] =
-    Cmd(Prepare(statement, context))
+    Command(Prepare(statement, context))
 
   override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Cursor] =
-    Cmd(ExecutePreparedQuery(preparedStatementId,rows))
+    Command(ExecutePreparedQuery(preparedStatementId,rows))
 
   override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Int] =
-    Cmd(ExecutePreparedUpdate(preparedStatementId,rows))
+    Command(ExecutePreparedUpdate(preparedStatementId,rows))
 
 
   override def executeQuery(statement: String)(implicit context: Context): FreeSqlDriverCmd[Cursor] =
-    Cmd(ExecuteQuery(statement,context))
+    Command(ExecuteQuery(statement,context))
 
   override def executeUpdate(statement: String)(implicit context: Context): FreeSqlDriverCmd[Int] =
-    Cmd(ExecuteUpdate(statement,context))
+    Command(ExecuteUpdate(statement,context))
 
 
   override def getCursorMetadata(cursorId: CursorId): FreeSqlDriverCmd[CursorMetadata] =
-    Cmd(GetCursorMetadata(cursorId))
+    Command(GetCursorMetadata(cursorId))
 
   override def nextCursor(cursorId: CursorId): FreeSqlDriverCmd[Cursor] =
-    Cmd(NextCursor(cursorId))
+    Command(NextCursor(cursorId))
 
   override def closeCursor(cursorId: CursorId): FreeSqlDriverCmd[Unit] =
-    Cmd(CloseCursor(cursorId))
+    Command(CloseCursor(cursorId))
 }

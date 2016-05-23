@@ -1,6 +1,5 @@
 package effectful.examples.pure.user.impl
 
-import scala.language.higherKinds
 import org.jasypt.digest.PooledStringDigester
 
 import scala.concurrent.duration.FiniteDuration

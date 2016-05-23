@@ -1,6 +1,5 @@
 package effectful.examples.pure.user
 
-import scala.language.higherKinds
 import scalaz.\/
 import effectful._
 

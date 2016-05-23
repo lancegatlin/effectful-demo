@@ -1,5 +1,4 @@
 import scala.collection.generic.CanBuildFrom
-import scala.language.higherKinds
 
 package object effectful {
   /**

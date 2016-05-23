@@ -1,6 +1,5 @@
 package effectful.examples.effects.par.impl
 
-import scala.language.higherKinds
 import effectful._
 import effectful.examples.effects.par.ParSystem
 

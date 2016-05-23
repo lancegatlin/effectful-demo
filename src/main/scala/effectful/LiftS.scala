@@ -1,6 +1,5 @@
 package effectful
 
-import scala.language.higherKinds
 
 /**
   * A type-class for lifting the effect system of a service into another

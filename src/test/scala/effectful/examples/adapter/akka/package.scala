@@ -1,8 +1,8 @@
 package effectful.examples.adapter
 
-import scala.language.higherKinds
 import effectful.examples.effects.logging.writer.LogWriter
 import effectful.{EffectSystem, LiftE}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 package object akka {
@@ -25,15 +25,26 @@ package object akka {
     override def apply[A](a: => A): Future[A] = Future(a)
   }
 
-  type LogWriterFuture[A] = Future[LogWriter[A]]
-
-  implicit object liftE_Writer_Future extends LiftE[LogWriter,LogWriterFuture] {
+  type FutureLogWriter[A] = Future[LogWriter[A]]
+  
+  implicit object liftE_Writer_Future extends LiftE[LogWriter,FutureLogWriter] {
     override def apply[A](
       ea: => LogWriter[A]
     )(implicit
       E: EffectSystem[LogWriter],
-      F: EffectSystem[LogWriterFuture]
-    ): LogWriterFuture[A] =
+      F: EffectSystem[FutureLogWriter]
+    ): FutureLogWriter[A] =
       Future.successful(ea)
   }
+
+  implicit def liftE_Future_FutureLogWriter(implicit ec:ExecutionContext) = new LiftE[Future,FutureLogWriter] {
+    override def apply[A](
+      ea: => Future[A]
+    )(implicit
+      E: EffectSystem[Future],
+      F: EffectSystem[FutureLogWriter]
+    ): FutureLogWriter[A] =
+      ea.map(a => LogWriter(a))
+  }
+
 }

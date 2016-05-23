@@ -5,7 +5,6 @@ import java.time.Instant
 import effectful._
 import effectful.examples.pure.UUIDService.UUID
 
-import scala.language.higherKinds
 
 trait UserService[E[_]] {
   import UserService._
@@ -49,7 +48,7 @@ object UserService {
           liftE(s.findById(id))
         override def findAll(start: Int, batchSize: Int): F[Seq[User]] =
           liftE(s.findAll(start,batchSize))
-        override def remove(userId: User): F[Boolean] =
+        override def remove(userId: UUID): F[Boolean] =
           liftE(s.remove(userId))
         override def create(id: UUID, username: String, password: String): F[Boolean] =
           liftE(s.create(id,username,password))

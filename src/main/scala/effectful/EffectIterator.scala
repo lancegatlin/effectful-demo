@@ -2,7 +2,6 @@ package effectful
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
-import scala.language.higherKinds
 import scala.collection.generic.CanBuildFrom
 
 /**

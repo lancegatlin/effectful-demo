@@ -5,7 +5,6 @@ import java.time.Instant
 import effectful.{EffectSystem, LiftE, LiftS}
 import effectful.examples.pure.UUIDService.UUID
 
-import scala.language.higherKinds
 import scala.concurrent.duration.Duration
 
 trait TokenService[E[_]] {

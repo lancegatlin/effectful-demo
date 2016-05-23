@@ -58,7 +58,8 @@ class InMemoryDocDaoImpl[ID,A](
       data = { data =>
         data.get(id) match {
           case Some((id, record, metadata)) =>
-            data + (id ->(id, value, metadata))
+            val tuple = (id, value, metadata)
+            data + (id -> tuple)
           case None =>
             throw new NoSuchElementException(s"Missing key $id")
         }
@@ -79,7 +80,8 @@ class InMemoryDocDaoImpl[ID,A](
           case Some(_) =>
             throw new DuplicateKeyException(s"Key $id already exists")
           case None =>
-            data + (id ->(id, value, mkMetadata()))
+            val tuple = (id, value, mkMetadata())
+            data + (id -> tuple)
         }
       }
       true
@@ -114,7 +116,8 @@ class InMemoryDocDaoImpl[ID,A](
         case None =>
           inserted = true
       }
-      data + (id ->(id, value, mkMetadata()))
+      val tuple = (id, value, mkMetadata())
+      data + (id -> tuple)
     }
     (inserted,updated)
   }

@@ -1,7 +1,6 @@
 package effectful.examples.effects.par
 
 import scala.collection.generic.CanBuildFrom
-import scala.language.higherKinds
 
 trait ParSystem[E[_]] {
   def par[A,B](ea: =>E[A],eb: =>E[B]) : E[(A,B)]

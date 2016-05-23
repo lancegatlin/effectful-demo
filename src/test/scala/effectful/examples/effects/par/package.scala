@@ -1,6 +1,5 @@
 package effectful.examples.effects
 
-import scala.language.higherKinds
 import effectful.EffectSystem
 
 import scala.collection.generic.CanBuildFrom

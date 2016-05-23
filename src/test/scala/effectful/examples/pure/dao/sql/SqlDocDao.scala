@@ -1,7 +1,6 @@
 package effectful.examples.pure.dao.sql
 
 
-import scala.language.higherKinds
 import java.time.Instant
 
 import effectful._

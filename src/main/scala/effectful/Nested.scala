@@ -1,6 +1,5 @@
 package effectful
 
-import scala.language.higherKinds
 
 /**
   * An effect system derived from nesting the monad G inside F

@@ -1,6 +1,5 @@
 package effectful.examples.effects.logging
 
-import scala.language.higherKinds
 import effectful._
 
 trait Logger[E[_]] {

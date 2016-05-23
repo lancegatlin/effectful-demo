@@ -2,7 +2,6 @@ package effectful.examples.pure.user.impl
 
 import java.time.Instant
 
-import scala.language.higherKinds
 import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration

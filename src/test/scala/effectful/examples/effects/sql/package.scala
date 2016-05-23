@@ -1,7 +1,5 @@
 package effectful.examples.effects
 
-import scala.language.higherKinds
-import scala.language.implicitConversions
 import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
 
@@ -122,7 +120,7 @@ package object sql {
     def orSqlNull : SqlVal =
       self match {
         case Some(v) => v
-          // todo:
+          // todo: either this to OptionSqlXXXPML to preserve sql type (sql type required by JDBC PreparedStatement.setNull
         case None => SqlVal.NULL(null)
       }
   }

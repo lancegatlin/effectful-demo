@@ -2,7 +2,6 @@ package effectful.examples.effects.sql.free
 
 import effectful.{EffectSystem, Free}
 
-import scala.language.higherKinds
 import effectful.examples.effects.sql._
 
 class SqlDriverCmdInterpreter[E[_]](
