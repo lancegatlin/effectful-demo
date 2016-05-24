@@ -144,8 +144,6 @@ package object effectful {
     ) : S[F] = liftS(self)
   }
 
-//  type FreeLambda[Cmd[_]] = ({ type F[A] = Free[Cmd,A]})#F
-
   implicit def liftE_Free[Cmd1[_],Cmd2[_]](implicit
     liftCmd:LiftCmd[Cmd1,Cmd2]
   ) = new LiftE[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {

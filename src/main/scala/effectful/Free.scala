@@ -10,6 +10,8 @@ package effectful
   * @tparam Cmd a type of command
   * @tparam A monad type
   */
+// todo: choose either: 1) encode effect system requirements in Free as a type parameter OR
+// todo: 2) add commands for each effect system (Par,Exceptions,etc)
 trait Free[Cmd[_],A] {
   def map[B](f: A => B) : Free[Cmd, B]
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B]

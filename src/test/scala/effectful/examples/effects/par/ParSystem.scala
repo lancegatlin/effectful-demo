@@ -21,4 +21,6 @@ trait ParSystem[E[_]] {
   )(
     f: A => E[Traversable[B]]
   )(implicit cbf: CanBuildFrom[Nothing,B,M[B]]) : E[M[B]]
+
+  // todo: parMapUnordered, parFlatMapUnordered
 }
