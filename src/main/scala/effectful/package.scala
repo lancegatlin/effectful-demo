@@ -93,16 +93,15 @@ package object effectful {
   }
 
   implicit def effectSystem_Free[Cmd[_]] = new EffectSystem[({ type E[AA] = Free[Cmd,AA] })#E] {
-    def map[A, B](m: Free[Cmd, A])(f: (A) => B) = ???
+    def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
+      m.map(f)
+    def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) =
+      m.flatMap(f)
+    def apply[A](a: => A) = Free.Val(a)
+    def widen[A, AA >: A](ea: Free[Cmd, A]) = ea.widen[AA]
 
-    def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) = ???
-
+    // todo: does this need to be encoded into Free?
     def Try[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) = ???
-
-    def widen[A, AA >: A](ea: Free[Cmd, A]) = ???
-
-    def apply[A](a: => A) = ???
-
     def TryFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) = ???
   }
 
