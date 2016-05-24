@@ -13,21 +13,31 @@ package effectful
 trait Free[Cmd[_],A] {
   def map[B](f: A => B) : Free[Cmd, B]
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B]
+  def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd,Cmd2]) : Free[Cmd2,A]
+  def run[E[_]](i: Interpreter[Cmd,E])(implicit E:EffectSystem[E]) : E[A]
 }
 
 object Free {
 
-  case class Command[Cmd[_],A](Cmd: Cmd[A]) extends Free[Cmd,A] {
+  case class Command[Cmd[_],A](cmd: Cmd[A]) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
       Map(this,f)
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
       FlatMap(this,f)
+    def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd,Cmd2]) : Command[Cmd2,A] =
+      Command(liftCmd(cmd))
+    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[A] =
+      i(cmd)
   }
   case class Val[Cmd[_],A](value: A) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
       Val(f(value))
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
       f(value)
+    override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Val[Cmd2, A] =
+      this.asInstanceOf[Val[Cmd2,A]]
+    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[A] =
+      E(value)
   }
   case class Map[Cmd[_],A,B](
     base: Free[Cmd,A],
@@ -37,6 +47,10 @@ object Free {
       Map(base,f andThen g)
     override def flatMap[C](g: (B) => Free[Cmd, C]): Free[Cmd, C] =
       FlatMap(this, g)
+    override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Map[Cmd2,A,B] =
+      Map(base.liftCmd,f)
+    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[B] =
+      base.run(i).map(f)
   }
   case class FlatMap[Cmd[_],A,B](
     base: Free[Cmd,A],
@@ -46,22 +60,9 @@ object Free {
       FlatMap(base, f andThen(_.map(g)))
     override def flatMap[C](g: (B) => Free[Cmd, C]): Free[Cmd, C] =
       FlatMap(base, f andThen(_.flatMap(g)))
-  }
-
-  trait Interpreter[Cmd[_],E[_]] {
-    implicit def E:EffectSystem[E]
-
-    def apply[A](cmd: Cmd[A]) : E[A]
-
-    def apply[A](free: Free[Cmd, A]): E[A] = {
-      def loop[B]: Free[Cmd, B] => E[B] = {
-        case Free.Val(a) => E(a)
-        // Intellij erroneous errors here
-        case Free.Command(cmd) => apply(cmd)
-        case Free.Map(base, f) => loop(base).map(f)
-        case Free.FlatMap(base, f) => loop(base).flatMap(inner => loop(f(inner)))
-      }
-      loop(free)
-    }
+    override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): FlatMap[Cmd2,A,B] =
+      FlatMap(base.liftCmd,f.andThen(_.liftCmd))
+    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[B] =
+      base.run(i).flatMap(inner => f(inner).run(i))
   }
 }

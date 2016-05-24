@@ -1,16 +1,16 @@
 package effectful.examples
 
 import effectful._
-import effectful.examples.effects.logging.free.{FreeLogger, FreeLoggingCmd, LoggingCmd}
+import effectful.examples.effects.logging.free.{FreeLogger, LoggingCmd}
 import effectful.examples.effects.par.impl.FakeParSystem
-import effectful.examples.effects.sql.free.{FreeSqlDriver, FreeSqlDriverCmd, SqlDriverCmd}
+import effectful.examples.effects.sql.free.{FreeSqlDriver, SqlDriverCmd}
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.pure.user.TokenService
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.impl.TokenServiceImpl
 
-import scalaz.\/
+import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 
 
@@ -21,22 +21,15 @@ object FreeMonadExample {
 
   implicit val fakeParSystem = new FakeParSystem[E]
 
-  implicit val liftE_FreeLogger_E = new LiftE[FreeLoggingCmd,E] {
-    def apply[A](
-      ea: => FreeLoggingCmd[A]
-    )(implicit
-      E: EffectSystem[FreeLoggingCmd],
-      F: EffectSystem[E]
-    ) = ??? // todo: how?
+  // todo: generalize these
+  implicit val liftCmd_LoggingCmd_Cmd = new LiftCmd[LoggingCmd,Cmd] {
+    override def apply[AA](cmd: LoggingCmd[AA]): Cmd[AA] =
+      -\/(cmd)
   }
 
-  implicit val liftE_SqlDriver_E = new LiftE[FreeSqlDriverCmd,E] {
-    def apply[A](
-      ea: => FreeSqlDriverCmd[A]
-    )(implicit
-      E: EffectSystem[FreeSqlDriverCmd],
-      F: EffectSystem[E]
-    ) = ??? // todo: how?
+  implicit val liftCmd_FreeLoggingCmd_Cmd = new LiftCmd[SqlDriverCmd,Cmd] {
+    override def apply[AA](cmd: SqlDriverCmd[AA]): Cmd[AA] =
+      \/-(cmd)
   }
 
   //  implicit val effectSystem_E = Nested[Future,LogWriter]
@@ -60,6 +53,7 @@ object FreeMonadExample {
     tokenDefaultDuration = 10.days
   )
 
+  tokenService.find("asdf")
 //  val delayService = new AsyncDelayService()
 //
 //  val passwordService = new PasswordServiceImpl[E](

@@ -1,14 +1,13 @@
 package effectful.examples.effects.sql.free
 
-import effectful.{EffectSystem, Free}
-
+import effectful.{EffectSystem, Interpreter}
 import effectful.examples.effects.sql._
 
 class SqlDriverCmdInterpreter[E[_]](
   sqlDriver: SqlDriver[E]                                   
 )(implicit
   val E:EffectSystem[E]
-) extends Free.Interpreter[SqlDriverCmd,E] {
+) extends Interpreter[SqlDriverCmd,E] {
   def apply[AA](cmd: SqlDriverCmd[AA]) : E[AA] = {
     import SqlDriverCmd._
     import sqlDriver._
