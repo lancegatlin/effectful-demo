@@ -1,18 +1,17 @@
 package effectful.examples
 
+import scalaz.{-\/, \/, \/-}
+import scala.concurrent.duration._
 import effectful._
 import effectful.examples.effects.logging.free.{FreeLogger, LoggingCmd}
 import effectful.examples.effects.par.impl.FakeParSystem
 import effectful.examples.effects.sql.free.{FreeSqlDriver, SqlDriverCmd}
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
-import effectful.examples.pure.user.TokenService
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.impl.TokenServiceImpl
-
-import scalaz.{-\/, \/, \/-}
-import scala.concurrent.duration._
-
+import effectful.examples.pure.user._
+import effectful.examples.pure._
 
 object FreeMonadExample {
 

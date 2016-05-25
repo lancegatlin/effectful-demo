@@ -8,7 +8,7 @@ class LoggerCmdInterpreter[E[_]](
 )(implicit
   E:EffectSystem[E]
 ) extends Interpreter[LoggingCmd,E]{
-  override def apply[A](cmd: LoggingCmd[A]): E[A] = {
+  override def apply[A](cmd: LoggingCmd[A])(implicit E:EffectSystem[E]): E[A] = {
     import LoggingCmd._
     cmd match {
       case Trace(message, Some(cause)) =>

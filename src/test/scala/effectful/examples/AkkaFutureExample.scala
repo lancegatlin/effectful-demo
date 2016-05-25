@@ -12,7 +12,8 @@ import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.UUIDService.UUID
-import effectful.examples.pure.user.TokenService
+import effectful.examples.pure.user._
+import effectful.examples.pure._
 import s_mach.concurrent.ScheduledExecutionContext
 
 import scala.concurrent.Future
