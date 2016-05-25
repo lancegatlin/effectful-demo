@@ -16,7 +16,7 @@ trait Free[Cmd[_],A] {
   def map[B](f: A => B) : Free[Cmd, B]
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B]
   def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd,Cmd2]) : Free[Cmd2,A]
-  def run[E[_]](i: Interpreter[Cmd,E])(implicit E:EffectSystem[E]) : E[A]
+  def run[E[_]](i: Interpreter[Cmd,E]) : E[A]
   def widen[AA >: A] : Free[Cmd,AA]
 }
 
@@ -29,7 +29,7 @@ object Free {
       FlatMap(this,f)
     def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd,Cmd2]) : Command[Cmd2,A] =
       Command(liftCmd(cmd))
-    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[A] =
+    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
       i(cmd)
     override def widen[AA >: A]: Command[Cmd, AA] = this.asInstanceOf
   }
@@ -40,8 +40,8 @@ object Free {
       f(value)
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Val[Cmd2, A] =
       this.asInstanceOf[Val[Cmd2,A]]
-    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[A] =
-      E(value)
+    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
+      i.E(value)
     override def widen[AA >: A]: Val[Cmd, AA] = this.asInstanceOf
   }
   case class Map[Cmd[_],A,B](
@@ -54,8 +54,8 @@ object Free {
       FlatMap(this, g)
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Map[Cmd2,A,B] =
       Map(base.liftCmd,f)
-    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[B] =
-      base.run(i).map(f)
+    override def run[E[_]](i: Interpreter[Cmd, E]): E[B] =
+      i.E.map(base.run(i))(f)
     override def widen[BB >: B]: Map[Cmd,A,BB] = this.asInstanceOf
   }
   case class FlatMap[Cmd[_],A,B](
@@ -68,8 +68,8 @@ object Free {
       FlatMap(base, f andThen(_.flatMap(g)))
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): FlatMap[Cmd2,A,B] =
       FlatMap(base.liftCmd,f.andThen(_.liftCmd))
-    override def run[E[_]](i: Interpreter[Cmd, E])(implicit E: EffectSystem[E]): E[B] =
-      base.run(i).flatMap(inner => f(inner).run(i))
+    override def run[E[_]](i: Interpreter[Cmd, E]): E[B] =
+      i.E.flatMap(base.run(i))(inner => f(inner).run(i))
     override def widen[BB >: B]: FlatMap[Cmd,A,BB] = this.asInstanceOf
   }
 }
