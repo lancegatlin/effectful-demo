@@ -8,7 +8,7 @@ class SqlDriverCmdInterpreter[E[_]](
 )(implicit
   val E:EffectSystem[E]
 ) extends Interpreter[SqlDriverCmd,E] {
-  def apply[AA](cmd: SqlDriverCmd[AA])(implicit E:EffectSystem[E]) : E[AA] = {
+  def apply[AA](cmd: SqlDriverCmd[AA]) : E[AA] = {
     import SqlDriverCmd._
     import sqlDriver._
 
