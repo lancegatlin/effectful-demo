@@ -6,7 +6,7 @@ import effectful.examples.effects.logging.Logger
 class LoggerCmdInterpreter[E[_]](
   logger: Logger[E]                                
 )(implicit
-  E:EffectSystem[E]
+  val E:EffectSystem[E]
 ) extends Interpreter[LoggingCmd,E]{
   override def apply[A](cmd: LoggingCmd[A]): E[A] = {
     import LoggingCmd._
