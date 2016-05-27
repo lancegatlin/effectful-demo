@@ -1,6 +1,8 @@
 package effectful.examples.effects.logging
 
-import effectful.EffectSystem
+import effectful.Exec
+import effectful.cats.Monad
+import effectful.impl.StdPar
 
 import scalaz._
 import Scalaz._
@@ -15,7 +17,12 @@ package object writer {
   }
 
 
-  implicit object EffectSystem_LogWriter extends EffectSystem.Immediate[LogWriter] with EffectSystem.NoExceptionCapture[LogWriter] {
+  implicit object EffectSystem_LogWriter extends
+    Exec.ImmediateNoCaptureExceptions[LogWriter] with
+    StdPar[LogWriter]
+  {
+    override implicit val E: Exec[LogWriter] = this
+
     override def map[A, B](m: LogWriter[A])(f: (A) => B): LogWriter[B] =
       m.map(f)
     override def flatMap[A, B](m: LogWriter[A])(f: (A) => LogWriter[B]): LogWriter[B] =
@@ -26,7 +33,9 @@ package object writer {
       LogWriter(a)
     def foreach[A,U](ea: LogWriter[A])(f: (A) => U) =
       f(ea.run._2)
-    def flatSequence[F[_], A, B](ea: LogWriter[A])(f: (A) => F[LogWriter[B]])(implicit F: EffectSystem[F]) : F[LogWriter[B]] = {
+    override def flatSequence[M[_], A, B](ta: LogWriter[A])(f: (A) => M[LogWriter[B]])(implicit M: Monad[M]): M[LogWriter[B]] = ???
+
+    def flatSequence[F[_], A, B](ea: LogWriter[A])(f: (A) => F[LogWriter[B]])(implicit F: Exec[F]) : F[LogWriter[B]] = {
       val (acc,a) = ea.run
       F.map(f(a))(_.<++:(acc))
     }

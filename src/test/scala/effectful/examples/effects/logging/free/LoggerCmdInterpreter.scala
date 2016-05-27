@@ -1,12 +1,13 @@
 package effectful.examples.effects.logging.free
 
-import effectful.{EffectSystem, Interpreter}
+import effectful.Exec
 import effectful.examples.effects.logging.Logger
+import effectful.free.Interpreter
 
 class LoggerCmdInterpreter[E[_]](
   logger: Logger[E]                                
 )(implicit
-  val E:EffectSystem[E]
+  val E:Exec[E]
 ) extends Interpreter[LoggingCmd,E]{
   override def apply[A](cmd: LoggingCmd[A]): E[A] = {
     import LoggingCmd._

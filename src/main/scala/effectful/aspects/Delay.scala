@@ -1,7 +1,7 @@
-package effectful.examples.effects.delay
+package effectful.aspects
 
 import scala.concurrent.duration.FiniteDuration
 
-trait DelayService[E[_]] {
+trait Delay[E[_]] {
   def delay(duration: FiniteDuration) : E[Unit]
 }

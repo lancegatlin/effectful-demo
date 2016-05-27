@@ -4,7 +4,6 @@ import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
 import effectful.examples.effects.logging.free.{FreeLogger, LoggingCmd}
-import effectful.examples.effects.par.impl.FakeParSystem
 import effectful.examples.effects.sql.free.{FreeSqlDriver, SqlDriverCmd}
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
@@ -12,13 +11,12 @@ import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.impl.TokenServiceImpl
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.free._
 
 object FreeMonadExample {
 
   type Cmd[A] = LoggingCmd[A] \/ SqlDriverCmd[A]
   type E[A] = Free[Cmd,A]
-
-  implicit val fakeParSystem = new FakeParSystem[E]
 
   // todo: generalize these
   implicit val liftCmd_LoggingCmd_Cmd = new LiftCmd[LoggingCmd,Cmd] {
@@ -40,14 +38,14 @@ object FreeMonadExample {
   val sqlDriver = new FreeSqlDriver
 
   val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
-    sql = sqlDriver.liftS,
+    sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
   val tokenService = new TokenServiceImpl[E](
-    logger = new FreeLogger("tokenService").liftS,
-    uuids = uuidService.liftS,
+    logger = new FreeLogger("tokenService").liftService,
+    uuids = uuidService.liftService,
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )

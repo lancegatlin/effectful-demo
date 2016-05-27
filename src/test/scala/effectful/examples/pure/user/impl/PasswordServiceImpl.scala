@@ -4,14 +4,12 @@ import org.jasypt.digest.PooledStringDigester
 
 import scala.concurrent.duration.FiniteDuration
 import effectful._
-import effectful.examples.effects.delay.DelayService
 import effectful.examples.pure.user.PasswordService
 
 class PasswordServiceImpl[E[_]](
-  delayService: DelayService[E],
   passwordMismatchDelay: FiniteDuration
 )(implicit
-  E:EffectSystem[E]
+  E:Exec[E]
 ) extends PasswordService[E] {
   val digester = new PooledStringDigester()
   digester.setPoolSize(Runtime.getRuntime.availableProcessors())
@@ -22,7 +20,7 @@ class PasswordServiceImpl[E[_]](
       E(true)
     } else {
       // Delay if password didn't match
-      delayService.delay(passwordMismatchDelay).map(_ => false)
+      E.delay(passwordMismatchDelay).map(_ => false)
     }
   }
 

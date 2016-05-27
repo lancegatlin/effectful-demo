@@ -13,7 +13,7 @@ package object sql {
     )(
       rows: SqlRow*
     )(implicit
-      E:EffectSystem[E]
+      E:Exec[E]
     ) : EffectIterator[E,SqlRow] = {
       iterator({ () => self.executePreparedQuery(preparedStatementId)(rows:_*) })
     }
@@ -22,12 +22,12 @@ package object sql {
       statement: String
     )(implicit
       context: Context,
-      E:EffectSystem[E]
+      E:Exec[E]
     ) : EffectIterator[E,SqlRow] = {
       iterator({ () => self.executeQuery(statement) })
     }
 
-    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:EffectSystem[E]) : EffectIterator[E,SqlRow]= {
+    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:Exec[E]) : EffectIterator[E,SqlRow]= {
       EffectIterator.flatten {
         for {
           cursor <- fetchCursor()
@@ -43,13 +43,13 @@ package object sql {
     def autoCommit[A](
       f: Context.AutoCommit.type => E[A]
     )(implicit
-      e:EffectSystem[E]
+      e:Exec[E]
     ) : E[A] = f(Context.AutoCommit)
 
     def inTransaction[A](
       f: Context.InTransaction => E[A]
     )(implicit
-      E:EffectSystem[E]
+      E:Exec[E]
     ) : E[A] =
       for {
         transaction <- self.beginTransaction()
@@ -125,39 +125,39 @@ package object sql {
       }
   }
 
-  implicit object LiftS_SqlDriver extends LiftS[SqlDriver] {
+  implicit object LiftService_SqlDriver$ extends LiftService[SqlDriver] {
     override def apply[E[_], F[_]](
       s: SqlDriver[E]
     )(implicit
-      E: EffectSystem[E],
-      F: EffectSystem[F],
-      liftE: LiftE[E, F]
+      E: Exec[E],
+      F: Exec[F],
+      liftExec: LiftExec[E, F]
     ): SqlDriver[F] = {
       import SqlDriver._
       import Context.InTransaction
       new SqlDriver[F] {
         override def beginTransaction(): F[InTransaction] =
-          liftE(s.beginTransaction())
+          liftExec(s.beginTransaction())
         override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Int] =
-          liftE(s.executePreparedUpdate(preparedStatementId)(rows:_*))
+          liftExec(s.executePreparedUpdate(preparedStatementId)(rows:_*))
         override def nextCursor(cursorId: CursorId): F[Cursor] =
-          liftE(s.nextCursor(cursorId))
+          liftExec(s.nextCursor(cursorId))
         override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Cursor] =
-          liftE(s.executePreparedQuery(preparedStatementId)(rows:_*))
+          liftExec(s.executePreparedQuery(preparedStatementId)(rows:_*))
         override def getCursorMetadata(cursorId: CursorId): F[CursorMetadata] =
-          liftE(s.getCursorMetadata(cursorId))
+          liftExec(s.getCursorMetadata(cursorId))
         override def closeCursor(cursorId: CursorId): F[Unit] =
-          liftE(s.closeCursor(cursorId))
+          liftExec(s.closeCursor(cursorId))
         override def rollback()(implicit context: InTransaction): F[Unit] =
-          liftE(s.rollback())
+          liftExec(s.rollback())
         override def executeQuery(statement: String)(implicit context: Context): F[Cursor] =
-          liftE(s.executeQuery(statement))
+          liftExec(s.executeQuery(statement))
         override def executeUpdate(statement: String)(implicit context: Context): F[Int] =
-          liftE(s.executeUpdate(statement))
+          liftExec(s.executeUpdate(statement))
         override def prepare(statement: String)(implicit context: Context): F[PreparedStatementId] =
-          liftE(s.prepare(statement))
+          liftExec(s.prepare(statement))
         override def commit()(implicit context: InTransaction): F[Unit] =
-          liftE(s.commit())
+          liftExec(s.commit())
       }
     }
   }

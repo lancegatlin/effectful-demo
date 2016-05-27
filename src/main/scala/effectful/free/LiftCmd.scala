@@ -1,4 +1,4 @@
-package effectful
+package effectful.free
 
 trait LiftCmd[Cmd1[_],Cmd2[_]] {
   def apply[AA](

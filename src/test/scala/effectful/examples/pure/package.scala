@@ -3,19 +3,19 @@ package effectful.examples
 import effectful._
 
 package object pure {
-  implicit object LiftS_UUIDService extends LiftS[UUIDService] {
+  implicit object LiftService_UUIDService$ extends LiftService[UUIDService] {
 
     override def apply[E[_], F[_]](
       s: UUIDService[E]
     )(implicit
-      E: EffectSystem[E],
-      F: EffectSystem[F],
-      liftE: LiftE[E, F]
+      E: Exec[E],
+      F: Exec[F],
+      liftExec: LiftExec[E, F]
     ): UUIDService[F] = {
       import UUIDService._
       new UUIDService[F] {
         override def gen(): F[UUID] =
-          liftE(s.gen())
+          liftExec(s.gen())
         override def fromBase64(str: String): Option[UUID] =
           s.fromBase64(str)
         override def toBase64(uuid: UUID): String =

@@ -12,7 +12,7 @@ class UserLoginServiceImpl[E[_]](
   passwords: PasswordService[E],
   tokens: TokenService[E]
 )(implicit
-  E:EffectSystem[E]
+  E:Exec[E]
 ) extends UserLoginService[E] {
   import UserLoginService._
   import logger._

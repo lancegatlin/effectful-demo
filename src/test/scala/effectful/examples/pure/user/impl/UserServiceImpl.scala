@@ -27,7 +27,7 @@ class UserServiceImpl[E[_]](
   users: DocDao[UUID,UserData,E],
   passwordService: PasswordService[E]
 )(implicit
-  E:EffectSystem[E]
+  E:Exec[E]
 ) extends UserService[E] {
   import UserServiceImpl._
 

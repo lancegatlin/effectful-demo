@@ -1,6 +1,6 @@
 package effectful.examples.effects.sql
 
-import effectful.Free
+import effectful.free.Free
 
 package object free {
   type FreeSqlDriverCmd[A] = Free[SqlDriverCmd,A]

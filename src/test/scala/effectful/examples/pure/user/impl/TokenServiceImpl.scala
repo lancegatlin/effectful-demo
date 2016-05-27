@@ -31,7 +31,7 @@ class TokenServiceImpl[E[_]](
   tokens: DocDao[String,TokenService.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
-  E:EffectSystem[E]
+  E:Exec[E]
 ) extends TokenService[E] {
   import TokenService._
   import TokenServiceImpl._

@@ -1,7 +1,7 @@
 package effectful.examples.effects.logging.free
 
-import effectful.Free
 import effectful.examples.effects.logging.Logger
+import effectful.free.Free
 
 class FreeLogger(logger: String) extends Logger[FreeLoggingCmd] {
   override def trace(message: =>String) =

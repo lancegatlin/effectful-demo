@@ -7,59 +7,59 @@ import scala.concurrent.duration.Duration
 import scalaz.\/
 
 package object user {
-  implicit object LiftS_PasswordService extends LiftS[PasswordService] {
+  implicit object LiftService_PasswordService$ extends LiftService[PasswordService] {
     override def apply[E[_], F[_]](
       s: PasswordService[E]
     )(implicit
-      E: EffectSystem[E],
-      F: EffectSystem[F],
-      liftE: LiftE[E, F]
+      E: Exec[E],
+      F: Exec[F],
+      liftExec: LiftExec[E, F]
     ): PasswordService[F] =
       new PasswordService[F] {
         override def mkDigest(plainText: String) =
-          liftE(s.mkDigest(plainText))
+          liftExec(s.mkDigest(plainText))
         override def compareDigest(d1: String, d2: String) =
-          liftE(s.compareDigest(d1,d2))
+          liftExec(s.compareDigest(d1,d2))
       }
   }
 
-  implicit object LiftS_TokenService extends LiftS[TokenService] {
+  implicit object LiftService_TokenService$ extends LiftService[TokenService] {
 
     override def apply[E[_], F[_]](
       s: TokenService[E]
     )(implicit
-      E: EffectSystem[E],
-      F: EffectSystem[F],
-      liftE: LiftE[E, F]
+      E: Exec[E],
+      F: Exec[F],
+      liftExec: LiftExec[E, F]
     ): TokenService[F] = {
       import TokenService._
       new TokenService[F] {
         override def issue(userId: UUID, deviceId: Option[UUID], expireAfter: Option[Duration]): F[(Token,TokenInfo)] =
-          liftE(s.issue(userId,deviceId,expireAfter))
+          liftExec(s.issue(userId,deviceId,expireAfter))
         override def validate(token: Token): F[Option[TokenInfo]] =
-          liftE(s.validate(token))
+          liftExec(s.validate(token))
         override def forceAllExpire(userId: UUID, exceptTokens: Token*): F[Boolean] =
-          liftE(s.forceAllExpire(userId,exceptTokens:_*))
+          liftExec(s.forceAllExpire(userId,exceptTokens:_*))
         override def find(token: Token): F[Option[TokenInfo]] =
-          liftE(s.find(token))
+          liftExec(s.find(token))
         override def forceExpire(token: Token): F[Unit] =
-          liftE(s.forceExpire(token))
+          liftExec(s.forceExpire(token))
       }
     }
   }
 
-  implicit object LiftS_UserLoginService extends LiftS[UserLoginService] {
+  implicit object LiftService_UserLoginService$ extends LiftService[UserLoginService] {
     override def apply[E[_], F[_]](
       s: UserLoginService[E]
     )(implicit
-      E: EffectSystem[E],
-      F: EffectSystem[F],
-      liftE: LiftE[E, F]
+      E: Exec[E],
+      F: Exec[F],
+      liftExec: LiftExec[E, F]
     ): UserLoginService[F] = {
       import UserLoginService._
       new UserLoginService[F] {
         override def login(username: String, password: String): F[\/[LoginFailure, Token]] =
-          liftE(s.login(username,password))
+          liftExec(s.login(username,password))
       }
     }
   }

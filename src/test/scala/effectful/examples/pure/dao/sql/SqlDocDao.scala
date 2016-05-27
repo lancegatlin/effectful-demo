@@ -9,8 +9,6 @@ import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 import SqlDriver._
-import effectful.examples.effects.par.ParSystem
-import effectful.examples.effects.par._
 
 object SqlDocDao {
   case class FieldColumnMapping(
@@ -45,8 +43,7 @@ class SqlDocDao[ID,A,E[_]](
   recordMapping: SqlDocDao.RecordMapping[ID,A],
   metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
 )(implicit
-  E:EffectSystem[E],
-  P: ParSystem[E]
+  E:Exec[E]
 ) extends DocDao[ID,A,E] {
   import SqlDocDao._
   import recordMapping._

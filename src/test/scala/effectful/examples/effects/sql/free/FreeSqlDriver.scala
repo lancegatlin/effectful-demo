@@ -1,8 +1,8 @@
 package effectful.examples.effects.sql.free
 
-import effectful.Free
 import effectful.examples.effects.sql._
 import SqlDriver._
+import effectful.free.Free
 
 class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
   import Free._
