@@ -3,12 +3,13 @@ package effectful.examples
 import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
-import effectful.examples.effects.logging.free.{FreeLogger, LoggingCmd}
-import effectful.examples.effects.sql.free.{FreeSqlDriver, SqlDriverCmd}
+import effectful.examples.effects.logging.free._
+import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.mapping.sql._
-import effectful.examples.pure.user.impl.TokenServiceImpl
+import effectful.examples.pure.UUIDService.UUID
+import effectful.examples.pure.user.impl._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
 import effectful.free._
@@ -29,10 +30,6 @@ object FreeMonadExample {
       \/-(cmd)
   }
 
-  //  implicit val effectSystem_E = Nested[Future,LogWriter]
-  //  implicit val fakeParSystem = new FakeParSystem[E]
-
-
   val uuidService = new JavaUUIDService
 
   val sqlDriver = new FreeSqlDriver
@@ -51,27 +48,42 @@ object FreeMonadExample {
   )
 
   tokenService.find("asdf")
-//  val delayService = new AsyncDelayService()
+
+  val passwordService = new PasswordServiceImpl[E](
+    passwordMismatchDelay = 5.seconds
+  )
+
+
+  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
+    sql = sqlDriver.liftService,
+    recordMapping = userDataRecordMapping,
+    metadataMapping = userDataMetadataRecordMapping
+  )
+
+  val userService = new UserServiceImpl[E](
+    users = userDao,
+    passwordService = passwordService
+  )
+
+  val userLoginService = new UserLoginServiceImpl[E](
+    logger = new FreeLogger("userLoginService").liftService,
+    users = userService,
+    tokens = tokenService,
+    passwords = passwordService
+  )
+
+//  val i = new Interpreter[Cmd,AkkaFutureExample.E] {
+//    override implicit val E = AkkaFutureExample.E
+//    val sqlI = new SqlDriverCmdInterpreter[AkkaFutureExample.E](
+//      AkkaFutureExample.sqlDriver.liftService
+//    )
+//    val logI = new LoggerCmdInterpreter[AkkaFutureExampl.E](
 //
-//  val passwordService = new PasswordServiceImpl[E](
-//    delayService = delayService.liftS,
-//    passwordMismatchDelay = 5.seconds
-//  )
-//
-//  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
-//    sql = sqlDriver.liftS,
-//    recordMapping = userDataRecordMapping,
-//    metadataMapping = userDataMetadataRecordMapping
-//  )
-//  val userService = new UserServiceImpl[E](
-//    users = userDao,
-//    passwordService = passwordService
-//  )
-//
-//  val userLoginService = new UserLoginServiceImpl[E](
-//    logger = WriterLogger("userLoginService").liftS,
-//    users = userService,
-//    tokens = tokenService,
-//    passwords = passwordService
-//  )
+//    )
+//    override def apply[A](cmd: Cmd[A]): E[A] =
+//      cmd match {
+//        case -\/(loggingCmd) =>
+//        case \/-(sqlDriverCmd) => sqlI(sqlDriverCmd)
+//      }
+//  }
 }

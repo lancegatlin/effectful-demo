@@ -41,7 +41,7 @@ object AkkaFutureExample {
   )
 
   type E[A] = Future[LogWriter[A]]
-  implicit val effectSystem_E = ExecStack[Future,LogWriter]
+  implicit val E = ExecStack[Future,LogWriter]
 
   val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
     sql = sqlDriver.liftService,

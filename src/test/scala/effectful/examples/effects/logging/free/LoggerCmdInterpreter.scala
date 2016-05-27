@@ -5,12 +5,14 @@ import effectful.examples.effects.logging.Logger
 import effectful.free.Interpreter
 
 class LoggerCmdInterpreter[E[_]](
+  // todo: this should be LoggerFactory
   logger: Logger[E]                                
 )(implicit
   val E:Exec[E]
-) extends Interpreter[LoggingCmd,E]{
+) extends Interpreter[LoggingCmd,E] {
   override def apply[A](cmd: LoggingCmd[A]): E[A] = {
     import LoggingCmd._
+    // todo: logging commands should have logger as parm
     cmd match {
       case Trace(message, Some(cause)) =>
         logger.trace(message,cause)
