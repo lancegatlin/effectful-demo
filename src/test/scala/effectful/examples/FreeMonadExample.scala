@@ -4,6 +4,7 @@ import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
 import effectful.examples.effects.logging.free._
+import effectful.examples.effects.logging.writer.WriterLogger
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
@@ -12,6 +13,7 @@ import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.user.impl._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.examples.adapter.akka._
 import effectful.free._
 
 object FreeMonadExample {
@@ -19,16 +21,16 @@ object FreeMonadExample {
   type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
   type E[A] = Free[Cmd,A]
 
-  // todo: generalize these
-  implicit val liftCmd_LoggingCmd_Cmd = new LiftCmd[LoggerCmd,Cmd] {
-    override def apply[AA](cmd: LoggerCmd[AA]): Cmd[AA] =
-      -\/(cmd)
-  }
+  // todo: how to generalize these for all nested disjunctions?
+  implicit def liftCmd_disjunction_left[Cmd1[_],Cmd2[_]] =
+    new LiftCmd[Cmd1,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
+      def apply[AA](cmd: Cmd1[AA]) = -\/(cmd)
+    }
 
-  implicit val liftCmd_FreeLoggingCmd_Cmd = new LiftCmd[SqlDriverCmd,Cmd] {
-    override def apply[AA](cmd: SqlDriverCmd[AA]): Cmd[AA] =
-      \/-(cmd)
-  }
+  implicit def liftCmd_disjunction_right[Cmd1[_],Cmd2[_]] =
+    new LiftCmd[Cmd2,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
+      def apply[AA](cmd: Cmd2[AA]) = \/-(cmd)
+    }
 
   val uuidService = new JavaUUIDService
 
@@ -72,18 +74,22 @@ object FreeMonadExample {
     passwords = passwordService
   )
 
-//  val i = new Interpreter[Cmd,AkkaFutureExample.E] {
-//    override implicit val E = AkkaFutureExample.E
-//    val sqlI = new SqlDriverCmdInterpreter[AkkaFutureExample.E](
-//      AkkaFutureExample.sqlDriver.liftService
-//    )
-//    val logI = new LoggerCmdInterpreter[AkkaFutureExampl.E](
-//
-//    )
-//    override def apply[A](cmd: Cmd[A]): E[A] =
-//      cmd match {
-//        case -\/(loggingCmd) =>
-//        case \/-(sqlDriverCmd) => sqlI(sqlDriverCmd)
-//      }
-//  }
+  // todo: generalize interpreter for any disjunction of commands
+  val interpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
+    override implicit val E = AkkaFutureExample.E
+    val sqlInterpreter =
+      new SqlDriverCmdInterpreter[AkkaFutureExample.E](
+        sqlDriver = AkkaFutureExample.sqlDriver.liftService
+      )
+    val logInterpreter =
+      new LoggerCmdInterpreter[AkkaFutureExample.E](
+        // todo: memoize these
+        loggerName => new WriterLogger(loggerName).liftService
+      )
+    override def apply[A](cmd: Cmd[A]): AkkaFutureExample.E[A] =
+      cmd match {
+        case -\/(loggingCmd) => logInterpreter(loggingCmd)
+        case \/-(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
+      }
+  }
 }

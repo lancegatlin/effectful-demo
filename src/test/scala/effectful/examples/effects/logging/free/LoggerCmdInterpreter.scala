@@ -5,8 +5,7 @@ import effectful.examples.effects.logging.Logger
 import effectful.free.Interpreter
 
 class LoggerCmdInterpreter[E[_]](
-  // todo: this should be LoggerFactory
-  nameToLogger: Map[String,Logger[E]]                                
+  nameToLogger: String => Logger[E]
 )(implicit
   val E:Exec[E]
 ) extends Interpreter[LoggerCmd,E] {
