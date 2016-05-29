@@ -6,34 +6,34 @@ import effectful.free.Interpreter
 
 class LoggerCmdInterpreter[E[_]](
   // todo: this should be LoggerFactory
-  logger: Logger[E]                                
+  nameToLogger: Map[String,Logger[E]]                                
 )(implicit
   val E:Exec[E]
-) extends Interpreter[LoggingCmd,E] {
-  override def apply[A](cmd: LoggingCmd[A]): E[A] = {
-    import LoggingCmd._
+) extends Interpreter[LoggerCmd,E] {
+  override def apply[A](cmd: LoggerCmd[A]): E[A] = {
+    import LoggerCmd._
     // todo: logging commands should have logger as parm
     cmd match {
-      case Trace(message, Some(cause)) =>
-        logger.trace(message,cause)
-      case Trace(message, None) =>
-        logger.trace(message)
-      case Debug(message, Some(cause)) =>
-        logger.debug(message,cause)
-      case Debug(message, None) =>
-        logger.debug(message)
-      case Info(message, Some(cause)) =>
-        logger.info(message,cause)
-      case Info(message, cause) =>
-        logger.info(message)
-      case Warn(message, Some(cause)) =>
-        logger.warn(message,cause)
-      case Warn(message, None) =>
-        logger.warn(message)
-      case Error(message, Some(cause)) =>
-        logger.error(message,cause)
-      case Error(message, None) =>
-        logger.error(message)
+      case Trace(loggerName, message, Some(cause)) =>
+        nameToLogger(loggerName).trace(message,cause)
+      case Trace(loggerName, message, None) =>
+        nameToLogger(loggerName).trace(message)
+      case Debug(loggerName, message, Some(cause)) =>
+        nameToLogger(loggerName).debug(message,cause)
+      case Debug(loggerName, message, None) =>
+        nameToLogger(loggerName).debug(message)
+      case Info(loggerName, message, Some(cause)) =>
+        nameToLogger(loggerName).info(message,cause)
+      case Info(loggerName, message, cause) =>
+        nameToLogger(loggerName).info(message)
+      case Warn(loggerName, message, Some(cause)) =>
+        nameToLogger(loggerName).warn(message,cause)
+      case Warn(loggerName, message, None) =>
+        nameToLogger(loggerName).warn(message)
+      case Error(loggerName, message, Some(cause)) =>
+        nameToLogger(loggerName).error(message,cause)
+      case Error(loggerName, message, None) =>
+        nameToLogger(loggerName).error(message)
     }
   } 
     

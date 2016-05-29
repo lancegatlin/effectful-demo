@@ -3,34 +3,34 @@ package effectful.examples.effects.logging.free
 import effectful.examples.effects.logging.Logger
 import effectful.free.Free
 
-class FreeLogger(logger: String) extends Logger[FreeLoggingCmd] {
+class FreeLogger(loggerName: String) extends Logger[FreeLoggerCmd] {
   override def trace(message: =>String) =
-    Free.Command(LoggingCmd.Trace(message,None))
+    Free.Command(LoggerCmd.Trace(loggerName,message,None))
 
-  override def trace(message: =>String, cause: Throwable): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Trace(message,Some(cause)))
+  override def trace(message: =>String, cause: Throwable): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Trace(loggerName,message,Some(cause)))
 
-  override def debug(message: =>String): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Debug(message,None))
+  override def debug(message: =>String): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Debug(loggerName,message,None))
 
-  override def debug(message: =>String, cause: Throwable): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Debug(message,Some(cause)))
+  override def debug(message: =>String, cause: Throwable): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Debug(loggerName,message,Some(cause)))
 
-  override def info(message: =>String): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Info(message,None))
+  override def info(message: =>String): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Info(loggerName,message,None))
 
-  override def info(message: => String, cause: Throwable): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Info(message,Some(cause)))
+  override def info(message: => String, cause: Throwable): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Info(loggerName,message,Some(cause)))
 
-  override def warn(message: =>String): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Warn(message,None))
+  override def warn(message: =>String): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Warn(loggerName,message,None))
 
-  override def warn(message: =>String, cause: Throwable): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Warn(message,Some(cause)))
+  override def warn(message: =>String, cause: Throwable): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Warn(loggerName,message,Some(cause)))
 
-  override def error(message: =>String): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Error(message,None))
+  override def error(message: =>String): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Error(loggerName,message,None))
 
-  override def error(message: =>String, cause: Throwable): FreeLoggingCmd[Unit] =
-    Free.Command(LoggingCmd.Error(message,Some(cause)))
+  override def error(message: =>String, cause: Throwable): FreeLoggerCmd[Unit] =
+    Free.Command(LoggerCmd.Error(loggerName,message,Some(cause)))
 }

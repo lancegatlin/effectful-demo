@@ -16,12 +16,12 @@ import effectful.free._
 
 object FreeMonadExample {
 
-  type Cmd[A] = LoggingCmd[A] \/ SqlDriverCmd[A]
+  type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
   type E[A] = Free[Cmd,A]
 
   // todo: generalize these
-  implicit val liftCmd_LoggingCmd_Cmd = new LiftCmd[LoggingCmd,Cmd] {
-    override def apply[AA](cmd: LoggingCmd[AA]): Cmd[AA] =
+  implicit val liftCmd_LoggingCmd_Cmd = new LiftCmd[LoggerCmd,Cmd] {
+    override def apply[AA](cmd: LoggerCmd[AA]): Cmd[AA] =
       -\/(cmd)
   }
 
