@@ -1,13 +1,15 @@
 package effectful
 
+import effectful.cats.Capture
 
 /**
   * A type-class for lifting the computation of an exec monad into
   * another exec monad
+ *
   * @tparam E effect system monad
   * @tparam F a different effect system monad
   */
-trait LiftExec[E[_],F[_]] {
+trait LiftCapture[E[_],F[_]] {
   /**
     * Lift the computation of an exec monad into another exec monad.
     *
@@ -25,7 +27,7 @@ trait LiftExec[E[_],F[_]] {
   def apply[A](
     ea: => E[A]
   )(implicit
-    E:Exec[E],
-    F:Exec[F]
+    E:Capture[E],
+    F:Capture[F]
   ) : F[A]
 }

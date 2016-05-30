@@ -1,5 +1,5 @@
 import scala.collection.generic.CanBuildFrom
-import effectful.cats.Monad
+import effectful.cats.{Capture, Monad}
 
 package object effectful {
   /**
@@ -58,25 +58,25 @@ package object effectful {
     * Automatically create a LiftE type-class instance that can
     * lift from identity effect system into any other effect system
     */
-  implicit def liftE_Id[F[_]] : LiftExec[Id,F] = new LiftExec[Id,F] {
+  implicit def liftCapture_Id[F[_]] : LiftCapture[Id,F] = new LiftCapture[Id,F] {
     override def apply[A](
       ea: => Id[A]
     )(implicit
-      E: Exec[Id],
-      F: Exec[F]
+      E: Capture[Id],
+      F: Capture[F]
     ) : F[A] = F.capture(ea)
   }
 
   /**
-    * Add the liftExec method to any effect system's monad that uses the LiftE
+    * Add the liftCapture method to any effect system's monad that uses the LiftE
     * type-class to lift the monad into another effect system's monad
     */
   implicit class EffectSystemPml[E[_],A](val self: E[A]) extends AnyVal {
-    def liftExec[F[_]](implicit
+    def liftCapture[F[_]](implicit
       E: Exec[E],
       F: Exec[F],
-      liftExec:LiftExec[E,F]
-    ) : F[A] = liftExec(self)
+      liftCapture:LiftCapture[E,F]
+    ) : F[A] = liftCapture(self)
   }
 
   /**
@@ -86,9 +86,9 @@ package object effectful {
     */
   implicit class ServicePML[S[_[_]],E[_]](val self: S[E]) extends AnyVal {
     def liftService[F[_]](implicit
-      E: Exec[E],
-      F: Exec[F],
-      liftExec:LiftExec[E,F],
+      E: Capture[E],
+      F: Capture[F],
+      liftCapture:LiftCapture[E,F],
       liftS:LiftService[S]
     ) : S[F] = liftS(self)
   }

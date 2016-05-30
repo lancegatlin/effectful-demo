@@ -5,7 +5,7 @@ import javax.xml.bind.DatatypeConverter
 
 import effectful._
 import effectful.aspects.Exceptions
-import effectful.cats.Monad
+import effectful.cats.{Capture, Monad}
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
@@ -138,35 +138,35 @@ package object sql {
     override def apply[E[_], F[_]](
       s: SqlDriver[E]
     )(implicit
-      E: Exec[E],
-      F: Exec[F],
-      liftExec: LiftExec[E, F]
+      E: Capture[E],
+      F: Capture[F],
+      liftCapture: LiftCapture[E, F]
     ): SqlDriver[F] = {
       import SqlDriver._
       import Context.InTransaction
       new SqlDriver[F] {
         override def beginTransaction(): F[InTransaction] =
-          liftExec(s.beginTransaction())
+          liftCapture(s.beginTransaction())
         override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Int] =
-          liftExec(s.executePreparedUpdate(preparedStatementId)(rows:_*))
+          liftCapture(s.executePreparedUpdate(preparedStatementId)(rows:_*))
         override def nextCursor(cursorId: CursorId): F[Cursor] =
-          liftExec(s.nextCursor(cursorId))
+          liftCapture(s.nextCursor(cursorId))
         override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): F[Cursor] =
-          liftExec(s.executePreparedQuery(preparedStatementId)(rows:_*))
+          liftCapture(s.executePreparedQuery(preparedStatementId)(rows:_*))
         override def getCursorMetadata(cursorId: CursorId): F[CursorMetadata] =
-          liftExec(s.getCursorMetadata(cursorId))
+          liftCapture(s.getCursorMetadata(cursorId))
         override def closeCursor(cursorId: CursorId): F[Unit] =
-          liftExec(s.closeCursor(cursorId))
+          liftCapture(s.closeCursor(cursorId))
         override def rollback()(implicit context: InTransaction): F[Unit] =
-          liftExec(s.rollback())
+          liftCapture(s.rollback())
         override def executeQuery(statement: String)(implicit context: Context): F[Cursor] =
-          liftExec(s.executeQuery(statement))
+          liftCapture(s.executeQuery(statement))
         override def executeUpdate(statement: String)(implicit context: Context): F[Int] =
-          liftExec(s.executeUpdate(statement))
+          liftCapture(s.executeUpdate(statement))
         override def prepare(statement: String)(implicit context: Context): F[PreparedStatementId] =
-          liftExec(s.prepare(statement))
+          liftCapture(s.prepare(statement))
         override def commit()(implicit context: InTransaction): F[Unit] =
-          liftExec(s.commit())
+          liftCapture(s.commit())
       }
     }
   }

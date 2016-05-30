@@ -1,5 +1,7 @@
 package effectful
 
+import effectful.cats.Capture
+
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
@@ -50,14 +52,14 @@ package object free {
       Free.ParFlatMapUnordered(items,f)
   }
 
-  implicit def liftE_Free[Cmd1[_],Cmd2[_]](implicit
+  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
     liftCmd:LiftCmd[Cmd1,Cmd2]
-  ) = new LiftExec[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
+  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
     override def apply[A](
       ea: => Free[Cmd1,A]
     )(implicit
-      E: Exec[({ type F[AA] = Free[Cmd1,AA]})#F],
-      F: Exec[({ type F[AA] = Free[Cmd2,AA]})#F]
+      E: Capture[({ type F[AA] = Free[Cmd1,AA]})#F],
+      F: Capture[({ type F[AA] = Free[Cmd2,AA]})#F]
     ): Free[Cmd2,A] =
       ea.liftCmd[Cmd2]
   }

@@ -1,6 +1,7 @@
 package effectful.examples
 
 import effectful._
+import effectful.cats.Capture
 
 package object pure {
   implicit object LiftService_UUIDService$ extends LiftService[UUIDService] {
@@ -8,14 +9,14 @@ package object pure {
     override def apply[E[_], F[_]](
       s: UUIDService[E]
     )(implicit
-      E: Exec[E],
-      F: Exec[F],
-      liftExec: LiftExec[E, F]
+      E: Capture[E],
+      F: Capture[F],
+      liftCapture: LiftCapture[E, F]
     ): UUIDService[F] = {
       import UUIDService._
       new UUIDService[F] {
         override def gen(): F[UUID] =
-          liftExec(s.gen())
+          liftCapture(s.gen())
         override def fromBase64(str: String): Option[UUID] =
           s.fromBase64(str)
         override def toBase64(uuid: UUID): String =

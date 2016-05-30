@@ -1,8 +1,9 @@
 package effectful.examples.adapter
 
+import effectful.cats.{Capture, Monad}
 import effectful.examples.adapter.scalaz.writer.LogWriter
 import effectful.impl.StdPar
-import effectful.{Exec, LiftExec}
+import effectful.{Exec, LiftCapture}
 import s_mach.concurrent._
 
 import scala.concurrent.duration.FiniteDuration
@@ -14,7 +15,7 @@ package object akka {
     sc:ScheduledExecutionContext
   ) = new Exec[Future] with StdPar[Future] {
 
-    override implicit val E: Exec[Future] = this
+    override implicit val E : Monad[Future] = this
 
     def capture[A](a: => A) = Future(a)
 
@@ -50,22 +51,22 @@ package object akka {
 
   type FutureLogWriter[A] = Future[LogWriter[A]]
   
-  implicit object liftExec_Writer_Future extends LiftExec[LogWriter,FutureLogWriter] {
+  implicit object liftCapture_Writer_Future$ extends LiftCapture[LogWriter,FutureLogWriter] {
     override def apply[A](
       ea: => LogWriter[A]
     )(implicit
-      E: Exec[LogWriter],
-      F: Exec[FutureLogWriter]
+      E: Capture[LogWriter],
+      F: Capture[FutureLogWriter]
     ): FutureLogWriter[A] =
       Future.successful(ea)
   }
 
-  implicit def liftE_Future_FutureLogWriter(implicit ec:ExecutionContext) = new LiftExec[Future,FutureLogWriter] {
+  implicit def liftE_Future_FutureLogWriter(implicit ec:ExecutionContext) = new LiftCapture[Future,FutureLogWriter] {
     override def apply[A](
       ea: => Future[A]
     )(implicit
-      E: Exec[Future],
-      F: Exec[FutureLogWriter]
+      E: Capture[Future],
+      F: Capture[FutureLogWriter]
     ): FutureLogWriter[A] =
       ea.map(a => LogWriter(a))
   }

@@ -1,37 +1,38 @@
 package effectful.examples.effects
 
 import effectful._
+import effectful.cats.Capture
 
 package object logging {
   implicit object LiftService_Logger extends LiftService[Logger] {
     override def apply[E[_], F[_]](
       s: Logger[E]
     )(implicit
-      E: Exec[E],
-      F: Exec[F],
-      liftExec: LiftExec[E, F]
+      E: Capture[E],
+      F: Capture[F],
+      liftCapture: LiftCapture[E, F]
     ): Logger[F] =
       new Logger[F] {
         override def trace(message: =>String): F[Unit] =
-          liftExec(s.trace(message))
+          liftCapture(s.trace(message))
         override def warn(message: =>String): F[Unit] =
-          liftExec(s.warn(message))
+          liftCapture(s.warn(message))
         override def warn(message: =>String, cause: Throwable): F[Unit] =
-          liftExec(s.warn(message,cause))
+          liftCapture(s.warn(message,cause))
         override def error(message: =>String): F[Unit] =
-          liftExec(s.error(message))
+          liftCapture(s.error(message))
         override def error(message: =>String, cause: Throwable): F[Unit] =
-          liftExec(s.error(message,cause))
+          liftCapture(s.error(message,cause))
         override def debug(message: =>String): F[Unit] =
-          liftExec(s.debug(message))
+          liftCapture(s.debug(message))
         override def debug(message: =>String, cause: Throwable): F[Unit] =
-          liftExec(s.debug(message))
+          liftCapture(s.debug(message))
         override def trace(message: =>String, cause: Throwable): F[Unit] =
-          liftExec(s.trace(message,cause))
+          liftCapture(s.trace(message,cause))
         override def info(message: =>String): F[Unit] =
-          liftExec(s.info(message))
+          liftCapture(s.info(message))
         override def info(message: => String, cause: Throwable): F[Unit] =
-          liftExec(s.info(message,cause))
+          liftCapture(s.info(message,cause))
       }
   }
 }

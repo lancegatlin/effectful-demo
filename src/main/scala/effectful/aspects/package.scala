@@ -1,5 +1,7 @@
 package effectful
 
+import effectful.cats.Capture
+
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
@@ -8,13 +10,13 @@ package object aspects {
     override def apply[E[_], F[_]](
       s: Delay[E]
     )(implicit
-      E: Exec[E],
-      F: Exec[F],
-      liftExec: LiftExec[E, F]
+      E: Capture[E],
+      F: Capture[F],
+      liftCapture: LiftCapture[E, F]
     ): Delay[F] =
       new Delay[F] {
         override def delay(duration: FiniteDuration): F[Unit] =
-          liftExec(s.delay(duration))
+          liftCapture(s.delay(duration))
       }
   }
   

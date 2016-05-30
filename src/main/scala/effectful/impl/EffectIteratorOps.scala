@@ -114,6 +114,7 @@ object EffectIteratorOps {
   ) extends EffectIterator[E,A] {
     import Monad.ops._
 
+    // Note: same note as FlatMap above
     private[this] val isFirstExhausted = new AtomicBoolean(false)
     override def next(): E[Option[A]] = {
       if(isFirstExhausted.get) {
