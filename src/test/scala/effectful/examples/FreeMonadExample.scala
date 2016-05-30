@@ -15,6 +15,8 @@ import effectful.examples.pure.user._
 import effectful.examples.pure._
 import effectful.free._
 
+import scala.concurrent.Future
+
 object FreeMonadExample {
 
   type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
@@ -87,9 +89,11 @@ object FreeMonadExample {
       new LoggerCmdInterpreter[AkkaFutureExample.E](
         // todo: memoize these
         loggerName => WriterLogger(loggerName).liftService(
-          // todo: fix me - should match in effectful.package
+          // todo: fix me - should match implicit in effectful.package
           new LiftCapture[LogWriter,AkkaFutureExample.E] {
-            def apply[A](ea: => LogWriter[A]) = ???
+            def apply[A](ea: => LogWriter[A]) = {
+              Future(ea)
+            }
           },
           implicitly
         )
