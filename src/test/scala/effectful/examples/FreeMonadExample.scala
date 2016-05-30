@@ -4,7 +4,7 @@ import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
 import effectful.examples.effects.logging.free._
-import effectful.examples.adapter.scalaz.writer.WriterLogger
+import effectful.examples.adapter.scalaz.writer.{LogWriter, WriterLogger}
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
@@ -78,7 +78,6 @@ object FreeMonadExample {
   // todo: generalize interpreter for any disjunction of commands
   val interpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
     override implicit val E = AkkaFutureExample.exec_E
-    implicit val temp = AkkaFutureExample.liftCapture_Writer_Future
 
     val sqlInterpreter =
       new SqlDriverCmdInterpreter[AkkaFutureExample.E](
@@ -87,7 +86,13 @@ object FreeMonadExample {
     val logInterpreter =
       new LoggerCmdInterpreter[AkkaFutureExample.E](
         // todo: memoize these
-        loggerName => WriterLogger(loggerName).liftService
+        loggerName => WriterLogger(loggerName).liftService(
+          // todo: fix me - should match in effectful.package
+          new LiftCapture[LogWriter,AkkaFutureExample.E] {
+            def apply[A](ea: => LogWriter[A]) = ???
+          },
+          implicitly
+        )
       )
     override def apply[A](cmd: Cmd[A]): AkkaFutureExample.E[A] =
       cmd match {

@@ -27,12 +27,12 @@ object AkkaFutureExample {
   implicit val exec_E = CompositeExec[Future,LogWriter]
 
   // todo: generalize this
-  implicit val liftCapture_Writer_Future = new LiftCapture[LogWriter,E] {
-    override def apply[A](
-      ea: => LogWriter[A]
-    ): E[A] =
-      Future.successful(ea)
-  }
+//  implicit val liftCapture_Writer_Future = new LiftCapture[LogWriter,E] {
+//    override def apply[A](
+//      ea: => LogWriter[A]
+//    ): E[A] =
+//      Future(ea)
+//  }
 
   val uuidService = new JavaUUIDService
 

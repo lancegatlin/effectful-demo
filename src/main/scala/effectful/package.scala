@@ -1,6 +1,6 @@
 
 import scala.collection.generic.CanBuildFrom
-import effectful.cats.{Capture, Monad}
+import effectful.cats._
 import effectful.aspects._
 
 package object effectful {
@@ -98,8 +98,21 @@ package object effectful {
     ) : S[F] = liftService(self)
   }
 
-//  implicit def captureFromMonad[E[_]](implicit E:Monad[E]) : Capture[E] =
-//    new Capture[E] {
-//      def capture[A](a: => A) = E.pure(a)
-//    }
+  implicit def liftCapture_G_FG[F[_],G[_]](implicit
+    F:Capture[F]
+  ) = new LiftCapture[G,({type FG[A] = F[G[A]]})#FG] {
+    def apply[A](ea: => G[A]) =
+      F.capture(ea)
+  }
+// todo: ambigious
+
+//  implicit def liftCapture_F_FG[F[_],G[_]](implicit
+//    F:Monad[F],
+//    G:Applicative[G]
+//  ) = new LiftCapture[F,({type FG[A] = F[G[A]]})#FG] {
+//    def apply[A](ea: => F[A]) =
+//      F.map(ea)(G.pure)
+//  }
+//
+
 }
