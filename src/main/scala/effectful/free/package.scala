@@ -55,15 +55,12 @@ package object free {
       Free.ParFlatMapUnordered(items,f)
   }
 
-//  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
-//    liftCmd:LiftCmd[Cmd1,Cmd2]
-//  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
-//    override def apply[A](
-//      ea: => Free[Cmd1,A]
-//    )(implicit
-//      E: Capture[({ type F[AA] = Free[Cmd1,AA]})#F],
-//      F: Capture[({ type F[AA] = Free[Cmd2,AA]})#F]
-//    ): Free[Cmd2,A] =
-//      ea.liftCmd[Cmd2]
-//  }
+  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
+    liftCmd:LiftCmd[Cmd1,Cmd2]
+  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
+    override def apply[A](
+      ea: => Free[Cmd1,A]
+    ): Free[Cmd2,A] =
+      ea.liftCmd[Cmd2]
+  }
 }
