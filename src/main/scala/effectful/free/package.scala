@@ -1,25 +1,24 @@
 package effectful
 
-import effectful.cats.Capture
+import effectful.aspects._
+import effectful.cats._
 
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
 package object free {
-  implicit def exec_Free[Cmd[_]] = new Exec[({ type E[AA] = Free[Cmd,AA] })#E] {
-
-    // todo: free can't capture effects
-    def capture[A](a: => A) = ???
-
+  implicit def monad_Free[Cmd[_]] = new Monad[({ type E[AA] = Free[Cmd,AA] })#E] {
     def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
       m.map(f)
     def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) =
       m.flatMap(f)
     def pure[A](a: A) =
       Free.Pure(a)
-    def widen[A, AA >: A](ea: Free[Cmd, A]) = 
+    def widen[A, AA >: A](ea: Free[Cmd, A]) =
       ea.widen[AA]
+  }
 
+  implicit def exceptions_Free[Cmd[_]] = new Exceptions[({ type E[AA] = Free[Cmd,AA] })#E] {
     def attempt[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) =
       Free.Try(_try,_catch)
     def attemptFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) =
@@ -28,10 +27,14 @@ package object free {
       Free.Failure(t)
     def success[A](a: A): Free[Cmd, A] =
       Free.Pure(a)
+  }
 
+  implicit def delays_Free[Cmd[_]] = new Delay[({ type E[AA] = Free[Cmd,AA] })#E] {
     def delay(duration: FiniteDuration): Free[Cmd, Unit] =
       Free.Delay(duration)
+  }
 
+  implicit def par_Free[Cmd[_]] = new Par[({ type E[AA] = Free[Cmd,AA] })#E] {
     def par[A, B](ea: => Free[Cmd, A], eb: => Free[Cmd, B]): Free[Cmd, (A, B)] =
       Free.Par2(ea,eb)
     def par[A, B, C](ea: => Free[Cmd, A], eb: => Free[Cmd, B], ec: => Free[Cmd, C]): Free[Cmd, (A, B, C)] =
@@ -52,15 +55,15 @@ package object free {
       Free.ParFlatMapUnordered(items,f)
   }
 
-  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
-    liftCmd:LiftCmd[Cmd1,Cmd2]
-  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
-    override def apply[A](
-      ea: => Free[Cmd1,A]
-    )(implicit
-      E: Capture[({ type F[AA] = Free[Cmd1,AA]})#F],
-      F: Capture[({ type F[AA] = Free[Cmd2,AA]})#F]
-    ): Free[Cmd2,A] =
-      ea.liftCmd[Cmd2]
-  }
+//  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
+//    liftCmd:LiftCmd[Cmd1,Cmd2]
+//  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
+//    override def apply[A](
+//      ea: => Free[Cmd1,A]
+//    )(implicit
+//      E: Capture[({ type F[AA] = Free[Cmd1,AA]})#F],
+//      F: Capture[({ type F[AA] = Free[Cmd2,AA]})#F]
+//    ): Free[Cmd2,A] =
+//      ea.liftCmd[Cmd2]
+//  }
 }

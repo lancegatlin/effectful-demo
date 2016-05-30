@@ -58,3 +58,14 @@ trait StdPar[E[_]] extends Par[E] {
 
   override def parFlatMapUnordered[M[AA] <: Traversable[AA], A, B](items: M[A])(f: (A) => E[Traversable[B]])(implicit cbf: CanBuildFrom[Nothing, B, M[B]]): E[M[B]] = ???
 }
+
+object StdPar {
+  def apply[E[_]](implicit
+    E:Monad[E]
+  ) : StdPar[E] = {
+    val _E = E
+    new StdPar[E] {
+      implicit val E = _E
+    }
+  }
+}

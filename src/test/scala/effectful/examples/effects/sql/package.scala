@@ -5,7 +5,7 @@ import javax.xml.bind.DatatypeConverter
 
 import effectful._
 import effectful.aspects.Exceptions
-import effectful.cats.{Capture, Monad}
+import effectful.cats.Monad
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
@@ -138,8 +138,6 @@ package object sql {
     override def apply[E[_], F[_]](
       s: SqlDriver[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): SqlDriver[F] = {
       import SqlDriver._

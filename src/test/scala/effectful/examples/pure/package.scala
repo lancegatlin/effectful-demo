@@ -1,16 +1,13 @@
 package effectful.examples
 
 import effectful._
-import effectful.cats.Capture
 
 package object pure {
-  implicit object LiftService_UUIDService$ extends LiftService[UUIDService] {
+  implicit object LiftService_UUIDService extends LiftService[UUIDService] {
 
     override def apply[E[_], F[_]](
       s: UUIDService[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): UUIDService[F] = {
       import UUIDService._

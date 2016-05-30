@@ -14,12 +14,25 @@ import effectful.examples.pure.user._
 import effectful.examples.pure._
 import s_mach.concurrent.ScheduledExecutionContext
 
-import scala.concurrent.Future
+import scala.concurrent._
 import scala.concurrent.duration._
 
 object AkkaFutureExample {
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val scheduledExecutionContext = ScheduledExecutionContext(4)
+
+  type E[A] = Future[LogWriter[A]]
+
+  implicit val exec_Future = ExecFuture()
+  implicit val exec_E = CompositeExec[Future,LogWriter]
+
+  // todo: generalize this
+  implicit val liftCapture_Writer_Future = new LiftCapture[LogWriter,E] {
+    override def apply[A](
+      ea: => LogWriter[A]
+    ): E[A] =
+      Future.successful(ea)
+  }
 
   val uuidService = new JavaUUIDService
 
@@ -39,9 +52,6 @@ object AkkaFutureExample {
     getConnectionFromPool = pool.getConnection,
     uuids = uuidService
   )
-
-  type E[A] = Future[LogWriter[A]]
-  implicit val E = ExecStack[Future,LogWriter]
 
   val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
     sql = sqlDriver.liftService,

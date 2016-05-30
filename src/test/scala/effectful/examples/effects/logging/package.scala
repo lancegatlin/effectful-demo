@@ -1,15 +1,12 @@
 package effectful.examples.effects
 
 import effectful._
-import effectful.cats.Capture
 
 package object logging {
   implicit object LiftService_Logger extends LiftService[Logger] {
     override def apply[E[_], F[_]](
       s: Logger[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): Logger[F] =
       new Logger[F] {

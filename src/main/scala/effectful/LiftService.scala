@@ -1,7 +1,5 @@
 package effectful
 
-import effectful.cats.Capture
-
 /**
   * A type-class for lifting the exec monad of a service into another
   * exec monad
@@ -16,8 +14,6 @@ trait LiftService[S[_[_]]] {
     * its current exec monad
     *
     * @param s service to lift
-    * @param E a type-class for service's exec monad
-    * @param F a type-class for the new exec monad to lift into
     * @param liftCapture a type-class for lifting from E into F
     * @tparam E type of service's exec monad
     * @tparam F type of target exec monad
@@ -27,8 +23,6 @@ trait LiftService[S[_[_]]] {
   def apply[E[_],F[_]](
     s: S[E]
   )(implicit
-    E:Capture[E],
-    F:Capture[F],
     liftCapture:LiftCapture[E,F]
   ) : S[F]
 }

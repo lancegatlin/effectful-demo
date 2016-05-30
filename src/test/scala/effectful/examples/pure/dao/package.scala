@@ -1,7 +1,6 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.cats.Capture
 import effectful.examples.pure.dao.query.Query
 
 package object dao {
@@ -12,8 +11,6 @@ package object dao {
       override def apply[E[_], F[_]](
         s: DocDao[ID,A,E]
       )(implicit
-        E: Capture[E],
-        F: Capture[F],
         liftCapture: LiftCapture[E, F]
       ): DocDao[ID,A,F] = {
         import DocDao._

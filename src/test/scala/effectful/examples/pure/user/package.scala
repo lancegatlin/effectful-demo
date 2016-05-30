@@ -1,19 +1,16 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.cats.Capture
 import effectful.examples.pure.UUIDService.UUID
 
 import scala.concurrent.duration.Duration
 import scalaz.\/
 
 package object user {
-  implicit object LiftService_PasswordService$ extends LiftService[PasswordService] {
+  implicit object LiftService_PasswordService extends LiftService[PasswordService] {
     override def apply[E[_], F[_]](
       s: PasswordService[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): PasswordService[F] =
       new PasswordService[F] {
@@ -24,13 +21,11 @@ package object user {
       }
   }
 
-  implicit object LiftService_TokenService$ extends LiftService[TokenService] {
+  implicit object LiftService_TokenService extends LiftService[TokenService] {
 
     override def apply[E[_], F[_]](
       s: TokenService[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): TokenService[F] = {
       import TokenService._
@@ -49,12 +44,10 @@ package object user {
     }
   }
 
-  implicit object LiftService_UserLoginService$ extends LiftService[UserLoginService] {
+  implicit object LiftService_UserLoginService extends LiftService[UserLoginService] {
     override def apply[E[_], F[_]](
       s: UserLoginService[E]
     )(implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture: LiftCapture[E, F]
     ): UserLoginService[F] = {
       import UserLoginService._

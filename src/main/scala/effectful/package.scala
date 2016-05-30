@@ -1,5 +1,7 @@
+
 import scala.collection.generic.CanBuildFrom
 import effectful.cats.{Capture, Monad}
+import effectful.aspects._
 
 package object effectful {
   /**
@@ -10,6 +12,13 @@ package object effectful {
   // todo: figure out how this sugar is declared in emm
 //  type |:[F[_],G[_]] = F[G[_]]
 //  val |: = Nested
+
+  type Exec[E[_]] =
+    Capture[E] with
+    Monad[E] with
+    Delay[E] with
+    Par[E] with
+    Exceptions[E]
 
   /**
     * Add the sequence method to any Collection of a effect system's monad
@@ -45,25 +54,25 @@ package object effectful {
     * Implementation of EffectSystem type-class for the identity effect system
     * (which uses the identity monad)
     */
-  implicit object Exec_Id extends
-    Exec.ImmediateNoCaptureExceptions[Id] with
+  implicit object exec_Id extends
     impl.IdCapture with
     impl.IdMonad with
     impl.IdTraverse with
-    impl.IdPar {
-      override implicit val E = this
-    }
+    impl.IdPar with
+    impl.NoCaptureExceptions[Id] with
+    impl.BlockingDelay[Id] {
+    implicit override val E: Monad[Id] with Capture[Id] = this
+  }
 
   /**
     * Automatically create a LiftE type-class instance that can
     * lift from identity effect system into any other effect system
     */
-  implicit def liftCapture_Id[F[_]] : LiftCapture[Id,F] = new LiftCapture[Id,F] {
+  implicit def liftCapture_Id[F[_]](implicit
+    F:Capture[F]
+  ) : LiftCapture[Id,F] = new LiftCapture[Id,F] {
     override def apply[A](
       ea: => Id[A]
-    )(implicit
-      E: Capture[Id],
-      F: Capture[F]
     ) : F[A] = F.capture(ea)
   }
 
@@ -73,8 +82,6 @@ package object effectful {
     */
   implicit class EffectSystemPml[E[_],A](val self: E[A]) extends AnyVal {
     def liftCapture[F[_]](implicit
-      E: Exec[E],
-      F: Exec[F],
       liftCapture:LiftCapture[E,F]
     ) : F[A] = liftCapture(self)
   }
@@ -86,11 +93,13 @@ package object effectful {
     */
   implicit class ServicePML[S[_[_]],E[_]](val self: S[E]) extends AnyVal {
     def liftService[F[_]](implicit
-      E: Capture[E],
-      F: Capture[F],
       liftCapture:LiftCapture[E,F],
-      liftS:LiftService[S]
-    ) : S[F] = liftS(self)
+      liftService:LiftService[S]
+    ) : S[F] = liftService(self)
   }
 
+//  implicit def captureFromMonad[E[_]](implicit E:Monad[E]) : Capture[E] =
+//    new Capture[E] {
+//      def capture[A](a: => A) = E.pure(a)
+//    }
 }
