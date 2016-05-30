@@ -47,6 +47,7 @@ package object effectful {
     */
   implicit object Exec_Id extends
     Exec.ImmediateNoCaptureExceptions[Id] with
+    impl.IdCapture with
     impl.IdMonad with
     impl.IdTraverse with
     impl.IdPar {
@@ -63,7 +64,7 @@ package object effectful {
     )(implicit
       E: Exec[Id],
       F: Exec[F]
-    ) : F[A] = F(ea)
+    ) : F[A] = F.capture(ea)
   }
 
   /**

@@ -1,14 +1,14 @@
 package effectful.impl
 
-import effectful.Exec
 import effectful.aspects.Exceptions
+import effectful.cats.Monad
 
 /**
   * An instance of Exceptions for monads that don't capture exceptions
   * in the monad
   */
 trait NoCaptureExceptions[E[_]] extends Exceptions[E] {
-  implicit val E:Exec[E]
+  implicit val E:Monad[E]
 
   override def attempt[A](
    _try: =>E[A]
@@ -27,7 +27,7 @@ trait NoCaptureExceptions[E[_]] extends Exceptions[E] {
     try { _try } catch _catch finally _finally
 
   override def success[A](a: A): E[A] =
-    E(a)
+    E.pure(a)
 
   override def failure(t: Throwable): E[Nothing] =
     throw t

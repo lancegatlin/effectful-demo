@@ -10,7 +10,7 @@ object EffectfulOps {
   ) : M[F[A]] = {
     import Monad.ops._
 
-    self.foldLeft(M(cbf())) { (mBuilder,ea) =>
+    self.foldLeft(M.pure(cbf())) { (mBuilder,ea) =>
       for {
         builder <- mBuilder
         a <- ea

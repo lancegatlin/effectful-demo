@@ -14,6 +14,9 @@ trait ExecStackImpl[F[_],G[_]] extends
   implicit val F:Exec[F]
   implicit val G:Exec.ImmediateNoCaptureExceptions[G]
 
+  def capture[A](a: => A) =
+    F.pure(G.capture(a))
+
   def map[A, B](m: E[A])(f: A => B) =
     F.map(m)(ga => G.map(ga)(f))
   def flatMap[A, B](m: E[A])(f: (A) => E[B]) =
@@ -21,8 +24,8 @@ trait ExecStackImpl[F[_],G[_]] extends
   def widen[A, AA >: A](fga: E[A]) =
   // todo: better way to do this that avoids runtime?
     F.map(fga)(_.widen)
-  def apply[A](a: => A) =
-    F(G(a))
+  def pure[A](a: A) =
+    F.pure(G.pure(a))
 
   // todo: maybe way to unpack exception from inner here?
   def attempt[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]]) =
@@ -32,8 +35,8 @@ trait ExecStackImpl[F[_],G[_]] extends
   override def failure(t: Throwable): E[Nothing] =
     F.failure(t).asInstanceOf
   override def success[A](a: A): E[A] =
-    F.success(G(a))
+    F.success(G.success(a))
 
   override def delay(duration: FiniteDuration): E[Unit] =
-    F.map(F.delay(duration))(_ => G(()))
+    F.map(F.delay(duration))(_ => G.pure(()))
 }

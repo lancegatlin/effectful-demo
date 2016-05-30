@@ -1,6 +1,5 @@
 package effectful.impl
 
-import effectful._
 import effectful.aspects.Par
 import effectful.cats.Monad
 
@@ -9,7 +8,7 @@ import scala.collection.generic.CanBuildFrom
 trait StdPar[E[_]] extends Par[E] {
   import Monad.ops._
 
-  implicit val E:Exec[E]
+  implicit val E:Monad[E]
 
   // Note: invoke lazy outside for-comp in case E is async + eager
 

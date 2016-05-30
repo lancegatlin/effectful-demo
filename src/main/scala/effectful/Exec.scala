@@ -1,6 +1,6 @@
 package effectful
 
-import effectful.cats.{Monad, Traverse}
+import effectful.cats.{Capture, Monad, Traverse}
 import effectful.aspects._
 
 /**
@@ -21,6 +21,7 @@ import effectful.aspects._
   * @tparam E monad type
   */
 trait Exec[E[_]] extends
+  Capture[E] with
   Monad[E] with
   Delay[E] with
   Exceptions[E] with
@@ -37,7 +38,9 @@ object Exec {
   trait Immediate[E[_]] extends
     Exec[E] with
     Traverse[E] with
-    impl.BlockingDelay[E]
+    impl.BlockingDelay[E] {
+    implicit val E:Capture[E]
+  }
 
 /**
   * A monad that is immediate and does not capture exceptions.
@@ -46,5 +49,7 @@ object Exec {
   */
   trait ImmediateNoCaptureExceptions[E[_]] extends
     Immediate[E] with
-    impl.NoCaptureExceptions[E]
+    impl.NoCaptureExceptions[E] {
+    implicit override val E:Monad[E] with Capture[E]
+  }
 }

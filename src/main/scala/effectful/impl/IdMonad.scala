@@ -13,6 +13,6 @@ trait IdMonad extends Monad[Id] {
   override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
     ea
 
-  override def apply[A](a: => A): Id[A] =
+  override def pure[A](a: A): Id[A] =
     a
 }

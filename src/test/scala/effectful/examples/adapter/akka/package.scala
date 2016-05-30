@@ -9,12 +9,14 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 package object akka {
-  implicit def effectSystem_Future(implicit
+  implicit def exec_Future(implicit
     ec:ExecutionContext,
     sc:ScheduledExecutionContext
   ) = new Exec[Future] with StdPar[Future] {
 
     override implicit val E: Exec[Future] = this
+
+    def capture[A](a: => A) = Future(a)
 
     override def map[A, B](m: Future[A])(f: (A) => B): Future[B] =
       m.map(f)
@@ -25,8 +27,8 @@ package object akka {
     override def widen[A, AA >: A](ea: Future[A]): Future[AA] =
       ea
 
-    override def apply[A](a: => A): Future[A] =
-      Future(a)
+    override def pure[A](a: A): Future[A] =
+      Future.successful(a)
 
     override def attempt[A](_try: =>Future[A])(_catch: PartialFunction[Throwable, Future[A]]): Future[A] =
       _try.recoverWith(_catch)

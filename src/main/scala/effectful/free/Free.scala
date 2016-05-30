@@ -23,7 +23,7 @@ sealed trait Free[Cmd[_],A] {
 }
 
 object Free {
-  def apply[Cmd[_],A](a: A) : Apply[Cmd,A] = Apply(a)
+  def apply[Cmd[_],A](a: A) : Pure[Cmd,A] = Pure(a)
 
   case class Command[Cmd[_],A](cmd: Cmd[A]) extends Free[Cmd,A] {
     def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd,Cmd2]) : Command[Cmd2,A] =
@@ -32,15 +32,15 @@ object Free {
       i(cmd)
   }
   // todo: should this be lazy? () => A
-  case class Apply[Cmd[_],A](value: A) extends Free[Cmd,A] {
+  case class Pure[Cmd[_],A](value: A) extends Free[Cmd,A] {
     override def map[B](f: (A) => B): Free[Cmd, B] =
-      Apply(f(value))
+      Pure(f(value))
     override def flatMap[B](f: (A) => Free[Cmd, B]): Free[Cmd, B] =
       f(value)
-    override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Apply[Cmd2, A] =
-      this.asInstanceOf[Apply[Cmd2,A]]
+    override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Pure[Cmd2, A] =
+      this.asInstanceOf[Pure[Cmd2,A]]
     override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
-      i.E(value)
+      i.E.pure(value)
   }
   case class Map[Cmd[_],A,B](
     base: Free[Cmd,A],

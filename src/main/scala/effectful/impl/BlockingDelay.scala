@@ -1,11 +1,13 @@
 package effectful.impl
 
 import scala.concurrent.duration.FiniteDuration
-import effectful._
 import effectful.aspects.Delay
+import effectful.cats.Capture
 
 trait BlockingDelay[E[_]] extends Delay[E] {
-  implicit val E:Exec[E]
+  implicit val E:Capture[E]
   override def delay(duration: FiniteDuration): E[Unit] =
-    E(Thread.sleep(duration.toMillis))
+    E.capture {
+      Thread.sleep(duration.toMillis)
+    }
 }

@@ -5,12 +5,16 @@ import scala.concurrent.duration.FiniteDuration
 
 package object free {
   implicit def exec_Free[Cmd[_]] = new Exec[({ type E[AA] = Free[Cmd,AA] })#E] {
+
+    // todo: free can't capture effects
+    def capture[A](a: => A) = ???
+
     def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
       m.map(f)
     def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) =
       m.flatMap(f)
-    def apply[A](a: => A) = 
-      Free.Apply(a)
+    def pure[A](a: A) =
+      Free.Pure(a)
     def widen[A, AA >: A](ea: Free[Cmd, A]) = 
       ea.widen[AA]
 
@@ -21,7 +25,7 @@ package object free {
     def failure(t: Throwable): Free[Cmd, Nothing] =
       Free.Failure(t)
     def success[A](a: A): Free[Cmd, A] =
-      Free.Apply(a)
+      Free.Pure(a)
 
     def delay(duration: FiniteDuration): Free[Cmd, Unit] =
       Free.Delay(duration)

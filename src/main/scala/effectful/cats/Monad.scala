@@ -5,19 +5,11 @@ trait Monad[M[_]] {
   def flatMap[A,B](m: M[A])(f: A => M[B]) : M[B]
 
   /**
-    * Create an instance of the monad that may capture some of the
-    * effects of a computation
-    *
-    * Note1: computation may fail with an exception and may
-    * or may not be captured by the effect system monad
-    * Note2: parameter must be lazy to allow for capture of effects
-    *
-    * @param a computation
-    * @tparam A type of result of computation
-    * @return an instance of E that may capture some of the effects of
-    *         the computation
+    * Lift an already computed value into the monad
+    * @param a computed value
+    * @return an instance of M
     */
-  def apply[A](a: => A) : M[A]
+  def pure[A](a: A) : M[A]
 
   /**
     * An effect capture monad should be covariant, however, to preserve compatibility
@@ -41,13 +33,21 @@ object Monad {
       */
     // todo: this conflicts with std TraversableOnce.map/flatMap implicit class
     // todo: how does scalaz handle this?
-    implicit class MonadicOpsPML[M[_],A](val self: M[A]) extends AnyVal {
+    implicit class MonadicOpsPML_XjJsYyBXXE[M[_],A](val self: M[A]) extends AnyVal {
       def map[B](f: A => B)(implicit M:Monad[M]) : M[B] =
         M.map(self)(f)
       def flatMap[B](f: A => M[B])(implicit M:Monad[M]) : M[B]=
         M.flatMap(self)(f)
       def widen[AA >: A](implicit M:Monad[M]) : M[AA] =
         M.widen(self)
+    }
+    implicit class EverythingPML_XjJsYyBXXE[A](val self: A) extends AnyVal {
+      def pure[M[_]](implicit M:Monad[M]) : M[A] =
+        M.pure(self)
+    }
+    implicit class MonadPML[M[_]](val self: Monad[M]) extends AnyVal {
+      def apply[A](a: A) : M[A] =
+        self.pure(a)
     }
   }
 }

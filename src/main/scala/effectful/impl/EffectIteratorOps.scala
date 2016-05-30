@@ -19,7 +19,7 @@ object EffectIteratorOps {
           builder += a
           loop()
         case None =>
-          E(builder.result())
+          E.pure(builder.result())
       }
     }
     loop()
@@ -29,7 +29,7 @@ object EffectIteratorOps {
     val _E = E
     new EffectIterator[E,A] {
       override implicit val E = _E
-      val none : E[Option[A]] = E(None)
+      val none : E[Option[A]] = E.pure(None)
       override def next(): E[Option[A]] = none
     }
   }
@@ -84,7 +84,7 @@ object EffectIteratorOps {
             optB <- ib.next()
             result <- optB match {
               case sb@Some(b) =>
-                E(sb)
+                E.pure(sb)
               case None =>
                 current.compareAndSet(sib,None)
                 next()
@@ -99,7 +99,7 @@ object EffectIteratorOps {
                 current.compareAndSet(None,Some(ib))
                 next()
               case None =>
-                E(None)
+                E.pure(None)
             }
           } yield result
       }
@@ -120,7 +120,7 @@ object EffectIteratorOps {
         for {
           oa <- first.next()
           result <- oa match {
-            case s@Some(_) => E(s)
+            case s@Some(_) => E.pure(s)
             case None =>
               isFirstExhausted.set(true)
               next()
@@ -139,9 +139,9 @@ object EffectIteratorOps {
   ) extends EffectIterator[E,A] {
     override def next(): E[Option[A]] =
       if(values.hasNext) {
-        E(Some(values.next()))
+        E.pure(Some(values.next()))
       } else {
-        E(None)
+        E.pure(None)
       }
   }
 
