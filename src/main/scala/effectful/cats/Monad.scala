@@ -33,3 +33,21 @@ trait Monad[M[_]] {
   def widen[A,AA >: A](ea: M[A]) : M[AA]
 }
 
+object Monad {
+  object ops {
+    /**
+      * Add the map/flatMap/widen methods to any effect system monad that
+      * simply forward the call to the implicit EffectSystem type-class
+      */
+    // todo: this conflicts with std TraversableOnce.map/flatMap implicit class
+    // todo: how does scalaz handle this?
+    implicit class MonadicOpsPML[M[_],A](val self: M[A]) extends AnyVal {
+      def map[B](f: A => B)(implicit M:Monad[M]) : M[B] =
+        M.map(self)(f)
+      def flatMap[B](f: A => M[B])(implicit M:Monad[M]) : M[B]=
+        M.flatMap(self)(f)
+      def widen[AA >: A](implicit M:Monad[M]) : M[AA] =
+        M.widen(self)
+    }
+  }
+}

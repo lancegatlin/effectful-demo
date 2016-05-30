@@ -1,11 +1,11 @@
 package effectful.examples.pure.user.impl
 
 import java.time.Instant
-
 import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration
 import effectful._
+import effectful.cats.Monad
 import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
@@ -31,8 +31,9 @@ class TokenServiceImpl[E[_]](
   tokens: DocDao[String,TokenService.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
-  E:Exec[E]
+  E:Monad[E]
 ) extends TokenService[E] {
+  import Monad.ops._
   import TokenService._
   import TokenServiceImpl._
   import logger._

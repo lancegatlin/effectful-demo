@@ -4,6 +4,8 @@ import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
 
 import effectful._
+import effectful.aspects.Exceptions
+import effectful.cats.Monad
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
@@ -13,7 +15,7 @@ package object sql {
     )(
       rows: SqlRow*
     )(implicit
-      E:Exec[E]
+      E:Monad[E]
     ) : EffectIterator[E,SqlRow] = {
       iterator({ () => self.executePreparedQuery(preparedStatementId)(rows:_*) })
     }
@@ -22,12 +24,14 @@ package object sql {
       statement: String
     )(implicit
       context: Context,
-      E:Exec[E]
+      E:Monad[E]
     ) : EffectIterator[E,SqlRow] = {
       iterator({ () => self.executeQuery(statement) })
     }
 
-    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:Exec[E]) : EffectIterator[E,SqlRow]= {
+    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:Monad[E]) : EffectIterator[E,SqlRow]= {
+      import Monad.ops._
+
       EffectIterator.flatten {
         for {
           cursor <- fetchCursor()
@@ -43,18 +47,22 @@ package object sql {
     def autoCommit[A](
       f: Context.AutoCommit.type => E[A]
     )(implicit
-      e:Exec[E]
+      E:Monad[E]
     ) : E[A] = f(Context.AutoCommit)
 
     def inTransaction[A](
       f: Context.InTransaction => E[A]
     )(implicit
-      E:Exec[E]
-    ) : E[A] =
+      E:Monad[E],
+      X:Exceptions[E]
+    ) : E[A] = {
+      import Monad.ops._
+      import X._
+
       for {
         transaction <- self.beginTransaction()
         result <- {
-          E.Try {
+          attempt {
             for {
               result <- f(transaction)
               _ <- self.commit()(transaction)
@@ -67,6 +75,7 @@ package object sql {
           }
         }
       } yield result
+    }
   }
 
   implicit class SqlValPML(val self: SqlVal) extends AnyVal {

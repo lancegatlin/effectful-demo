@@ -1,5 +1,5 @@
 import scala.collection.generic.CanBuildFrom
-import effectful.cats.{Monad, Traverse}
+import effectful.cats.Monad
 
 package object effectful {
   /**
@@ -11,25 +11,6 @@ package object effectful {
 //  type |:[F[_],G[_]] = F[G[_]]
 //  val |: = Nested
 
-  // todo: this conflicts with std TraversableOnce.map/flatMap implicit class
-  // todo: how does scalaz handle this?
-  /**
-    * Add the map/flatMap/widen methods to any effect system monad that
-    * simply forward the call to the implicit EffectSystem type-class
-    */
-  implicit class MonadicOpsPML[M[_],A](val self: M[A]) extends AnyVal {
-    def map[B](f: A => B)(implicit M:Monad[M]) : M[B] =
-      M.map(self)(f)
-    def flatMap[B](f: A => M[B])(implicit M:Monad[M]) : M[B]=
-      M.flatMap(self)(f)
-    def widen[AA >: A](implicit M:Monad[M]) : M[AA] =
-      M.widen(self)
-  }
-
-  implicit class TraverseOpsPML[T[_],A](val self: T[A]) extends AnyVal {
-    def foreach[U](f: A => U)(implicit T:Traverse[T]) : Unit =
-      T.foreach(self)(f)
-  }
   /**
     * Add the sequence method to any Collection of a effect system's monad
     * that simply forwards the call to the implicit EffectSystem type-class

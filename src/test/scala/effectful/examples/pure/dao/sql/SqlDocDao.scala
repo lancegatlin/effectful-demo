@@ -9,6 +9,8 @@ import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 import SqlDriver._
+import effectful.aspects.{Exceptions, Par}
+import effectful.cats.Monad
 
 object SqlDocDao {
   case class FieldColumnMapping(
@@ -43,8 +45,13 @@ class SqlDocDao[ID,A,E[_]](
   recordMapping: SqlDocDao.RecordMapping[ID,A],
   metadataMapping: SqlDocDao.RecordMapping[ID,RecordMetadata]
 )(implicit
-  E:Exec[E]
+  E:Monad[E],
+  P:Par[E],
+  X:Exceptions[E]
 ) extends DocDao[ID,A,E] {
+  import P._
+  import Monad.ops._
+  
   import SqlDocDao._
   import recordMapping._
 
@@ -95,7 +102,7 @@ class SqlDocDao[ID,A,E[_]](
     (recordFormat.fromSqlVal(idCol), recordFormat.fromSqlRow(recordRow), metadataMapping.recordFormat.fromSqlRow(metadataRow))
   }
 
-  def prepFindById(implicit context: SqlDriver.Context) =
+  def prepFindById(implicit context: SqlDriver.Context): E[ID => E[Option[(ID,A,RecordMetadata)]]]  =
       sql.prepare(
         s"$qSelectFullRecord WHERE ${idColName.esc}=?"
       ).map { ps =>
@@ -122,7 +129,7 @@ class SqlDocDao[ID,A,E[_]](
         .widen
     }
 
-  def prepFindAll(implicit context: Context) =
+  def prepFindAll(implicit context: Context) : E[() => E[IndexedSeq[(ID,A,RecordMetadata)]]] =
     sql.prepare(qSelectFullRecord).map { ps =>
       { () =>
         sql.iteratePreparedQuery(ps)()
@@ -136,7 +143,7 @@ class SqlDocDao[ID,A,E[_]](
       prepFindAll.flatMap(_()).widen
     }
 
-  def prepExists(implicit context: Context) =
+  def prepExists(implicit context: Context) : E[ID => E[Boolean]] =
     sql.prepare(
       s"SELECT 1 FROM ${tableName.esc} WHERE ${idColName.esc}=?"
     ).map { ps =>
@@ -162,7 +169,7 @@ class SqlDocDao[ID,A,E[_]](
     }
 
 
-  def prepMarkRemoved(implicit context: Context) =
+  def prepMarkRemoved(implicit context: Context) : E[ID => E[Boolean]] =
     sql.prepare(
       s"UPDATE ${metadataTableName.esc} SET ${removedColName.esc}=? WHERE ${idColName.esc}=?"
     ).map { ps =>
@@ -190,7 +197,7 @@ class SqlDocDao[ID,A,E[_]](
 
   val newMetadata = RecordMetadata.forNewRecord
 
-  def prepInsert(implicit context: Context) =
+  def prepInsert(implicit context: Context) : E[Seq[(ID,A)] => E[Int]] =
     if(metadataTableSameAsRecord) {
       sql.prepare(
         s"INSERT INTO ${tableName.esc} VALUES(${("?" * allFieldCount + 1).mkString(",")})"
@@ -205,7 +212,7 @@ class SqlDocDao[ID,A,E[_]](
     } else {
       // Maybe run in parallel
       for {
-        tuple <- E.par(
+        tuple <- par(
           sql.prepare(
             s"INSERT INTO ${tableName.esc} VALUES(${("?" * recordFieldCount + 1).mkString(",")})"
           ),
@@ -217,7 +224,7 @@ class SqlDocDao[ID,A,E[_]](
       } yield { (values: Seq[(ID, A)]) =>
         // Maybe run in parallel
         for {
-          tuple <- E.par(
+          tuple <- par(
               sql.executePreparedUpdate(prepMainInsert)(values.map { case (id,a) =>
               recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
             }:_*),
@@ -243,12 +250,12 @@ class SqlDocDao[ID,A,E[_]](
 
   // todo: update metadata table too
   // todo: this should be def that accepts implicit context to allow binding transaction below
-  def prepUpdate(implicit context: Context) =
+  def prepUpdate(implicit context: Context) : E[(ID,A) => E[Boolean]] =
     if(metadataTableSameAsRecord) {
       ???
     } else {
       for {
-        tuple <- E.par(
+        tuple <- par(
           sql.prepare(
             s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
           ),

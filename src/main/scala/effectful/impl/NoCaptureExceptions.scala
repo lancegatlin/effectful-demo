@@ -9,14 +9,14 @@ import effectful.aspects.Exceptions
 trait NoCaptureExceptions[E[_]] extends Exceptions[E] {
   implicit val E:Exec[E]
 
-  override def Try[A](
+  override def attempt[A](
    _try: =>E[A]
   )(
    _catch: PartialFunction[Throwable, E[A]]
   ): E[A] =
     try { _try } catch _catch
 
-  override def TryFinally[A,U](
+  override def attemptFinally[A,U](
     _try: => E[A]
   )(
     _catch: PartialFunction[Throwable, E[A]]

@@ -1,6 +1,6 @@
 package effectful.examples.pure.user.impl
 
-import effectful._
+import effectful.cats.Monad
 import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.DocDao.RecordMetadata
@@ -27,8 +27,9 @@ class UserServiceImpl[E[_]](
   users: DocDao[UUID,UserData,E],
   passwordService: PasswordService[E]
 )(implicit
-  E:Exec[E]
+  E:Monad[E]
 ) extends UserService[E] {
+  import Monad.ops._
   import UserServiceImpl._
 
   val toUser : ((UUID,UserData,RecordMetadata)) => User = { case (id,userData,metadata) =>

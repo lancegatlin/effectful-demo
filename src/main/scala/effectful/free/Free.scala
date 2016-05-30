@@ -76,7 +76,7 @@ object Free {
     _catch: PartialFunction[Throwable,Free[Cmd,A]]
   ) extends Free[Cmd,A] {
     override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
-      i.E.Try(_try.run(i))(_catch.andThen(_.run(i)))
+      i.E.attempt(_try.run(i))(_catch.andThen(_.run(i)))
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Free[Cmd2, A] =
       Try(
         _try.liftCmd,
@@ -89,7 +89,7 @@ object Free {
     _finally: Free[Cmd,U]
   ) extends Free[Cmd,A] {
     override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
-      i.E.TryFinally(_try.run(i))(_catch.andThen(_.run(i)))(_finally.run(i))
+      i.E.attemptFinally(_try.run(i))(_catch.andThen(_.run(i)))(_finally.run(i))
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Free[Cmd2, A] =
       TryFinally(
         _try.liftCmd,

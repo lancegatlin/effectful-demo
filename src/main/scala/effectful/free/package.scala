@@ -14,9 +14,9 @@ package object free {
     def widen[A, AA >: A](ea: Free[Cmd, A]) = 
       ea.widen[AA]
 
-    def Try[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) =
+    def attempt[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) =
       Free.Try(_try,_catch)
-    def TryFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) =
+    def attemptFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) =
       Free.TryFinally(_try,_catch,_finally)
     def failure(t: Throwable): Free[Cmd, Nothing] =
       Free.Failure(t)

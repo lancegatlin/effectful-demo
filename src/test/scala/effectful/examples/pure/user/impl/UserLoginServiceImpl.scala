@@ -1,6 +1,6 @@
 package effectful.examples.pure.user.impl
 
-import effectful._
+import effectful.cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.user._
 
@@ -12,8 +12,9 @@ class UserLoginServiceImpl[E[_]](
   passwords: PasswordService[E],
   tokens: TokenService[E]
 )(implicit
-  E:Exec[E]
+  E:Monad[E]
 ) extends UserLoginService[E] {
+  import Monad.ops._
   import UserLoginService._
   import logger._
 

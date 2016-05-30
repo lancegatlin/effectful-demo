@@ -28,10 +28,10 @@ package object akka {
     override def apply[A](a: => A): Future[A] =
       Future(a)
 
-    override def Try[A](_try: =>Future[A])(_catch: PartialFunction[Throwable, Future[A]]): Future[A] =
+    override def attempt[A](_try: =>Future[A])(_catch: PartialFunction[Throwable, Future[A]]): Future[A] =
       _try.recoverWith(_catch)
 
-    override def TryFinally[A,U](_try: => Future[A])(_catch: PartialFunction[Throwable, Future[A]])(_finally: => Future[U]): Future[A] =
+    override def attemptFinally[A,U](_try: => Future[A])(_catch: PartialFunction[Throwable, Future[A]])(_finally: => Future[U]): Future[A] =
       _try.recoverWith(_catch).flatMap(a => _finally.map(_ => a))
 
 

@@ -1,5 +1,7 @@
 package effectful
 
+import effectful.cats.Monad
+
 import scala.collection.generic.CanBuildFrom
 
 /**
@@ -15,7 +17,7 @@ import scala.collection.generic.CanBuildFrom
   * @tparam A input type
   */
 trait EffectIterator[E[_],A] { self =>
-  implicit val E:Exec[E]
+  implicit val E:Monad[E]
 
   def map[B](f: A => B) : EffectIterator[E,B] =
     impl.EffectIteratorOps.Map(this,f)
@@ -45,21 +47,21 @@ trait EffectIterator[E[_],A] { self =>
 }
 
 object EffectIterator {
-  def empty[E[_],A](implicit E: Exec[E]) =
+  def empty[E[_],A](implicit E: Monad[E]) =
     impl.EffectIteratorOps.empty[E,A]
 
   def apply[E[_], A](
     f: () => E[Option[A]]
   )(implicit
-    E: Exec[E]
+    E: Monad[E]
   ) : EffectIterator[E,A] =
     impl.EffectIteratorOps.apply(f)
 
-  def computed[E[_],A](a: A*)(implicit E: Exec[E]) : EffectIterator[E,A] =
+  def computed[E[_],A](a: A*)(implicit E: Monad[E]) : EffectIterator[E,A] =
     impl.EffectIteratorOps.computed(a:_*)
 
   def flatten[E[_],A](
     eia: E[EffectIterator[E,A]]
-  )(implicit E: Exec[E]) : EffectIterator[E,A] =
+  )(implicit E: Monad[E]) : EffectIterator[E,A] =
     impl.EffectIteratorOps.flatten[E,A](eia)
 }
