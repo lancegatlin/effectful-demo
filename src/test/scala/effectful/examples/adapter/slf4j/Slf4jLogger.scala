@@ -56,3 +56,8 @@ class Slf4jLogger(underlying: org.slf4j.Logger) extends Logger[Id] {
     }
 
 }
+
+object Slf4jLogger {
+  def apply(loggerName: String) : Slf4jLogger =
+    new Slf4jLogger(org.slf4j.LoggerFactory.getLogger(loggerName))
+}
