@@ -3,8 +3,8 @@ package effectful.examples
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import effectful._
 import effectful.examples.adapter.akka._
-import effectful.examples.effects.logging.writer.{LogWriter, WriterLogger}
-import effectful.examples.effects.sql.jdbc.JdbcSqlDriver
+import effectful.examples.adapter.jdbc.JdbcSqlDriver
+import effectful.examples.adapter.scalaz.writer._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService
 import effectful.examples.pure.user.impl._

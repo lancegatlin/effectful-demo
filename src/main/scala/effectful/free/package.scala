@@ -4,7 +4,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
 package object free {
-  implicit def effectSystem_Free[Cmd[_]] = new Exec[({ type E[AA] = Free[Cmd,AA] })#E] {
+  implicit def exec_Free[Cmd[_]] = new Exec[({ type E[AA] = Free[Cmd,AA] })#E] {
     def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
       m.map(f)
     def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) =

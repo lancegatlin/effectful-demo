@@ -1,9 +1,10 @@
-package effectful.examples.effects.sql.jdbc
+package effectful.examples.adapter.jdbc
 
 import java.sql.{JDBCType, ResultSet, Types}
 import java.time.{LocalDate, ZoneId, ZoneOffset}
-import effectful.examples.effects.sql._
+
 import effectful.examples.effects.sql.SqlDriver._
+import effectful.examples.effects.sql._
 
 object JdbcSqlDriverOps {
   val shouldStreamThreshold = 4096l
@@ -170,8 +171,9 @@ object JdbcSqlDriverOps {
   }
 
   def sqlTypeToJdbcType : SqlType => JDBCType = {
-    import SqlType._
     import java.sql.JDBCType
+
+    import SqlType._
 
     {
       case CHAR(fixedSize) => JDBCType.CHAR

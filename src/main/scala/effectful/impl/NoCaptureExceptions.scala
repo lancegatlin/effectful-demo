@@ -4,7 +4,8 @@ import effectful.Exec
 import effectful.aspects.Exceptions
 
 /**
-  * An effect system that doesn't capture exceptions in the effect system's monad
+  * An instance of Exceptions for monads that don't capture exceptions
+  * in the monad
   */
 trait NoCaptureExceptions[E[_]] extends Exceptions[E] {
   implicit val E:Exec[E]

@@ -4,7 +4,7 @@ import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
 import effectful.examples.effects.logging.free._
-import effectful.examples.effects.logging.writer.WriterLogger
+import effectful.examples.adapter.scalaz.writer.WriterLogger
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.impl.JavaUUIDService

@@ -1,9 +1,10 @@
-package effectful.examples.effects.sql.jdbc
+package effectful.examples.adapter.jdbc
 
 import java.util.concurrent.ConcurrentHashMap
+
 import effectful._
+import effectful.examples.effects.sql.SqlDriver._
 import effectful.examples.effects.sql._
-import SqlDriver._
 import effectful.examples.pure.UUIDService
 
 object JdbcSqlDriver {

@@ -1,6 +1,6 @@
 package effectful.examples.adapter
 
-import effectful.examples.effects.logging.writer.LogWriter
+import effectful.examples.adapter.scalaz.writer.LogWriter
 import effectful.impl.StdPar
 import effectful.{Exec, LiftExec}
 import s_mach.concurrent._

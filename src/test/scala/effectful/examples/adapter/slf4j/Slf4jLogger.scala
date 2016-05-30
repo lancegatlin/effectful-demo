@@ -1,4 +1,4 @@
-package effectful.examples.effects.logging.slf4j
+package effectful.examples.adapter.slf4j
 
 import effectful.examples.effects.logging.Logger
 

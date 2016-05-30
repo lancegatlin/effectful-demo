@@ -11,8 +11,6 @@ trait ExecStackImpl[F[_],G[_]] extends
 {
   import Monad.ops._
 
-  // todo: it should be possible for F to be Future and G a Future
-  // todo: the only thing really required is flatSequence
   implicit val F:Exec[F]
   implicit val G:Exec.ImmediateNoCaptureExceptions[G]
 

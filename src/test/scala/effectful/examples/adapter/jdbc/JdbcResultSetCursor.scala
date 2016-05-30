@@ -1,7 +1,7 @@
-package effectful.examples.effects.sql.jdbc
+package effectful.examples.adapter.jdbc
 
+import effectful.examples.adapter.jdbc.JdbcSqlDriverOps._
 import effectful.examples.effects.sql.SqlDriver._
-import JdbcSqlDriverOps._
 
 case class JdbcResultSetCursor(
   id: Symbol,

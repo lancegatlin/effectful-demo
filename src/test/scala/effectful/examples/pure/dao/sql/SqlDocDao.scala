@@ -252,7 +252,17 @@ class SqlDocDao[ID,A,E[_]](
   // todo: this should be def that accepts implicit context to allow binding transaction below
   def prepUpdate(implicit context: Context) : E[(ID,A) => E[Boolean]] =
     if(metadataTableSameAsRecord) {
-      ???
+      sql.prepare(
+        s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")},${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"
+      ).map { ps =>
+
+        { (id:ID,a:A) =>
+          sql.executePreparedUpdate(ps)(
+            recordFormat.toSqlRow(a) ++
+            IndexedSeq(SqlVal.TIMESTAMP(Instant.now()),recordFormat.toSqlVal(id))
+          ).map(_ == 1)
+        }
+      }
     } else {
       for {
         tuple <- par(
@@ -267,10 +277,10 @@ class SqlDocDao[ID,A,E[_]](
       } yield { (id:ID,a:A) =>
         for {
           mainUpdateCount <- sql.executePreparedUpdate(prepMainUpdate)(
-            recordFormat.toSqlRow(a)
+            recordFormat.toSqlRow(a) :+ recordFormat.toSqlVal(id)
           )
           metaUpdateCount <- sql.executePreparedUpdate(prepMetaUpdate)(
-            IndexedSeq(recordFormat.toSqlVal(id),SqlVal.TIMESTAMP(Instant.now()))
+            IndexedSeq(SqlVal.TIMESTAMP(Instant.now()),recordFormat.toSqlVal(id))
           )
         } yield mainUpdateCount == 1
       }

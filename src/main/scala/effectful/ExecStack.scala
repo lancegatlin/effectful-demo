@@ -16,6 +16,8 @@ trait ExecStack[F[_],G[_]] extends
   type E[A] = F[G[A]]
   implicit val E:Exec[E] = this
 
+  // todo: it should be possible for F to be Future and G a Future
+  // todo: the only thing really required is flatSequence
   implicit val F:Exec[F]
   implicit val G:Exec.ImmediateNoCaptureExceptions[G]
 }

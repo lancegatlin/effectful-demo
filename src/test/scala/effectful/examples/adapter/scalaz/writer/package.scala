@@ -1,4 +1,4 @@
-package effectful.examples.effects.logging
+package effectful.examples.adapter.scalaz
 
 import effectful.Exec
 import effectful.cats.Monad

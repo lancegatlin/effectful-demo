@@ -1,4 +1,4 @@
-package effectful.examples.effects.sql
+package effectful.examples.adapter
 
 import java.util.concurrent.ConcurrentHashMap
 

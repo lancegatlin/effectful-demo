@@ -2,7 +2,6 @@ package effectful
 
 import effectful.cats.{Monad, Traverse}
 import effectful.aspects._
-import effectful.impl.{BlockingDelay, NoCaptureExceptions}
 
 /**
   * A type-class for a monad (or monad stack) that can be used
@@ -38,7 +37,7 @@ object Exec {
   trait Immediate[E[_]] extends
     Exec[E] with
     Traverse[E] with
-    BlockingDelay[E]
+    impl.BlockingDelay[E]
 
 /**
   * A monad that is immediate and does not capture exceptions.
@@ -47,5 +46,5 @@ object Exec {
   */
   trait ImmediateNoCaptureExceptions[E[_]] extends
     Immediate[E] with
-    NoCaptureExceptions[E]
+    impl.NoCaptureExceptions[E]
 }
