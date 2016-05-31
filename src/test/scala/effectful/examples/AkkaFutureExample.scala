@@ -1,6 +1,5 @@
 package effectful.examples
 
-import com.mchange.v2.c3p0.ComboPooledDataSource
 import effectful._
 import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
@@ -18,7 +17,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 object AkkaFutureExample {
-  import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val scheduledExecutionContext = ScheduledExecutionContext(4)
 
   type E[A] = Future[LogWriter[A]]
@@ -26,30 +25,10 @@ object AkkaFutureExample {
   implicit val exec_Future = ExecFuture()
   implicit val exec_E = CompositeExec[Future,LogWriter]
 
-  // todo: generalize this
-//  implicit val liftCapture_Writer_Future = new LiftCapture[LogWriter,E] {
-//    override def apply[A](
-//      ea: => LogWriter[A]
-//    ): E[A] =
-//      Future(ea)
-//  }
-
   val uuidService = new JavaUUIDService
 
-  val pool = new ComboPooledDataSource()
-  pool.setDriverClass("org.postgresql.Driver")
-  pool.setJdbcUrl("jdbc:postgresql://localhost/testdb")
-  pool.setUser("test")
-  pool.setPassword("test password")
-  pool.setMinPoolSize(5)
-  pool.setAcquireIncrement(5)
-  pool.setMaxPoolSize(20)
-  // todo: use in-memory h2
-  // todo: generate schema
-  // todo: initialize with schema
-
   val sqlDriver = new JdbcSqlDriver(
-    getConnectionFromPool = pool.getConnection,
+    getConnectionFromPool = SqlDb.pool.getConnection,
     uuids = uuidService
   )
 

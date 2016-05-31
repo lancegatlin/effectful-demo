@@ -52,7 +52,7 @@ package object sql {
 
   // todo: make a macro to generate this
   val tokenInfoRecordMapping = RecordMapping[String,TokenInfo](
-    tableName = "tokens",
+    tableName = "Tokens",
     recordFields = Seq(
       FieldColumnMapping(
         fieldName = "userId",
@@ -104,7 +104,7 @@ package object sql {
 
   // todo: make a macro to generate this
   val tokenInfoMetadataRecordMapping = RecordMapping[String,RecordMetadata](
-    tableName = "tokens",
+    tableName = "Tokens",
     recordFields = Seq(
       FieldColumnMapping(
         fieldName = "created",
@@ -158,7 +158,7 @@ package object sql {
   }
 
   val userDataRecordMapping = RecordMapping[UUID,UserData](
-    tableName = "users",
+    tableName = "Users",
     recordFields = Seq(
       FieldColumnMapping(
         fieldName = "username",
@@ -180,7 +180,7 @@ package object sql {
 
   // todo: make a macro to generate this
   val userDataMetadataRecordMapping = RecordMapping[UUID,RecordMetadata](
-    tableName = "users",
+    tableName = "Users",
     recordFields = Seq(
       FieldColumnMapping(
         fieldName = "created",

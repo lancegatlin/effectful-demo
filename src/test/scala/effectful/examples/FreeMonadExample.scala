@@ -92,6 +92,7 @@ object FreeMonadExample {
           // todo: fix me - should match implicit in effectful.package
           new LiftCapture[LogWriter,AkkaFutureExample.E] {
             def apply[A](ea: => LogWriter[A]) = {
+              import AkkaFutureExample.executionContext
               Future(ea)
             }
           },

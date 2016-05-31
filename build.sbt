@@ -8,7 +8,8 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.2" % "test",
   "org.scalatest" %% "scalatest" % "2.2.0" % "test",
   "com.mchange" % "c3p0" % "0.9.5.2" % "test",
-  "net.s_mach" %% "concurrent" % "1.1.0" % "test"
+  "net.s_mach" %% "concurrent" % "1.1.0" % "test",
+  "com.h2database" % "h2" % "1.4.192"
 )
 
 scalacOptions ++= Seq(
@@ -17,7 +18,7 @@ scalacOptions ++= Seq(
   "-deprecation",
 //  "-Ywarn-dead-code",
   "-Ywarn-numeric-widen",
-  "-Ywarn-unused-import",
+//  "-Ywarn-unused-import",
   "-Xfatal-warnings",
   "-Xlint",
   "-language:higherKinds"
