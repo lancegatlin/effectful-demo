@@ -9,10 +9,10 @@ import effectful.cats.Monad
 import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
-import effectful.examples.pure.UUIDService
-import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.query._
 import effectful.examples.pure.user.TokenService
+import effectful.examples.pure.uuid.UUIDService
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 object TokenServiceImpl {
   import TokenService._

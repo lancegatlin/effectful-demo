@@ -1,7 +1,7 @@
 package effectful.examples.pure.user
 
 import java.time.Instant
-import effectful.examples.pure.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 trait UserService[E[_]] {
   import UserService._

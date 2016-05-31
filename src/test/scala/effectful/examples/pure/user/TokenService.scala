@@ -3,7 +3,7 @@ package effectful.examples.pure.user
 import java.time.Instant
 
 import scala.concurrent.duration.Duration
-import effectful.examples.pure.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 trait TokenService[E[_]] {
   import TokenService._

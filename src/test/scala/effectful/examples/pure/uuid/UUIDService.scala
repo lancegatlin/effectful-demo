@@ -1,4 +1,4 @@
-package effectful.examples.pure
+package effectful.examples.pure.uuid
 
 trait UUIDService[E[_]] {
   import UUIDService._

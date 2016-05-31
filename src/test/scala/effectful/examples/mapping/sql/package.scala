@@ -3,12 +3,13 @@ package effectful.examples.mapping
 import org.apache.commons.codec.binary.Base64
 import effectful.examples.effects.sql.SqlDriver.SqlRow
 import effectful.examples.effects.sql._
-import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.TokenService.TokenInfo
 import effectful.examples.pure.user.impl.UserServiceImpl.UserData
+import effectful.examples.pure.uuid.UUIDService
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 package object sql {
   import SqlVal._

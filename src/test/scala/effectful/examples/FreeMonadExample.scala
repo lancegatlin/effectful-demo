@@ -7,12 +7,12 @@ import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.{LogWriter, WriterLogger}
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
-import effectful.examples.pure.impl.JavaUUIDService
+import effectful.examples.pure.uuid.impl.JavaUUIDService
 import effectful.examples.mapping.sql._
-import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.user.impl._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.examples.pure.uuid.UUIDService.UUID
 import effectful.free._
 
 import scala.concurrent.Future

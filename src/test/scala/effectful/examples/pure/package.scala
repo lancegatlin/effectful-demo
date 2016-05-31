@@ -1,6 +1,7 @@
 package effectful.examples
 
 import effectful._
+import effectful.examples.pure.uuid.UUIDService
 
 package object pure {
   implicit object LiftService_UUIDService extends LiftService[UUIDService] {

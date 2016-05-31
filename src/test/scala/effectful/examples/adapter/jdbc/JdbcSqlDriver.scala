@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import effectful._
 import effectful.examples.effects.sql.SqlDriver._
 import effectful.examples.effects.sql._
-import effectful.examples.pure.UUIDService
+import effectful.examples.pure.uuid.UUIDService
 
 object JdbcSqlDriver {
   case class InternalPreparedStatement(

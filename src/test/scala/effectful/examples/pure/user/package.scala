@@ -1,7 +1,7 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.examples.pure.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 import scala.concurrent.duration.Duration
 import scalaz.\/

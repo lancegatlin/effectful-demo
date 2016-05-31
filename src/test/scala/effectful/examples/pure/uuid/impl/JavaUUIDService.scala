@@ -1,10 +1,10 @@
-package effectful.examples.pure.impl
+package effectful.examples.pure.uuid.impl
 
 import java.nio.ByteBuffer
 import java.util.{UUID => JavaUUID}
 
 import effectful._
-import effectful.examples.pure.UUIDService
+import effectful.examples.pure.uuid.UUIDService
 import org.apache.commons.codec.binary.Base64
 
 import scala.util.Try

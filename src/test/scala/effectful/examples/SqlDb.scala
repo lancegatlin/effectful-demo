@@ -4,7 +4,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import effectful.examples.pure.impl.JavaUUIDService
+import effectful.examples.pure.uuid.impl.JavaUUIDService
 import org.apache.commons.codec.binary.Base64
 
 object SqlDb {

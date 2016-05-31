@@ -1,13 +1,13 @@
 package effectful.examples.pure.user.impl
 
 import effectful.cats.Monad
-import effectful.examples.pure.UUIDService.UUID
 import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.pure.user.{PasswordService, UserService}
 import effectful.examples.pure.user.UserService.User
 import effectful.examples.pure.user.impl.UserServiceImpl.UserData
+import effectful.examples.pure.uuid.UUIDService.UUID
 
 object UserServiceImpl {
   case class UserData(
