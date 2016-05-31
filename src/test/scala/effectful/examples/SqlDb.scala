@@ -69,6 +69,10 @@ object SqlDb {
     assert(rs.isBeforeFirst == true)
     rs.next()
     assert(rs.getString(1) == uuid)
+    assert(rs.getString(2) == "test")
+
+    println("Verified test user is inserted...")
+
     rs.close()
     connect.close()
   }
