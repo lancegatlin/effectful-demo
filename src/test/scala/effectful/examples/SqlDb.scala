@@ -1,5 +1,8 @@
 package effectful.examples
 
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+
 import com.mchange.v2.c3p0.ComboPooledDataSource
 
 object SqlDb {
@@ -53,7 +56,8 @@ object SqlDb {
     )
 
     val uuid = "ad0421f3-9d7e-48ce-9cac-11a7f9c3d2dd"
-    val now = "2016-01-01 00:00:00"
+
+    val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
 
     run(
   s"""

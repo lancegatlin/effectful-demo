@@ -33,7 +33,7 @@ case class JdbcResultSetCursor(
       ColumnMetadata(
         name = getColumnName(i),
         label = getColumnLabel(i),
-        sqlType = columnTypes(i),
+        sqlType = columnTypes(i-1),
         autoIncrement = isAutoIncrement(i),
         caseSensitive = isCaseSensitive(i),
         nullable = isNullable(i) match {
@@ -52,7 +52,7 @@ case class JdbcResultSetCursor(
         rowNum = resultSet.getRow,
         row =
           (1 to columnCount).map { col =>
-            parseResultSetColumn(resultSet,col,columnTypes(col))
+            parseResultSetColumn(resultSet,col,columnTypes(col-1))
           }
       )
     } else {

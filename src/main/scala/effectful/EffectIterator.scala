@@ -1,6 +1,6 @@
 package effectful
 
-import effectful.cats.Monad
+import effectful.cats.{Applicative, Monad}
 
 import scala.collection.generic.CanBuildFrom
 

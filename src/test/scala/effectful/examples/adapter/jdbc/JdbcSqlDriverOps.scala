@@ -12,79 +12,89 @@ object JdbcSqlDriverOps {
   def parseResultSetColumn(resultSet: ResultSet, col: Int, sqlType:SqlType) : SqlVal = {
     def getCharData(size: Long, col: Int) =
       if(size > shouldStreamThreshold) {
-        CharData.IsReader(resultSet.getCharacterStream(col))
+        Option(resultSet.getCharacterStream(col)).map(CharData.IsReader)
       } else {
-        CharData.IsString(resultSet.getString(col))
+        Option(resultSet.getString(col)).map(CharData.IsString)
       }
     def getNCharData(size: Long, col: Int) =
       if(size > shouldStreamThreshold) {
-        CharData.IsReader(resultSet.getNCharacterStream(col))
+        Option(resultSet.getNCharacterStream(col)).map(CharData.IsReader)
       } else {
-        CharData.IsString(resultSet.getNString(col))
+        Option(resultSet.getNString(col)).map(CharData.IsString)
       }
     def getBinData(size: Long, col: Int) =
       if(size > shouldStreamThreshold) {
-        BinData.IsBinStream(resultSet.getBinaryStream(col))
+        Option(resultSet.getBinaryStream(col)).map(BinData.IsBinStream)
       } else {
-        BinData.IsByteArray(resultSet.getBytes(col))
+        Option(resultSet.getBytes(col)).map(BinData.IsByteArray)
       }
 
     import SqlType._
-    val sqlVal =
+    val optSqlVal =
       sqlType match {
         case CHAR(fixedSize) =>
-          SqlVal.CHAR(fixedSize, getCharData(fixedSize, col))
+          getCharData(fixedSize, col).map(SqlVal.CHAR(fixedSize, _))
         case NCHAR(fixedSize) =>
-          SqlVal.NCHAR(fixedSize, getNCharData(fixedSize, col))
+          getNCharData(fixedSize, col).map(SqlVal.NCHAR(fixedSize, _))
         case VARCHAR(maxSize) =>
-          SqlVal.VARCHAR(maxSize, getCharData(maxSize, col))
+          getCharData(maxSize, col).map(SqlVal.VARCHAR(maxSize, _))
         case NVARCHAR(maxSize) =>
-          SqlVal.NVARCHAR(maxSize, getNCharData(maxSize,col))
+          getNCharData(maxSize,col).map(SqlVal.NVARCHAR(maxSize, _))
         case CLOB =>
-          SqlVal.CLOB(getCharData(Long.MaxValue, col))
+          getCharData(Long.MaxValue, col).map(SqlVal.CLOB)
         case NCLOB =>
-          SqlVal.NCLOB(getNCharData(Long.MaxValue, col))
+          getNCharData(Long.MaxValue, col).map(SqlVal.NCLOB)
         case BINARY(fixedSize) =>
-          SqlVal.BINARY(fixedSize, getBinData(fixedSize, col))
+          getBinData(fixedSize, col).map(SqlVal.BINARY(fixedSize, _))
         case VARBINARY(maxSize) =>
-          SqlVal.VARBINARY(maxSize, getBinData(maxSize, col))
+          getBinData(maxSize, col).map(SqlVal.VARBINARY(maxSize, _))
         case BLOB =>
-          SqlVal.BLOB(getBinData(Long.MaxValue, col))
+          getBinData(Long.MaxValue, col).map(SqlVal.BLOB)
         case BIT =>
-          SqlVal.BIT(resultSet.getBoolean(col))
+          Some(SqlVal.BIT(resultSet.getBoolean(col)))
         case BOOLEAN =>
-          SqlVal.BOOLEAN(resultSet.getBoolean(col))
+          Some(SqlVal.BOOLEAN(resultSet.getBoolean(col)))
         case TINYINT =>
-          SqlVal.TINYINT(resultSet.getShort(col))
+          Some(SqlVal.TINYINT(resultSet.getShort(col)))
         case SMALLINT =>
-          SqlVal.SMALLINT(resultSet.getShort(col))
+          Some(SqlVal.SMALLINT(resultSet.getShort(col)))
         case INTEGER =>
-          SqlVal.INTEGER(resultSet.getInt(col))
+          Some(SqlVal.INTEGER(resultSet.getInt(col)))
         case BIGINT =>
-          SqlVal.BIGINT(resultSet.getLong(col))
+          Some(SqlVal.BIGINT(resultSet.getLong(col)))
         case REAL =>
-          SqlVal.REAL(resultSet.getFloat(col))
+          Some(SqlVal.REAL(resultSet.getFloat(col)))
         case DOUBLE =>
-          SqlVal.DOUBLE(resultSet.getDouble(col))
+          Some(SqlVal.DOUBLE(resultSet.getDouble(col)))
         case NUMERIC(precision,scale) =>
-          SqlVal.NUMERIC(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
+          Option(resultSet.getBigDecimal(col)).map(n => SqlVal.NUMERIC(BigDecimal(n),precision,scale))
         case DECIMAL(precision,scale) =>
-          SqlVal.DECIMAL(BigDecimal(resultSet.getBigDecimal(col)),precision,scale)
+          Option(resultSet.getBigDecimal(col)).map(n => SqlVal.DECIMAL(BigDecimal(n),precision,scale))
         case DATE =>
-          val oldDate = resultSet.getDate(col)
-          val newDate = oldDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
-          SqlVal.DATE(newDate)
+          Option(resultSet.getDate(col)).map { oldDate =>
+            val newDate = oldDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate
+            SqlVal.DATE(newDate)
+          }
         case TIME =>
-          val oldTime = resultSet.getTime(col)
-          val newTime = oldTime.toInstant.atZone(ZoneId.systemDefault()).toLocalTime
-          SqlVal.TIME(newTime)
+          Option(resultSet.getTime(col)).map { oldTime =>
+            val newTime = oldTime.toInstant.atZone(ZoneId.systemDefault()).toLocalTime
+            SqlVal.TIME(newTime)
+          }
         case TIMESTAMP =>
-          SqlVal.TIMESTAMP(java.time.Instant.ofEpochMilli(resultSet.getTimestamp(col).getTime))
+          Option(resultSet.getTimestamp(col)).map { timestamp =>
+            SqlVal.TIMESTAMP(java.time.Instant.ofEpochMilli(timestamp.getTime))
+          }
       }
-    if(resultSet.wasNull) {
-      SqlVal.NULL(sqlType)
-    } else {
-      sqlVal
+
+    optSqlVal match {
+      case Some(sqlVal) =>
+        if(resultSet.wasNull) {
+          SqlVal.NULL(sqlType)
+        } else {
+          sqlVal
+        }
+      case None =>
+        SqlVal.NULL(sqlType)
     }
   }
 

@@ -117,7 +117,7 @@ object EffectIteratorOps {
     // Note: same note as FlatMap above
     private[this] val isFirstExhausted = new AtomicBoolean(false)
     override def next(): E[Option[A]] = {
-      if(isFirstExhausted.get) {
+      if(isFirstExhausted.get == false) {
         for {
           oa <- first.next()
           result <- oa match {

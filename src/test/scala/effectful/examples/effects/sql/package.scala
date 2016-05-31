@@ -3,7 +3,7 @@ package effectful.examples.effects
 import java.time.format.DateTimeFormatter
 import javax.xml.bind.DatatypeConverter
 
-import effectful._
+import effectful.{EffectIterator, LiftCapture, LiftService}
 import effectful.aspects.Exceptions
 import effectful.cats.Monad
 import effectful.examples.effects.sql.SqlDriver._
@@ -35,11 +35,19 @@ package object sql {
       EffectIterator.flatten {
         for {
           cursor <- fetchCursor()
-        } yield EffectIterator[E,SqlRow] { () =>
-          self.nextCursor(cursor.id).map {
-            case Cursor.Row(_,_,row) => Some(row)
-            case Cursor.Empty(_) => None
+        } yield {
+          cursor match {
+            case Cursor.Empty(_) =>
+              EffectIterator.empty
+            case Cursor.Row(_,_,firstRow) =>
+              EffectIterator.computed(firstRow) ++ EffectIterator[E,SqlRow] { () =>
+                self.nextCursor(cursor.id).map {
+                  case Cursor.Row(_,_,row) => Some(row)
+                  case Cursor.Empty(_) => None
+                }
+              }
           }
+
         }
       }
     }
