@@ -12,13 +12,13 @@ trait Exceptions[E[_]] {
     * Future or scalaz.Task. Using a try/catch block around a monad
     * such as Future will never execute the catch block.
     *
-    * @param f code block to catch exceptions from
+    * @param _try code block to catch exceptions from
     * @param _catch exception handler
     * @tparam A type of expression
     * @return an instance of E
     */
   def attempt[A](
-     f: => E[A]
+     _try: => E[A]
   )(
     _catch: PartialFunction[Throwable, E[A]]
   ) : E[A]
@@ -34,13 +34,13 @@ trait Exceptions[E[_]] {
     * Future or scalaz.Task. Using a try/catch block around a monad
     * such as Future will never execute the catch block.
     *
-    * @param f code block to catch exceptions from
+    * @param _try code block to catch exceptions from
     * @param _catch exception handler
     * @tparam A type of expression
     * @return an instance of E
     */
   def attemptFinally[A,U](
-     f: => E[A]
+     _try: => E[A]
   )(
     _catch: PartialFunction[Throwable, E[A]]
   )(

@@ -20,9 +20,9 @@ package object free {
 
   implicit def exceptions_Free[Cmd[_]] = new Exceptions[({ type E[AA] = Free[Cmd,AA] })#E] {
     def attempt[A](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]]) =
-      Free.Try(_try,_catch)
+      Free.Attempt(_try,_catch)
     def attemptFinally[A, U](_try: => Free[Cmd, A])(_catch: PartialFunction[Throwable, Free[Cmd, A]])(_finally: => Free[Cmd, U]) =
-      Free.TryFinally(_try,_catch,_finally)
+      Free.AttemptFinally(_try,_catch,_finally)
     def failure(t: Throwable): Free[Cmd, Nothing] =
       Free.Failure(t)
     def success[A](a: A): Free[Cmd, A] =

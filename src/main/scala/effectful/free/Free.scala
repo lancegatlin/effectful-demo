@@ -9,7 +9,7 @@ import scala.concurrent.duration.FiniteDuration
   * @tparam Cmd a type of command
   * @tparam A monad type
   */
-sealed trait Free[Cmd[_],A] {
+sealed abstract class Free[Cmd[_],A] extends Product with Serializable {
   def map[B](f: A => B) : Free[Cmd, B] =
     Free.Map(this,f)
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B] =
@@ -71,19 +71,19 @@ object Free {
 
   // Exceptions aspect
   // Note: since Free is already lazy no need for () => E[A] pattern here
-  case class Try[Cmd[_],A](
+  case class Attempt[Cmd[_],A](
     _try: Free[Cmd,A],
     _catch: PartialFunction[Throwable,Free[Cmd,A]]
   ) extends Free[Cmd,A] {
     override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
       i.E.attempt(_try.run(i))(_catch.andThen(_.run(i)))
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Free[Cmd2, A] =
-      Try(
+      Attempt(
         _try.liftCmd,
         _catch.andThen(_.liftCmd)
       )
   }
-  case class TryFinally[Cmd[_],A,U](
+  case class AttemptFinally[Cmd[_],A,U](
     _try: Free[Cmd,A],
     _catch: PartialFunction[Throwable,Free[Cmd,A]],
     _finally: Free[Cmd,U]
@@ -91,7 +91,7 @@ object Free {
     override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
       i.E.attemptFinally(_try.run(i))(_catch.andThen(_.run(i)))(_finally.run(i))
     override def liftCmd[Cmd2[_]](implicit liftCmd: LiftCmd[Cmd, Cmd2]): Free[Cmd2, A] =
-      TryFinally(
+      AttemptFinally(
         _try.liftCmd,
         _catch.andThen(_.liftCmd),
         _finally.liftCmd

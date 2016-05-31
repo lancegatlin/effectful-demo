@@ -57,7 +57,7 @@ package object effectful {
   implicit object exec_Id extends
     impl.IdCapture with
     impl.IdMonad with
-    impl.IdTraverse with
+//    impl.IdTraverse with
     impl.IdPar with
     impl.NoCaptureExceptions[Id] with
     impl.BlockingDelay[Id] {
