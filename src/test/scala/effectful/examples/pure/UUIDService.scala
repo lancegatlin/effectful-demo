@@ -11,5 +11,6 @@ trait UUIDService[E[_]] {
 }
 
 object UUIDService {
-  case class UUID(bytes: Array[Byte])
+  // Note: can't use Array since equality/hashCode isn't correct
+  case class UUID(bytes: IndexedSeq[Byte])
 }

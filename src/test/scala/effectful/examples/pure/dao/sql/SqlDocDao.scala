@@ -200,7 +200,7 @@ class SqlDocDao[ID,A,E[_]](
   def prepInsert(implicit context: Context) : E[Seq[(ID,A)] => E[Int]] =
     if(metadataTableSameAsRecord) {
       sql.prepare(
-        s"INSERT INTO ${tableName.esc} VALUES(${("?" * allFieldCount + 1).mkString(",")})"
+        s"INSERT INTO ${tableName.esc} VALUES(${("?" * allFieldCount).mkString(",")})"
       ).map { ps =>
 
         { (values:Seq[(ID,A)]) =>
@@ -214,10 +214,10 @@ class SqlDocDao[ID,A,E[_]](
       for {
         tuple <- par(
           sql.prepare(
-            s"INSERT INTO ${tableName.esc} VALUES(${("?" * recordFieldCount + 1).mkString(",")})"
+            s"INSERT INTO ${tableName.esc} VALUES(${("?" * (recordFieldCount + 1)).mkString(",")})"
           ),
           sql.prepare(
-            s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * metadataMapping.recordFieldCount + 1).mkString(",")})"
+            s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * (metadataMapping.recordFieldCount + 1)).mkString(",")})"
           )
         )
         (prepMainInsert,prepMetadataInsert) = tuple

@@ -15,7 +15,7 @@ package object sql {
 
   implicit val charDataFormat_UUID = new CharDataFormat[UUID] {
     def toCharData(a: UUID) =
-      CharData(Base64.encodeBase64String(a.bytes))
+      CharData(Base64.encodeBase64URLSafeString(a.bytes.toArray))
 
     def fromCharData(data: CharData) =
       UUID(Base64.decodeBase64(data.toCharString()))
@@ -34,7 +34,8 @@ package object sql {
 
       IndexedSeq(
         VARCHAR(30,userId.toCharData),
-        deviceId.map(uuid => VARCHAR(30,uuid.toCharData)).orSqlNull,
+        // todo: better way to do this
+        deviceId.map(uuid => VARCHAR(30,uuid.toCharData)).orSqlNull(SqlType.VARCHAR(30)),
         TIMESTAMP(lastValidated),
         TIMESTAMP(expiresOn)
       )
@@ -89,7 +90,8 @@ package object sql {
       IndexedSeq(
         TIMESTAMP(created),
         TIMESTAMP(lastUpdated),
-        removed.map(TIMESTAMP).orSqlNull
+        // todo: better way to do this
+        removed.map(TIMESTAMP).orSqlNull(SqlType.TIMESTAMP)
       )
     }
 

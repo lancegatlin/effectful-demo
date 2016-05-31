@@ -118,7 +118,9 @@ object JdbcSqlDriverOps {
 
     rows.foreach { row =>
       import SqlVal._
-      row.iterator.zipWithIndex.foreach { case (sqlVal,i) =>
+      row.iterator.zipWithIndex.foreach { case (sqlVal,_i) =>
+        val i = _i + 1
+        println(s"!!! $i => $sqlVal")
         sqlVal match {
           case NULL(sqlType) =>
             // todo: fixing this up to use metadata to lookup type of column
@@ -174,6 +176,9 @@ object JdbcSqlDriverOps {
               time.atDate(LocalDate.ofEpochDay(0)).toInstant(ZoneOffset.UTC).toEpochMilli
             ))
           case TIMESTAMP(timestamp) =>
+            ps.setTimestamp(i, new java.sql.Timestamp(
+              timestamp.toEpochMilli
+            ))
         }
       }
       ps.addBatch()

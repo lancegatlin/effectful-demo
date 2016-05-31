@@ -134,11 +134,11 @@ package object sql {
   }
 
   implicit class OptionSqlValPML(val self: Option[SqlVal]) extends AnyVal {
-    def orSqlNull : SqlVal =
+    def orSqlNull(sqlType: SqlType) : SqlVal =
       self match {
         case Some(v) => v
           // todo: either this to OptionSqlXXXPML to preserve sql type (sql type required by JDBC PreparedStatement.setNull
-        case None => SqlVal.NULL(null)
+        case None => SqlVal.NULL(sqlType)
       }
   }
 

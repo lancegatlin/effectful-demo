@@ -22,7 +22,7 @@ class JavaUUIDService extends UUIDService[Id] {
   }
 
   def toJavaUUID(uuid: UUID) : JavaUUID = {
-    val bb = ByteBuffer.wrap(uuid.bytes)
+    val bb = ByteBuffer.wrap(uuid.bytes.toArray)
     val msb = bb.getLong
     val lsb = bb.getLong
     new JavaUUID(msb,lsb)
@@ -41,7 +41,7 @@ class JavaUUIDService extends UUIDService[Id] {
   }
 
   override def toBase64(uuid: UUID): String =
-    Base64.encodeBase64URLSafeString(uuid.bytes)
+    Base64.encodeBase64URLSafeString(uuid.bytes.toArray)
 
   override def fromString(s: String): Id[Option[UUID]] =
     Try(JavaUUID.fromString(s)).toOption.map(toUUID)
