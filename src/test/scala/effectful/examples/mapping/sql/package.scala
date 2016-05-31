@@ -6,10 +6,10 @@ import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
-import effectful.examples.pure.user.TokenService.TokenInfo
-import effectful.examples.pure.user.impl.UserServiceImpl.UserData
-import effectful.examples.pure.uuid.UUIDService
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.user.Tokens.TokenInfo
+import effectful.examples.pure.user.impl.UsersImpl.UserData
+import effectful.examples.pure.uuid.UUIDs$
+import effectful.examples.pure.uuid.UUIDs.UUID
 
 package object sql {
   import SqlVal._

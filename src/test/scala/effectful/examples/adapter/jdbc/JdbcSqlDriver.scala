@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import effectful._
 import effectful.examples.effects.sql.SqlDriver._
 import effectful.examples.effects.sql._
-import effectful.examples.pure.uuid.UUIDService
+import effectful.examples.pure.uuid.UUIDs
 
 object JdbcSqlDriver {
   case class InternalPreparedStatement(
@@ -26,7 +26,7 @@ object JdbcSqlDriver {
 
 class JdbcSqlDriver(
   getConnectionFromPool: () => java.sql.Connection,
-  uuids: UUIDService[Id]
+  uuids: UUIDs[Id]
 ) extends SqlDriver[Id] {
   import JdbcSqlDriver._
   import JdbcSqlDriverOps._

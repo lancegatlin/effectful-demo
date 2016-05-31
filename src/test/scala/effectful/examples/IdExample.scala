@@ -4,56 +4,56 @@ import effectful._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.slf4j.Slf4jLogger
 import effectful.examples.pure.dao.sql.SqlDocDao
-import effectful.examples.pure.uuid.impl.JavaUUIDService
+import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs.UUID
 
 import scala.concurrent.duration._
 
 object IdExample {
 
-  val uuidService = new JavaUUIDService
+  val uuids = new JavaUUIDs
 
   val sqlDriver = new JdbcSqlDriver(
     getConnectionFromPool = SqlDb.pool.getConnection,
-    uuids = uuidService
+    uuids = uuids
   )
 
-  val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,Id](
+  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,Id](
     sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
 
-  val tokenService = new TokenServiceImpl[Id](
-    logger = Slf4jLogger("tokenService").liftService,
-    uuids = uuidService.liftService,
+  val tokens = new TokensImpl[Id](
+    logger = Slf4jLogger("tokens").liftService,
+    uuids = uuids.liftService,
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )
 
-  val passwordService = new PasswordServiceImpl[Id](
+  val passwords = new PasswordsImpl[Id](
     passwordMismatchDelay = 5.seconds
   )
 
-  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,Id](
+  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,Id](
     sql = sqlDriver.liftService,
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping
   )
-  val userService = new UserServiceImpl[Id](
+  val users = new UsersImpl[Id](
     users = userDao,
-    passwordService = passwordService
+    passwords = passwords
   )
 
-  val userLoginService = new UserLoginServiceImpl[Id](
-    logger = Slf4jLogger("userLoginService").liftService,
-    users = userService,
-    tokens = tokenService,
-    passwords = passwordService
+  val userLogins = new UserLoginsImpl[Id](
+    logger = Slf4jLogger("userLogins").liftService,
+    users = users,
+    tokens = tokens,
+    passwords = passwords
   )
 }

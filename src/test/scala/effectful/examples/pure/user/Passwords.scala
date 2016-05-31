@@ -1,6 +1,6 @@
 package effectful.examples.pure.user
 
-trait PasswordService[E[_]] {
+trait Passwords[E[_]] {
   def compareDigest(
     d1: String,
     d2: String

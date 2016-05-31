@@ -1,19 +1,19 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs.UUID
 
 import scala.concurrent.duration.Duration
 import scalaz.\/
 
 package object user {
-  implicit object LiftService_PasswordService extends LiftService[PasswordService] {
+  implicit object LiftService_PasswordService extends LiftService[Passwords] {
     override def apply[E[_], F[_]](
-      s: PasswordService[E]
+      s: Passwords[E]
     )(implicit
       liftCapture: LiftCapture[E, F]
-    ): PasswordService[F] =
-      new PasswordService[F] {
+    ): Passwords[F] =
+      new Passwords[F] {
         override def mkDigest(plainText: String) =
           liftCapture(s.mkDigest(plainText))
         override def compareDigest(d1: String, d2: String) =
@@ -21,15 +21,15 @@ package object user {
       }
   }
 
-  implicit object LiftService_TokenService extends LiftService[TokenService] {
+  implicit object LiftService_TokenService extends LiftService[Tokens] {
 
     override def apply[E[_], F[_]](
-      s: TokenService[E]
+      s: Tokens[E]
     )(implicit
       liftCapture: LiftCapture[E, F]
-    ): TokenService[F] = {
-      import TokenService._
-      new TokenService[F] {
+    ): Tokens[F] = {
+      import Tokens._
+      new Tokens[F] {
         override def issue(userId: UUID, deviceId: Option[UUID], expireAfter: Option[Duration]): F[(Token,TokenInfo)] =
           liftCapture(s.issue(userId,deviceId,expireAfter))
         override def validate(token: Token): F[Option[TokenInfo]] =
@@ -44,14 +44,14 @@ package object user {
     }
   }
 
-  implicit object LiftService_UserLoginService extends LiftService[UserLoginService] {
+  implicit object LiftService_UserLoginService extends LiftService[UserLogins] {
     override def apply[E[_], F[_]](
-      s: UserLoginService[E]
+      s: UserLogins[E]
     )(implicit
       liftCapture: LiftCapture[E, F]
-    ): UserLoginService[F] = {
-      import UserLoginService._
-      new UserLoginService[F] {
+    ): UserLogins[F] = {
+      import UserLogins._
+      new UserLogins[F] {
         override def login(username: String, password: String): F[\/[LoginFailure, Token]] =
           liftCapture(s.login(username,password))
       }

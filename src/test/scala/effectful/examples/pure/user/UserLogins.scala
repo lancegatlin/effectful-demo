@@ -2,13 +2,13 @@ package effectful.examples.pure.user
 
 import scalaz.\/
 
-trait UserLoginService[E[_]] {
-  import UserLoginService._
+trait UserLogins[E[_]] {
+  import UserLogins._
 
   def login(username: String, password: String) : E[LoginFailure \/ Token]
 }
 
-object UserLoginService {
+object UserLogins {
   type Token = String
   sealed trait LoginFailure
   object LoginFailure {

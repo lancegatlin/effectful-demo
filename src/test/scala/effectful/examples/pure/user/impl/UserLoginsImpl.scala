@@ -6,23 +6,23 @@ import effectful.examples.pure.user._
 
 import scalaz.{-\/, \/, \/-}
 
-class UserLoginServiceImpl[E[_]](
+class UserLoginsImpl[E[_]](
   logger: Logger[E],
-  users: UserService[E],
-  passwords: PasswordService[E],
-  tokens: TokenService[E]
+  users: Users[E],
+  passwords: Passwords[E],
+  tokens: Tokens[E]
 )(implicit
   E:Monad[E]
-) extends UserLoginService[E] {
+) extends UserLogins[E] {
   import Monad.ops._
-  import UserLoginService._
+  import UserLogins._
   import logger._
 
   override def login(username: String, password: String): E[LoginFailure \/ Token] =
     for {
       maybeUser <- users.findByUsername(username)
       result <- maybeUser match {
-        case Some(user:UserService.User) =>
+        case Some(user:Users.User) =>
           for {
             digest <- passwords.mkDigest(password)
             passwordOk <- passwords.compareDigest(user.passwordDigest,digest)

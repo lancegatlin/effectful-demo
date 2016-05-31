@@ -5,13 +5,13 @@ import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.scalaz.writer._
 import effectful.examples.pure.dao.sql.SqlDocDao
-import effectful.examples.pure.uuid.impl.JavaUUIDService
+import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
-import effectful.examples.pure.uuid.UUIDService
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs
+import effectful.examples.pure.uuid.UUIDs.UUID
 import s_mach.concurrent.ScheduledExecutionContext
 
 import scala.concurrent._
@@ -26,45 +26,45 @@ object AkkaFutureExample {
   implicit val exec_Future = ExecFuture()
   implicit val exec_E = CompositeExec[Future,LogWriter]
 
-  val uuidService = new JavaUUIDService
+  val uuids = new JavaUUIDs
 
   val sqlDriver = new JdbcSqlDriver(
     getConnectionFromPool = SqlDb.pool.getConnection,
-    uuids = uuidService
+    uuids = uuids
   )
 
-  val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
+  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
-  val tokenService = new TokenServiceImpl[E](
-    logger = WriterLogger("tokenService").liftService,
-    uuids = uuidService.liftService,
+  val tokens = new TokensImpl[E](
+    logger = WriterLogger("tokens").liftService,
+    uuids = uuids.liftService,
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )
 
-  val passwordService = new PasswordServiceImpl[E](
+  val passwords = new PasswordsImpl[E](
     passwordMismatchDelay = 5.seconds
   )
 
-  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
+  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
     sql = sqlDriver.liftService,
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping
   )
-  val userService = new UserServiceImpl[E](
+  val users = new UsersImpl[E](
     users = userDao,
-    passwordService = passwordService
+    passwords = passwords
   )
 
-  val userLoginService = new UserLoginServiceImpl[E](
-    logger = WriterLogger("userLoginService").liftService,
-    users = userService,
-    tokens = tokenService,
-    passwords = passwordService
+  val userLogins = new UserLoginsImpl[E](
+    logger = WriterLogger("userLogins").liftService,
+    users = users,
+    tokens = tokens,
+    passwords = passwords
   )
   /*
   import scala.concurrent._

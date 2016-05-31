@@ -5,14 +5,14 @@ import org.jasypt.digest.PooledStringDigester
 import scala.concurrent.duration.FiniteDuration
 import effectful.aspects.Delay
 import effectful.cats.Monad
-import effectful.examples.pure.user.PasswordService
+import effectful.examples.pure.user.Passwords
 
-class PasswordServiceImpl[E[_]](
+class PasswordsImpl[E[_]](
   passwordMismatchDelay: FiniteDuration
 )(implicit
   E:Monad[E],
   delays:Delay[E]
-) extends PasswordService[E] {
+) extends Passwords[E] {
   import Monad.ops._
   import delays._
 

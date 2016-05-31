@@ -1,10 +1,10 @@
 package effectful.examples.pure.user
 
 import java.time.Instant
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs.UUID
 
-trait UserService[E[_]] {
-  import UserService._
+trait Users[E[_]] {
+  import Users._
 
   def findByUsername(username: String) : E[Option[User]]
   def findById(id: UUID) : E[Option[User]]
@@ -18,7 +18,7 @@ trait UserService[E[_]] {
   def remove(userId: UUID) : E[Boolean]
  }
 
-object UserService {
+object Users {
   case class User(
     id: UUID,
     username: String,

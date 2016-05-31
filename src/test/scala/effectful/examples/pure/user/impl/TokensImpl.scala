@@ -10,12 +10,12 @@ import effectful.examples.pure.dao.DocDao
 import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.query._
-import effectful.examples.pure.user.TokenService
-import effectful.examples.pure.uuid.UUIDService
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.user.Tokens
+import effectful.examples.pure.uuid.UUIDs
+import effectful.examples.pure.uuid.UUIDs.UUID
 
-object TokenServiceImpl {
-  import TokenService._
+object TokensImpl {
+  import Tokens._
   object TokenInfoFields {
     val userId = Query.Field("userId",(_:TokenInfo).userId)
     val deviceId = Query.Field("deviceId",(_:TokenInfo).deviceId)
@@ -25,17 +25,17 @@ object TokenServiceImpl {
   }
 }
 
-class TokenServiceImpl[E[_]](
+class TokensImpl[E[_]](
   logger: Logger[E],
-  uuids: UUIDService[E],
-  tokens: DocDao[String,TokenService.TokenInfo,E],
+  uuids: UUIDs[E],
+  tokens: DocDao[String,Tokens.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
   E:Monad[E]
-) extends TokenService[E] {
+) extends Tokens[E] {
   import Monad.ops._
-  import TokenService._
-  import TokenServiceImpl._
+  import Tokens._
+  import TokensImpl._
   import logger._
 
   override def issue(

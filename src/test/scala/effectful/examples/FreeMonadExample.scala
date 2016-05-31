@@ -7,12 +7,12 @@ import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.{LogWriter, WriterLogger}
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
-import effectful.examples.pure.uuid.impl.JavaUUIDService
+import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.impl._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs.UUID
 import effectful.free._
 
 import scala.concurrent.Future
@@ -35,46 +35,46 @@ object FreeMonadExample {
       def apply[AA](cmd: Cmd2[AA]) = \/-(cmd)
     }
 
-  val uuidService = new JavaUUIDService
+  val uuids = new JavaUUIDs
 
   val sqlDriver = new FreeSqlDriver
 
-  val tokenDao = new SqlDocDao[String,TokenService.TokenInfo,E](
+  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
-  val tokenService = new TokenServiceImpl[E](
-    logger = new FreeLogger("tokenService").liftService,
-    uuids = uuidService.liftService,
+  val tokens = new TokensImpl[E](
+    logger = new FreeLogger("tokens").liftService,
+    uuids = uuids.liftService,
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )
 
-  tokenService.find("asdf")
+  tokens.find("asdf")
 
-  val passwordService = new PasswordServiceImpl[E](
+  val passwords = new PasswordsImpl[E](
     passwordMismatchDelay = 5.seconds
   )
 
 
-  val userDao = new SqlDocDao[UUID,UserServiceImpl.UserData,E](
+  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
     sql = sqlDriver.liftService,
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping
   )
 
-  val userService = new UserServiceImpl[E](
+  val users = new UsersImpl[E](
     users = userDao,
-    passwordService = passwordService
+    passwords = passwords
   )
 
-  val userLoginService = new UserLoginServiceImpl[E](
-    logger = new FreeLogger("userLoginService").liftService,
-    users = userService,
-    tokens = tokenService,
-    passwords = passwordService
+  val userLogins = new UserLoginsImpl[E](
+    logger = new FreeLogger("userLogins").liftService,
+    users = users,
+    tokens = tokens,
+    passwords = passwords
   )
 
   // todo: generalize interpreter for any disjunction of commands

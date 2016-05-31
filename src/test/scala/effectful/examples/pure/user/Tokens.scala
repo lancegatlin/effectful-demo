@@ -3,10 +3,10 @@ package effectful.examples.pure.user
 import java.time.Instant
 
 import scala.concurrent.duration.Duration
-import effectful.examples.pure.uuid.UUIDService.UUID
+import effectful.examples.pure.uuid.UUIDs.UUID
 
-trait TokenService[E[_]] {
-  import TokenService._
+trait Tokens[E[_]] {
+  import Tokens._
 
   def issue(
     userId: UUID,
@@ -32,7 +32,7 @@ trait TokenService[E[_]] {
   ) : E[Boolean]
 }
 
-object TokenService {
+object Tokens {
   type Token = String
   case class TokenInfo(
     userId: UUID,

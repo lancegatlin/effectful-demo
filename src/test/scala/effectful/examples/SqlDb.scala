@@ -4,8 +4,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import effectful.examples.pure.uuid.impl.JavaUUIDService
-import org.apache.commons.codec.binary.Base64
+import effectful.examples.pure.uuid.impl.JavaUUIDs
 
 object SqlDb {
 
@@ -57,10 +56,10 @@ object SqlDb {
   """
     )
 
-    val uuidService = new JavaUUIDService
+    val uuids = new JavaUUIDs
     val uuid =
-      uuidService.toBase64(
-        uuidService.fromString("ad0421f3-9d7e-48ce-9cac-11a7f9c3d2dd").get
+      uuids.toBase64(
+        uuids.fromString("ad0421f3-9d7e-48ce-9cac-11a7f9c3d2dd").get
       )
     val now = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
 

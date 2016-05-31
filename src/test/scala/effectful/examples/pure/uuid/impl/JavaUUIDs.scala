@@ -4,13 +4,13 @@ import java.nio.ByteBuffer
 import java.util.{UUID => JavaUUID}
 
 import effectful._
-import effectful.examples.pure.uuid.UUIDService
+import effectful.examples.pure.uuid.UUIDs
 import org.apache.commons.codec.binary.Base64
 
 import scala.util.Try
 
-class JavaUUIDService extends UUIDService[Id] {
-  import UUIDService._
+class JavaUUIDs extends UUIDs[Id] {
+  import UUIDs._
 
   def toUUID(uuid: JavaUUID) = UUID(toBytes(uuid))
 

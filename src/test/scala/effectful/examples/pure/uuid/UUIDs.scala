@@ -1,7 +1,7 @@
 package effectful.examples.pure.uuid
 
-trait UUIDService[E[_]] {
-  import UUIDService._
+trait UUIDs[E[_]] {
+  import UUIDs._
 
   def gen() : E[UUID]
   def toString(uuid: UUID) : String
@@ -10,7 +10,7 @@ trait UUIDService[E[_]] {
   def fromBase64(s: String) : Option[UUID]
 }
 
-object UUIDService {
+object UUIDs {
   // Note: can't use Array since equality/hashCode isn't correct
   case class UUID(bytes: IndexedSeq[Byte])
 }
