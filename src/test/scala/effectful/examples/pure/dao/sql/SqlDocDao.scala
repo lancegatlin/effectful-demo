@@ -58,7 +58,9 @@ class SqlDocDao[ID,A,E[_]](
   val metadataTableName = metadataMapping.tableName
   val metadataTableSameAsRecord = tableName == metadataTableName
 
-  val recordFieldNames = recordFields.map(_.fieldName)
+//  val recordFieldNames = recordFields.map(_.fieldName)
+  val recordColNames = recordFields.map(_.columnName)
+
   val meta_recordFieldNames =
     metadataMapping.recordFields.map(_.fieldName)
 
@@ -93,8 +95,6 @@ class SqlDocDao[ID,A,E[_]](
 
   val removedColName = meta_recordFieldNameToColName("removed")
   val lastUpdatedColName = meta_recordFieldNameToColName("lastUpdated")
-
-  val allFieldCount = recordFieldCount + 1 + metadataMapping.recordFieldCount
 
   def parseFullRecord : SqlRow => (ID,A,RecordMetadata) = { row =>
     val idCol = row.head
@@ -176,7 +176,7 @@ class SqlDocDao[ID,A,E[_]](
 
       { (id:ID) =>
         sql.executePreparedUpdate(ps)(
-          IndexedSeq(recordFormat.toSqlVal(id),SqlVal.TIMESTAMP(Instant.now()))
+          IndexedSeq(SqlVal.TIMESTAMP(Instant.now()),recordFormat.toSqlVal(id))
         ).map(_ == 1)
       }
     }
@@ -197,10 +197,13 @@ class SqlDocDao[ID,A,E[_]](
 
   val newMetadata = RecordMetadata.forNewRecord
 
+  val allFieldCount = recordMapping.recordFieldCount + 1 + metadataMapping.recordFieldCount
+  val allFieldsOrdered = (recordMapping.allFields ++ metadataMapping.recordFields).sortBy(_.columnIndex)
+
   def prepInsert(implicit context: Context) : E[Seq[(ID,A)] => E[Int]] =
     if(metadataTableSameAsRecord) {
       sql.prepare(
-        s"INSERT INTO ${tableName.esc} VALUES(${("?" * allFieldCount).mkString(",")})"
+        s"INSERT INTO ${tableName.esc} (${allFieldsOrdered.map(_.columnName.esc).mkString(",")}) VALUES(${("?" * allFieldCount).mkString(",")})"
       ).map { ps =>
 
         { (values:Seq[(ID,A)]) =>
@@ -214,10 +217,10 @@ class SqlDocDao[ID,A,E[_]](
       for {
         tuple <- par(
           sql.prepare(
-            s"INSERT INTO ${tableName.esc} VALUES(${("?" * (recordFieldCount + 1)).mkString(",")})"
+            s"INSERT INTO ${tableName.esc} (${recordMapping.allFieldsOrdered.map(_.columnName.esc).mkString(",")}) VALUES(${("?" * (recordFieldCount + 1)).mkString(",")})"
           ),
           sql.prepare(
-            s"INSERT INTO ${metadataTableName.esc} VALUES(${("?" * (metadataMapping.recordFieldCount + 1)).mkString(",")})"
+            s"INSERT INTO ${metadataTableName.esc} (${metadataMapping.allFieldsOrdered.map(_.columnName.esc).mkString(",")}) VALUES(${("?" * (metadataMapping.recordFieldCount + 1)).mkString(",")})"
           )
         )
         (prepMainInsert,prepMetadataInsert) = tuple
@@ -253,7 +256,7 @@ class SqlDocDao[ID,A,E[_]](
   def prepUpdate(implicit context: Context) : E[(ID,A) => E[Boolean]] =
     if(metadataTableSameAsRecord) {
       sql.prepare(
-        s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")},${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"
+        s"UPDATE ${tableName.esc} SET ${recordColNames.map(name => esc"$name=?").mkString(",")},${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"
       ).map { ps =>
 
         { (id:ID,a:A) =>
@@ -267,7 +270,7 @@ class SqlDocDao[ID,A,E[_]](
       for {
         tuple <- par(
           sql.prepare(
-            s"UPDATE ${tableName.esc} SET ${recordFieldNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
+            s"UPDATE ${tableName.esc} SET ${recordColNames.map(name => esc"$name=?").mkString(",")} WHERE ${idColName.esc}=?"
           ),
           sql.prepare(
             s"UPDATE ${metadataTableName.esc} SET ${lastUpdatedColName.esc}=? WHERE ${idColName.esc}=?"

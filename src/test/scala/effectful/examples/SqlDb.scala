@@ -45,7 +45,7 @@ object SqlDb {
     run(
   """
   CREATE TABLE Tokens(
-    id varchar(256) primary key,
+    token varchar(256) primary key,
     user_id varchar(256) NOT NULL,
     device_id varchar(256),
     last_validated timestamp NOT NULL,

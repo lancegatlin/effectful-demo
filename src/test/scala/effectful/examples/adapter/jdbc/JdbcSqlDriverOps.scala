@@ -120,7 +120,6 @@ object JdbcSqlDriverOps {
       import SqlVal._
       row.iterator.zipWithIndex.foreach { case (sqlVal,_i) =>
         val i = _i + 1
-        println(s"!!! $i => $sqlVal")
         sqlVal match {
           case NULL(sqlType) =>
             // todo: fixing this up to use metadata to lookup type of column

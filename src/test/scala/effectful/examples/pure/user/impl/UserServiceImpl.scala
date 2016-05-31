@@ -46,9 +46,10 @@ class UserServiceImpl[E[_]](
     users.findById(id).map(_.map(toUser))
 
   def findByUsername(username: String) =
-    users.find {
-      UserDataFields.username === username
-    }.map(_.headOption.map(toUser))
+    E.pure(None)
+//    users.find {
+//      UserDataFields.username === username
+//    }.map(_.headOption.map(toUser))
 
   def findAll(start: Int, batchSize: Int) =
     users.findAll(start, batchSize).map(_.map(toUser))
