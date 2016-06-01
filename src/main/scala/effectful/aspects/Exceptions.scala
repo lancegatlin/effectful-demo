@@ -1,5 +1,7 @@
 package effectful.aspects
 
+import effectful.cats.Applicative
+
 trait Exceptions[E[_]] {
   /**
     * Replacement for standard try/catch blocks when using an effect
@@ -56,4 +58,12 @@ trait Exceptions[E[_]] {
     * @return an instance of E that contains an exception instead of a value
     */
   def failure(t: Throwable) : E[Nothing]
+}
+
+object Exceptions {
+  implicit def apply[F[_],G[_]](implicit
+    X:Exceptions[F],
+    G:Applicative[G]
+  ) : Exceptions[({ type FG[A] = F[G[A]]})#FG] =
+    CompositeExceptions[F,G]
 }

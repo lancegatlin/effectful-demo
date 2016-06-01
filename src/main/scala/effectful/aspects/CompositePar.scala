@@ -59,3 +59,20 @@ trait CompositePar[F[_],G[_]] extends Par[({ type FG[A] = F[G[A]]})#FG] {
   def parFlatMapUnordered[M[AA] <: Traversable[AA], A, B](items: M[A])(f: (A) => F[G[Traversable[B]]])(implicit cbf: CanBuildFrom[Nothing, B, M[B]]) = ???
 
 }
+
+object CompositePar {
+  implicit def apply[F[_],G[_]](implicit
+    P:Par[F],
+    F:Monad[F],
+    G:Monad[G]
+  ) = {
+    val _P = P
+    val _F = F
+    val _G = G
+    new CompositePar[F,G] {
+      override val P = _P
+      override val G = _G
+      override val F = _F
+    }
+  }
+}

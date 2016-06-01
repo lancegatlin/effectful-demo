@@ -1,6 +1,7 @@
 package effectful.examples
 
 import effectful._
+import effectful.cats.Capture
 import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.scalaz.writer._
@@ -24,7 +25,9 @@ object AkkaFutureExample {
   type E[A] = Future[LogWriter[A]]
 
   implicit val exec_Future = ExecFuture()
-  implicit val exec_E = CompositeExec[Future,LogWriter]
+//  implicit val exec_E = CompositeExec[Future,LogWriter]
+
+  val temp1 = implicitly[Capture[E]]
 
   val uuids = new JavaUUIDs
 

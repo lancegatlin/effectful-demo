@@ -16,3 +16,11 @@ trait Capture[E[_]] {
     */
   def capture[A](a: => A) : E[A]
 }
+
+object Capture {
+  implicit def apply[F[_],G[_]](implicit
+    C:Capture[F],
+    G:Applicative[G]
+  ) : Capture[({ type FG[A] = F[G[A]]})#FG] =
+    CompositeCapture[F,G]
+}

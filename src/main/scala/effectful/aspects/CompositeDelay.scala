@@ -14,3 +14,20 @@ trait CompositeDelay[F[_],G[_]] extends Delay[({ type FG[A] = F[G[A]]})#FG] {
     D.delay(duration).map(_ => G.pure(()))
   }
 }
+
+object CompositeDelay {
+  def apply[F[_],G[_]](implicit
+    D:Delay[F],
+    F:Monad[F],
+    G:Applicative[G]
+  ) = {
+    val _D = D
+    val _F = F
+    val _G = G
+    new CompositeDelay[F,G] {
+      override val D = _D
+      override val F = _F
+      override val G = _G
+    }
+  }
+}
