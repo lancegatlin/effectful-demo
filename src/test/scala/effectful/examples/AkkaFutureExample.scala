@@ -28,11 +28,8 @@ object AkkaFutureExample {
     scheduledExecutionContext
   )
 
-  // todo: eliminate this
-  implicit val capture_LogWriter = new Capture[LogWriter] {
-    override def capture[A](a: => A): LogWriter[A] =
-      LogWriter(a)
-  }
+  // todo: shouldnt need this
+  implicit val capture_LogWriter = Capture.fromApplicative[LogWriter]
 
   val uuids = new JavaUUIDs
 

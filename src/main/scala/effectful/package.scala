@@ -67,6 +67,8 @@ package object effectful {
       E.pure(f)
   }
 
+
+
   /**
     * Add the liftS method to any effectful service that uses the LiftS
     * type-class to lift the service's effect system monad into another

@@ -1,5 +1,7 @@
 package effectful
 
+import scala.language.implicitConversions
+
 import effectful.aspects._
 import effectful.cats._
 
@@ -55,12 +57,12 @@ package object free {
       Free.ParFlatMapUnordered(items,f)
   }
 
-//  implicit def liftCapture_Free[Cmd1[_],Cmd2[_]](implicit
-//    liftCmd:LiftCmd[Cmd1,Cmd2]
-//  ) = new LiftCapture[({ type F[AA] = Free[Cmd1,AA]})#F,({ type F[AA] = Free[Cmd2,AA]})#F] {
-//    override def apply[A](
-//      ea: => Free[Cmd1,A]
-//    ): Free[Cmd2,A] =
-//      ea.liftCmd[Cmd2]
-//  }
+  implicit def naturalTransformation_Free[Cmd1[_],Cmd2[_]](implicit
+    X: NaturalTransformation[Cmd1,Cmd2]
+  ) : NaturalTransformation[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] =
+    new NaturalTransformation[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] {
+      override def apply[A](f: Free[Cmd1, A]): Free[Cmd2, A] =
+        f.mapCmd[Cmd2]
+    }
+
 }

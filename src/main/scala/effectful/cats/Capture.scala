@@ -18,13 +18,14 @@ trait Capture[E[_]] {
 }
 
 object Capture {
-  // todo: how to express this for Applicative?
-//  def apply[E[_]](implicit
-//    E:Applicative[E]
-//  ) : Capture[E] = new Capture[E] {
-//    override def capture[A](a: => A): E[A] =
-//      E.pure(a)
-//  }
+  // todo: how to make this implicit without ambigious?
+  def fromApplicative[E[_]](implicit
+    E:Applicative[E]
+  ) : Capture[E] = new Capture[E] {
+    override def capture[A](a: => A): E[A] =
+      E.pure(a)
+  }
+
   implicit def apply[F[_],G[_]](implicit
     C:Capture[F],
     G:Capture[G]
