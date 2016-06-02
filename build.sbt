@@ -1,4 +1,4 @@
-name := "generic-monadic-services"
+name := "effectful"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-io" % "1.3.2" % "test",
