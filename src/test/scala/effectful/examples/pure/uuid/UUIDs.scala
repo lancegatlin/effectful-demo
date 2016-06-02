@@ -12,5 +12,7 @@ trait UUIDs[E[_]] {
 
 object UUIDs {
   // Note: can't use Array since equality/hashCode isn't correct
-  case class UUID(bytes: IndexedSeq[Byte])
+  case class UUID(bytes: IndexedSeq[Byte])(implicit print: UUID => String) {
+    override def toString = print(this)
+  }
 }

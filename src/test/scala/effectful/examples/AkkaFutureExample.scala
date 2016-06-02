@@ -31,7 +31,7 @@ object AkkaFutureExample {
   // todo: shouldnt need this
   implicit val capture_LogWriter = Capture.fromApplicative[LogWriter]
 
-  val uuids = new JavaUUIDs
+  implicit val uuids = new JavaUUIDs
 
   val sqlDriver = new JdbcSqlDriver(
     getConnectionFromPool = SqlDb.pool.getConnection,

@@ -12,6 +12,8 @@ import scala.util.Try
 class JavaUUIDs extends UUIDs[Id] {
   import UUIDs._
 
+  implicit val print : UUID => String = toString(_)
+
   def toUUID(uuid: JavaUUID) = UUID(toBytes(uuid))
 
   def toBytes(uuid: JavaUUID) : Array[Byte] = {

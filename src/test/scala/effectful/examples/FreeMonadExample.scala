@@ -8,6 +8,7 @@ import effectful.cats.{Capture, Monad, NaturalTransformation}
 import effectful.examples.AkkaFutureExample.E
 import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.WriterLogger
+import effectful.examples.adapter.slf4j.Slf4jLogger
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.uuid.impl.JavaUUIDs
@@ -37,7 +38,7 @@ object FreeMonadExample {
       override def apply[A](c: Cmd2[A]) = \/-(c)
     }
 
-  val uuids = new JavaUUIDs
+  implicit val uuids = new JavaUUIDs
 
   val sqlDriver = new FreeSqlDriver
 
@@ -80,7 +81,7 @@ object FreeMonadExample {
   )
 
   // todo: generalize interpreter for any disjunction of commands
-  val interpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
+  val futInterpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
     type EE[A] = AkkaFutureExample.E[A]
     import AkkaFutureExample.exec_Future
     import AkkaFutureExample.capture_LogWriter
@@ -92,15 +93,39 @@ object FreeMonadExample {
     override val X = implicitly[Exceptions[EE]]
 
     val sqlInterpreter =
-      new SqlDriverCmdInterpreter[AkkaFutureExample.E](
+      new SqlDriverCmdInterpreter[EE](
         sqlDriver = AkkaFutureExample.sqlDriver.liftService
       )
     val logInterpreter =
-      new LoggerCmdInterpreter[AkkaFutureExample.E](
+      new LoggerCmdInterpreter[EE](
         // todo: memoize these
         loggerName => WriterLogger(loggerName).liftService
       )
-    override def apply[A](cmd: Cmd[A]): AkkaFutureExample.E[A] =
+    override def apply[A](cmd: Cmd[A]): EE[A] =
+      cmd match {
+        case -\/(loggingCmd) => logInterpreter(loggingCmd)
+        case \/-(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
+      }
+  }
+
+  val idInterpreter = new Interpreter[Cmd,Id] {
+    type EE[A] = Id[A]
+    override val C = implicitly[Capture[EE]]
+    override val D = implicitly[Delay[EE]]
+    override val M = implicitly[Monad[EE]]
+    override val P = implicitly[Par[EE]]
+    override val X = implicitly[Exceptions[EE]]
+
+    val sqlInterpreter =
+      new SqlDriverCmdInterpreter[EE](
+        sqlDriver = IdExample.sqlDriver
+      )
+    val logInterpreter =
+      new LoggerCmdInterpreter[EE](
+        // todo: memoize these
+        loggerName => Slf4jLogger(loggerName)
+      )
+    override def apply[A](cmd: Cmd[A]): EE[A] =
       cmd match {
         case -\/(loggingCmd) => logInterpreter(loggingCmd)
         case \/-(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)

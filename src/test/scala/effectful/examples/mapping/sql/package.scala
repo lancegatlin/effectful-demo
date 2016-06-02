@@ -8,20 +8,21 @@ import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.Tokens.TokenInfo
 import effectful.examples.pure.user.impl.UsersImpl.UserData
+import effectful.examples.pure.uuid.UUIDs
 import effectful.examples.pure.uuid.UUIDs.UUID
 
 package object sql {
   import SqlVal._
 
-  implicit val charDataFormat_UUID = new CharDataFormat[UUID] {
+  implicit def charDataFormat_UUID[E[_]](implicit uuids:UUIDs[E]) = new CharDataFormat[UUID] {
     def toCharData(a: UUID) =
       CharData(Base64.encodeBase64URLSafeString(a.bytes.toArray))
 
     def fromCharData(data: CharData) =
-      UUID(Base64.decodeBase64(data.toCharString()))
+      UUID(Base64.decodeBase64(data.toCharString()))(uuids.toString)
   }
 
-  val sqlRecordFormat_TokenInfo = new SqlRecordFormat[String,TokenInfo] {
+  def sqlRecordFormat_TokenInfo[E[_]](implicit uuids:UUIDs[E]) = new SqlRecordFormat[String,TokenInfo] {
 
     def toSqlVal(a: String) =
       SqlVal.VARCHAR(30,CharData(a))
@@ -52,7 +53,7 @@ package object sql {
   }
 
   // todo: make a macro to generate this
-  val tokenInfoRecordMapping = RecordMapping[String,TokenInfo](
+  def tokenInfoRecordMapping[E[_]](implicit uuids:UUIDs[E]) = RecordMapping[String,TokenInfo](
     tableName = "Tokens",
     recordFields = Seq(
       FieldColumnMapping(
@@ -83,7 +84,7 @@ package object sql {
     )
   )(sqlRecordFormat_TokenInfo)
 
-  val sqlRowFormat_RecordMetadata = new SqlRowFormat[RecordMetadata] {
+  def sqlRowFormat_RecordMetadata[E[_]](implicit uuids:UUIDs[E]) = new SqlRowFormat[RecordMetadata] {
     def toSqlRow(a: RecordMetadata) = {
       import a._
 
@@ -105,7 +106,7 @@ package object sql {
   }
 
   // todo: make a macro to generate this
-  val tokenInfoMetadataRecordMapping = RecordMapping[String,RecordMetadata](
+  def tokenInfoMetadataRecordMapping[E[_]](implicit uuids:UUIDs[E]) = RecordMapping[String,RecordMetadata](
     tableName = "Tokens",
     recordFields = Seq(
       FieldColumnMapping(
@@ -134,7 +135,7 @@ package object sql {
     rowFormat = sqlRowFormat_RecordMetadata
   ))
 
-  val sqlRecordFormat_UserData = new SqlRecordFormat[UUID,UserData] {
+  def sqlRecordFormat_UserData[E[_]](implicit uuids:UUIDs[E]) = new SqlRecordFormat[UUID,UserData] {
 
     def toSqlVal(a: UUID) =
       SqlVal.VARCHAR(30,a.toCharData)
@@ -159,7 +160,7 @@ package object sql {
     }
   }
 
-  val userDataRecordMapping = RecordMapping[UUID,UserData](
+  def userDataRecordMapping[E[_]](implicit uuids:UUIDs[E]) = RecordMapping[UUID,UserData](
     tableName = "Users",
     recordFields = Seq(
       FieldColumnMapping(
@@ -181,7 +182,7 @@ package object sql {
   )(sqlRecordFormat_UserData)
 
   // todo: make a macro to generate this
-  val userDataMetadataRecordMapping = RecordMapping[UUID,RecordMetadata](
+  def userDataMetadataRecordMapping[E[_]](implicit uuids:UUIDs[E]) = RecordMapping[UUID,RecordMetadata](
     tableName = "Users",
     recordFields = Seq(
       FieldColumnMapping(

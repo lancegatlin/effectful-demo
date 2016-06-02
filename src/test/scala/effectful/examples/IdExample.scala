@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 object IdExample {
 
-  val uuids = new JavaUUIDs
+  implicit val uuids = new JavaUUIDs
 
   val sqlDriver = new JdbcSqlDriver(
     getConnectionFromPool = SqlDb.pool.getConnection,
