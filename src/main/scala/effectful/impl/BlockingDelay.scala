@@ -11,3 +11,14 @@ trait BlockingDelay[E[_]] extends Delay[E] {
       Thread.sleep(duration.toMillis)
     }
 }
+
+object BlockingDelay {
+  def apply[E[_]](implicit
+    E:Capture[E]
+  ) : Delay[E] = {
+    val _E = E
+    new BlockingDelay[E] {
+      implicit val E = _E
+    }
+  }
+}

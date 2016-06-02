@@ -22,7 +22,7 @@ object FreeMonadExample {
   type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
   type E[A] = Free[Cmd,A]
 
-  implicit val liftCapture_Id_Free : LiftCapture[Id,E] = implicitly
+//  implicit val liftCapture_Id_Free : LiftCapture[Id,E] = implicitly
 
   // todo: how to generalize these for all nested disjunctions?
   implicit def liftCmd_disjunction_left[Cmd1[_],Cmd2[_]] =

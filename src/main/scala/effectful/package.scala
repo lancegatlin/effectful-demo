@@ -1,7 +1,11 @@
 
+
 import scala.collection.generic.CanBuildFrom
 import effectful.cats._
 import effectful.aspects._
+import effectful.impl.BlockingDelay
+
+import scala.concurrent.duration.FiniteDuration
 
 package object effectful {
   /**
@@ -12,13 +16,6 @@ package object effectful {
   // todo: figure out how this sugar is declared in emm
 //  type |:[F[_],G[_]] = F[G[_]]
 //  val |: = Nested
-
-  type Exec[E[_]] =
-    Capture[E] with
-    Monad[E] with
-    Delay[E] with
-    Par[E] with
-    Exceptions[E]
 
   /**
     * Add the sequence method to any Collection of a effect system's monad
@@ -47,22 +44,23 @@ package object effectful {
       M: Monad[M],
       cbf: CanBuildFrom[Nothing, A, F[A]]
     ) : M[F[A]] =
-      impl.EffectfulOps.sequence[M,A,F](self)
+      impl.EffectfulOps.sequence[M,A,F](self)(M,cbf)
   }
 
   /**
     * Implementation of EffectSystem type-class for the identity effect system
     * (which uses the identity monad)
     */
-  implicit object exec_Id extends
-    impl.IdCapture with
-    impl.IdMonad with
-//    impl.IdTraverse with
-    impl.IdPar with
-    impl.NoCaptureExceptions[Id] with
-    impl.BlockingDelay[Id] {
-    implicit override val E: Monad[Id] with Capture[Id] = this
-  }
+//  implicit object exec_Id extends
+//    impl.IdCapture with
+//    impl.IdMonad with
+////    impl.IdTraverse with
+//    impl.IdPar with
+//    impl.NoCaptureExceptions[Id] with
+//    impl.BlockingDelay[Id] {
+//    implicit override val E: Monad[Id] with Capture[Id] = this
+//  }
+  implicit val monad_Id = new impl.IdMonad { }
 
   /**
     * Automatically create a LiftE type-class instance that can
@@ -98,12 +96,12 @@ package object effectful {
     ) : S[F] = liftService(self)
   }
 
-  implicit def liftCapture_G_FG[F[_],G[_]](implicit
-    F:Capture[F]
-  ) = new LiftCapture[G,({type FG[A] = F[G[A]]})#FG] {
-    def apply[A](ea: => G[A]) =
-      F.capture(ea)
-  }
+//  implicit def liftCapture_G_FG[F[_],G[_]](implicit
+//    F:Capture[F]
+//  ) = new LiftCapture[G,({type FG[A] = F[G[A]]})#FG] {
+//    def apply[A](ea: => G[A]) =
+//      F.capture(ea)
+//  }
 // todo: ambigious
 
 //  implicit def liftCapture_F_FG[F[_],G[_]](implicit

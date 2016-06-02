@@ -13,7 +13,7 @@ object ExecFuture {
     ec: ExecutionContext,
     ses:ScheduledExecutionContext
   ) : Exec[Future] =
-    new
+    new Exec[Future] with
         Capture[Future] with
         Monad[Future] with
         Exceptions[Future] with

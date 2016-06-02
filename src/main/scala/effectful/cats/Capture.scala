@@ -16,3 +16,16 @@ trait Capture[E[_]] {
     */
   def capture[A](a: => A) : E[A]
 }
+
+object Capture {
+  def apply[E[_]](implicit
+    E:Applicative[E]
+  ) : Capture[E] = new Capture[E] {
+   def capture[A](a: => A) =
+     E.pure(a)
+  }
+
+  implicit def mkCapture[E[_]](implicit
+    E:Applicative[E]
+  ) : Capture[E] = Capture[E]
+}

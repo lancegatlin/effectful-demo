@@ -1,5 +1,7 @@
 package effectful.aspects
 
+import effectful.cats.{Applicative, Monad}
+
 trait Exceptions[E[_]] {
   /**
     * Replacement for standard try/catch blocks when using an effect
@@ -56,4 +58,25 @@ trait Exceptions[E[_]] {
     * @return an instance of E that contains an exception instead of a value
     */
   def failure(t: Throwable) : E[Nothing]
+}
+
+object Exceptions {
+  def apply[E[_]](implicit
+    E:Applicative[E]
+  ) = new Exceptions[E] {
+    def attempt[A](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]]) =
+      try { _try } catch _catch
+
+    def attemptFinally[A, U](_try: => E[A])(_catch: PartialFunction[Throwable, E[A]])(_finally: => E[U]) =
+      try { _try } catch _catch finally _finally
+
+    def success[A](a: A) =
+      E.pure(a)
+    def failure(t: Throwable) =
+      throw t
+  }
+
+  implicit def mkExceptions[E[_]](implicit
+    E:Monad[E]
+  ) : Exceptions[E] = Exceptions[E]
 }
