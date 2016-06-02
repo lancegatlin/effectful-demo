@@ -1,23 +1,8 @@
 package effectful
 
-import effectful.cats.Capture
-
 import scala.collection.generic.CanBuildFrom
-import scala.concurrent.duration.FiniteDuration
 
 package object aspects {
-//  implicit object liftService_Delay extends LiftService[Delay] {
-//    override def apply[F[_], G[_]](
-//      s: Delay[G]
-//    )(implicit
-//      F: Capture[F]
-//    ): Delay[({ type FG[A] = F[G[A]]})#FG] =
-//      new Delay[({ type FG[A] = F[G[A]]})#FG] {
-//        override def delay(duration: FiniteDuration): F[Unit] =
-//          F.capture(s.delay(duration))
-//      }
-//  }
-  
   implicit class ParHelper[M[AA] <: Seq[AA],A,E[_]](
     val self: M[A]
   ) extends AnyVal {
@@ -41,13 +26,4 @@ package object aspects {
     def par[E[_]] = new ParHelper[M,A,E](self)
   }
 
-  implicit class EffectSystemPML[E[_]](val self: Exec[E]) extends AnyVal {
-    def par[A,B](ea: =>E[A],eb: =>E[B])(implicit p:Par[E]) : E[(A,B)] =
-      p.par(ea,eb)
-    def par[A,B,C](ea: =>E[A],eb: =>E[B],ec: =>E[C])(implicit p:Par[E]) : E[(A,B,C)] =
-      p.par(ea,eb,ec)
-    def par[A,B,C,D](ea: =>E[A],eb: =>E[B],ec: =>E[C],ed: =>E[D])(implicit p:Par[E]) : E[(A,B,C,D)] =
-      p.par(ea,eb,ec,ed)
-  }
-  
 }

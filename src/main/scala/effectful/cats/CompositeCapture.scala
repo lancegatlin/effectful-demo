@@ -21,18 +21,4 @@ object CompositeCapture {
       implicit val G = _G
     }
   }
-
-//  def apply[F[_],G[_]](implicit
-//    F:Capture[F],
-//    G:Capture[G]
-//  ) : Capture[({ type FG[A] = F[G[A]]})#FG] = {
-//    val _F = F
-//    val _G = G
-//    new CompositeCapture[F,G] {
-//      implicit val F = _F
-//      implicit val G = _G
-//      def maybeCapture[A](a: => A) =
-//        G.capture(a)
-//    }
-//  }
 }

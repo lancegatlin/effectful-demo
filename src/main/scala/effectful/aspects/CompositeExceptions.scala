@@ -18,7 +18,7 @@ trait CompositeExceptions[F[_],G[_]] extends Exceptions[({ type FG[A] = F[G[A]]}
 }
 
 object CompositeExceptions {
-  def apply[F[_],G[_]](implicit
+  implicit def apply[F[_],G[_]](implicit
     X:Exceptions[F],
     G:Applicative[G]
   ) = {

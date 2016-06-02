@@ -36,6 +36,7 @@ package object writer {
 //    }
   }
 
+  // todo: generalize with Traverse
   implicit def flatSequence_LogWriter[E[_]](implicit
     M:effectful.cats.Monad[E]
   ) : FlatSequence[E,LogWriter]  =

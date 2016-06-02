@@ -20,7 +20,8 @@ trait SqlDriver[E[_]] {
     rows: SqlRow*
   ) : E[Int]
 
-
+  // todo: make cursor return Cursor.NonEmpty instead of data immediately
+  // todo: to align with normal iterator pattern
   def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
@@ -76,6 +77,8 @@ object SqlDriver {
 
   type CursorId = Symbol
 
+  // todo: add Cursor.NonEmpty
+  // todo: to align with normal iterator pattern
   sealed trait Cursor {
     def id: CursorId
     def isEmpty : Boolean

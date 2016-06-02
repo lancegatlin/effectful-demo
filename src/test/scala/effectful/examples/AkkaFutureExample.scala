@@ -23,7 +23,7 @@ object AkkaFutureExample {
 
   type E[A] = Future[LogWriter[A]]
 
-  implicit val exec_Future : Exec[Future] = ExecFuture.bindContext()(
+  implicit val exec_Future = ExecFuture.bindContext()(
     executionContext,
     scheduledExecutionContext
   )

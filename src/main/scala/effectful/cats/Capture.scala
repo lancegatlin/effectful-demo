@@ -18,7 +18,7 @@ trait Capture[E[_]] {
 }
 
 object Capture {
-  // todo: how to make this implicit without ambigious?
+  // todo: how to make this implicit without ambiguous?
   def fromApplicative[E[_]](implicit
     E:Applicative[E]
   ) : Capture[E] = new Capture[E] {

@@ -16,7 +16,7 @@ trait CompositeDelay[F[_],G[_]] extends Delay[({ type FG[A] = F[G[A]]})#FG] {
 }
 
 object CompositeDelay {
-  def apply[F[_],G[_]](implicit
+  implicit def apply[F[_],G[_]](implicit
     D:Delay[F],
     F:Monad[F],
     G:Applicative[G]

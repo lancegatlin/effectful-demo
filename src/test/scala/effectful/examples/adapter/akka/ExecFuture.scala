@@ -2,9 +2,8 @@ package effectful.examples.adapter.akka
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import effectful.Exec
-import effectful.aspects.{Delay, Exceptions}
-import effectful.cats.{Capture, Monad}
+import effectful.aspects._
+import effectful.cats._
 import effectful.impl.StdPar
 import s_mach.concurrent._
 
@@ -12,7 +11,11 @@ object ExecFuture {
   def bindContext()(implicit
     ec: ExecutionContext,
     ses:ScheduledExecutionContext
-  ) : Exec[Future] =
+  ) :   Capture[Future] with
+        Monad[Future] with
+        Exceptions[Future] with
+        Par[Future] with
+        Delay[Future] =
     new
         Capture[Future] with
         Monad[Future] with

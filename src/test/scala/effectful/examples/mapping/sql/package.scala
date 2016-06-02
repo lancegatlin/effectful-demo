@@ -8,7 +8,6 @@ import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.Tokens.TokenInfo
 import effectful.examples.pure.user.impl.UsersImpl.UserData
-import effectful.examples.pure.uuid.UUIDs$
 import effectful.examples.pure.uuid.UUIDs.UUID
 
 package object sql {
