@@ -50,40 +50,21 @@ package object effectful {
       impl.EffectfulOps.sequence[M,A,F](self)
   }
 
-  /**
-    * Implementation of EffectSystem type-class for the identity effect system
-    * (which uses the identity monad)
-    */
-  implicit object exec_Id extends
-    impl.IdCapture with
-    impl.IdMonad with
-//    impl.IdTraverse with
-    impl.IdPar with
-    impl.NoCaptureExceptions[Id] with
-    impl.BlockingDelay[Id] {
-    implicit override val E: Monad[Id] with Capture[Id] = this
+  implicit object capture_Id extends impl.IdCapture
+  implicit object monad_Id extends impl.IdMonad
+  implicit object par_Id extends impl.IdPar
+  implicit object exceptions_Id extends impl.NoCaptureExceptions[Id] {
+    implicit val E = monad_Id
+  }
+  implicit object delay_Id extends impl.BlockingDelay[Id] {
+    override implicit val E = capture_Id
   }
 
-  /**
-    * Automatically create a LiftE type-class instance that can
-    * lift from identity effect system into any other effect system
-    */
-  implicit def liftCapture_Id[F[_]](implicit
-    F:Capture[F]
-  ) : LiftCapture[Id,F] = new LiftCapture[Id,F] {
-    override def apply[A](
-      ea: => Id[A]
-    ) : F[A] = F.capture(ea)
-  }
-
-  /**
-    * Add the liftCapture method to any effect system's monad that uses the LiftE
-    * type-class to lift the monad into another effect system's monad
-    */
-  implicit class EffectSystemPml[E[_],A](val self: E[A]) extends AnyVal {
-    def liftCapture[F[_]](implicit
-      liftCapture:LiftCapture[E,F]
-    ) : F[A] = liftCapture(self)
+  implicit def naturalTransformation_Id[E[_]](implicit
+    E:Applicative[E]
+  ) = new NaturalTransformation[Id,E] {
+    override def apply[A](f: Id[A]): E[A] =
+      E.pure(f)
   }
 
   /**
@@ -91,28 +72,11 @@ package object effectful {
     * type-class to lift the service's effect system monad into another
     * effect system's monad
     */
-  implicit class ServicePML[S[_[_]],E[_]](val self: S[E]) extends AnyVal {
-    def liftService[F[_]](implicit
-      liftCapture:LiftCapture[E,F],
+  implicit class ServicePML[S[_[_]],F[_]](val self: S[F]) extends AnyVal {
+    def liftService[G[_]](implicit
+      X:CaptureTransform[F,G],
       liftService:LiftService[S]
-    ) : S[F] = liftService(self)
+    ) : S[G] = liftService(self)
   }
-
-  implicit def liftCapture_G_FG[F[_],G[_]](implicit
-    F:Capture[F]
-  ) = new LiftCapture[G,({type FG[A] = F[G[A]]})#FG] {
-    def apply[A](ea: => G[A]) =
-      F.capture(ea)
-  }
-// todo: ambigious
-
-//  implicit def liftCapture_F_FG[F[_],G[_]](implicit
-//    F:Monad[F],
-//    G:Applicative[G]
-//  ) = new LiftCapture[F,({type FG[A] = F[G[A]]})#FG] {
-//    def apply[A](ea: => F[A]) =
-//      F.map(ea)(G.pure)
-//  }
-//
 
 }

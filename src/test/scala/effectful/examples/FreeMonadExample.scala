@@ -3,6 +3,7 @@
 //import scalaz.{-\/, \/, \/-}
 //import scala.concurrent.duration._
 //import effectful._
+//import effectful.cats.Capture
 //import effectful.examples.effects.logging.free._
 //import effectful.examples.adapter.scalaz.writer.{LogWriter, WriterLogger}
 //import effectful.examples.effects.sql.free._
@@ -22,31 +23,37 @@
 //  type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
 //  type E[A] = Free[Cmd,A]
 //
-//  implicit val liftCapture_Id_Free : LiftCapture[Id,E] = implicitly
+//  // todo: should be able to generalize Capture from Applicative
+//  implicit def capture_Free[Cmd[_]] : Capture[({ type F[A] = Free[Cmd,A]})#F] = {
+//    new Capture[({ type F[A] = Free[Cmd,A]})#F] {
+//      override def capture[A](a: => A) =
+//        Free.Pure(a)
+//      }
+//  }
 //
 //  // todo: how to generalize these for all nested disjunctions?
-//  implicit def liftCmd_disjunction_left[Cmd1[_],Cmd2[_]] =
-//    new LiftCmd[Cmd1,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
-//      def apply[AA](cmd: Cmd1[AA]) = -\/(cmd)
-//    }
-//
-//  implicit def liftCmd_disjunction_right[Cmd1[_],Cmd2[_]] =
-//    new LiftCmd[Cmd2,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
-//      def apply[AA](cmd: Cmd2[AA]) = \/-(cmd)
-//    }
+////  implicit def liftCmd_disjunction_left[Cmd1[_],Cmd2[_]] =
+////    new LiftCmd[Cmd1,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
+////      def apply[AA](cmd: Cmd1[AA]) = -\/(cmd)
+////    }
+////
+////  implicit def liftCmd_disjunction_right[Cmd1[_],Cmd2[_]] =
+////    new LiftCmd[Cmd2,({ type Cmd[A] = Cmd1[A] \/ Cmd2[A]})#Cmd] {
+////      def apply[AA](cmd: Cmd2[AA]) = \/-(cmd)
+////    }
 //
 //  val uuids = new JavaUUIDs
 //
 //  val sqlDriver = new FreeSqlDriver
 //
 //  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
-//    sql = sqlDriver.liftService,
+//    sql = sqlDriver.liftService[E],
 //    recordMapping = tokenInfoRecordMapping,
 //    metadataMapping = tokenInfoMetadataRecordMapping
 //  )
 //
 //  val tokens = new TokensImpl[E](
-//    logger = new FreeLogger("tokens").liftService,
+//    logger = new FreeLogger("tokens").liftService[E],
 //    uuids = uuids.liftService,
 //    tokens = tokenDao,
 //    tokenDefaultDuration = 10.days
@@ -60,7 +67,7 @@
 //
 //
 //  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
-//    sql = sqlDriver.liftService,
+//    sql = sqlDriver.liftService[E],
 //    recordMapping = userDataRecordMapping,
 //    metadataMapping = userDataMetadataRecordMapping
 //  )
@@ -71,7 +78,7 @@
 //  )
 //
 //  val userLogins = new UserLoginsImpl[E](
-//    logger = new FreeLogger("userLogins").liftService,
+//    logger = new FreeLogger("userLogins").liftService[E],
 //    users = users,
 //    tokens = tokens,
 //    passwords = passwords
@@ -79,25 +86,16 @@
 //
 //  // todo: generalize interpreter for any disjunction of commands
 //  val interpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
-//    override implicit val E = AkkaFutureExample.exec_E
+//    override implicit val E = AkkaFutureExample.exec_Future
 //
 //    val sqlInterpreter =
 //      new SqlDriverCmdInterpreter[AkkaFutureExample.E](
-//        sqlDriver = AkkaFutureExample.sqlDriver.liftService
+//        sqlDriver = AkkaFutureExample.sqlDriver.liftService[E]
 //      )
 //    val logInterpreter =
 //      new LoggerCmdInterpreter[AkkaFutureExample.E](
 //        // todo: memoize these
-//        loggerName => WriterLogger(loggerName).liftService(
-//          // todo: fix me - should match implicit in effectful.package
-//          new LiftCapture[LogWriter,AkkaFutureExample.E] {
-//            def apply[A](ea: => LogWriter[A]) = {
-//              import AkkaFutureExample.executionContext
-//              Future(ea)
-//            }
-//          },
-//          implicitly
-//        )
+//        loggerName => WriterLogger(loggerName).liftService[E]
 //      )
 //    override def apply[A](cmd: Cmd[A]): AkkaFutureExample.E[A] =
 //      cmd match {

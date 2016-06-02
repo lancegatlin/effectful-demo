@@ -1,7 +1,7 @@
 package effectful.examples
 
 import effectful._
-import effectful.cats.Capture
+import effectful.cats._
 import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.scalaz.writer._
@@ -11,7 +11,6 @@ import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
-import effectful.examples.pure.uuid.UUIDs
 import effectful.examples.pure.uuid.UUIDs.UUID
 import s_mach.concurrent.ScheduledExecutionContext
 
@@ -24,10 +23,16 @@ object AkkaFutureExample {
 
   type E[A] = Future[LogWriter[A]]
 
-  implicit val exec_Future = ExecFuture()
-//  implicit val exec_E = CompositeExec[Future,LogWriter]
+  implicit val exec_Future : Exec[Future] = ExecFuture.bindContext()(
+    executionContext,
+    scheduledExecutionContext
+  )
 
-  val temp1 = implicitly[Capture[E]]
+  // todo: eliminate this
+  implicit val capture_LogWriter = new Capture[LogWriter] {
+    override def capture[A](a: => A): LogWriter[A] =
+      LogWriter(a)
+  }
 
   val uuids = new JavaUUIDs
 
@@ -37,14 +42,14 @@ object AkkaFutureExample {
   )
 
   val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
-    sql = sqlDriver.liftService,
+    sql = sqlDriver.liftService[E],
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
   )
 
   val tokens = new TokensImpl[E](
-    logger = WriterLogger("tokens").liftService,
-    uuids = uuids.liftService,
+    logger = WriterLogger("tokens").liftService[E],
+    uuids = uuids.liftService[E],
     tokens = tokenDao,
     tokenDefaultDuration = 10.days
   )
@@ -54,7 +59,7 @@ object AkkaFutureExample {
   )
 
   val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
-    sql = sqlDriver.liftService,
+    sql = sqlDriver.liftService[E],
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping
   )
@@ -64,7 +69,7 @@ object AkkaFutureExample {
   )
 
   val userLogins = new UserLoginsImpl[E](
-    logger = WriterLogger("userLogins").liftService,
+    logger = WriterLogger("userLogins").liftService[E],
     users = users,
     tokens = tokens,
     passwords = passwords

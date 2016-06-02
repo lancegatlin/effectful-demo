@@ -9,7 +9,7 @@ import effectful.impl.StdPar
 import s_mach.concurrent._
 
 object ExecFuture {
-  def apply()(implicit
+  def bindContext()(implicit
     ec: ExecutionContext,
     ses:ScheduledExecutionContext
   ) : Exec[Future] =

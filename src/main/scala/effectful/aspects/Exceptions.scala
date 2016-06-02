@@ -2,6 +2,7 @@ package effectful.aspects
 
 import effectful.cats.Applicative
 
+// todo: this could be generalized to Errors[Err,E[_]]
 trait Exceptions[E[_]] {
   /**
     * Replacement for standard try/catch blocks when using an effect
