@@ -23,8 +23,6 @@ object SqlDocDao {
     tableName: String,
     recordFields: Seq[FieldColumnMapping],
     idField: FieldColumnMapping
-  )(
-    val recordFormat: SqlRecordFormat[ID,A]
   ) {
     def recordFieldCount = recordFields.size
     val recordFieldsOrdered = recordFields.sortBy(_.columnIndex)
@@ -47,7 +45,9 @@ class SqlDocDao[ID,A,E[_]](
 )(implicit
   E:Monad[E],
   P:Par[E],
-  X:Exceptions[E]
+  X:Exceptions[E],
+  recordFormat: SqlRecordFormat[ID,A],
+  metadataFormat: SqlRecordFormat[ID,RecordMetadata]
 ) extends DocDao[ID,A,E] {
   import P._
   import Monad.ops._
@@ -99,7 +99,7 @@ class SqlDocDao[ID,A,E[_]](
   def parseFullRecord : SqlRow => (ID,A,RecordMetadata) = { row =>
     val idCol = row.head
     val (recordRow, metadataRow) = row.tail.splitAt(recordFieldCount)
-    (recordFormat.fromSqlVal(idCol), recordFormat.fromSqlRow(recordRow), metadataMapping.recordFormat.fromSqlRow(metadataRow))
+    (recordFormat.fromSqlVal(idCol), recordFormat.fromSqlRow(recordRow), metadataFormat.fromSqlRow(metadataRow))
   }
 
   def prepFindById(implicit context: SqlDriver.Context): E[ID => E[Option[(ID,A,RecordMetadata)]]]  =
@@ -208,7 +208,7 @@ class SqlDocDao[ID,A,E[_]](
 
         { (values:Seq[(ID,A)]) =>
           sql.executePreparedUpdate(ps)(values.map { case (id,a) =>
-            (recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)) ++ metadataMapping.recordFormat.toSqlRow(newMetadata)
+            (recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)) ++ metadataFormat.toSqlRow(newMetadata)
           }:_*)
         }
       }
@@ -232,7 +232,7 @@ class SqlDocDao[ID,A,E[_]](
               recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
             }:_*),
             sql.executePreparedUpdate(prepMetadataInsert)(values.map { case (id,a) =>
-              recordFormat.toSqlVal(id) +: metadataMapping.recordFormat.toSqlRow(newMetadata)
+              recordFormat.toSqlVal(id) +: metadataFormat.toSqlRow(newMetadata)
             }:_*)
           )
           (mainInsertCount,metadataInsertCount) = tuple
