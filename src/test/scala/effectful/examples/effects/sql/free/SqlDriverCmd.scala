@@ -26,7 +26,7 @@ object SqlDriverCmd {
   case class ExecutePreparedQuery(
     preparedStatementId: PreparedStatementId,
     rows: Seq[SqlRow]
-  ) extends SqlDriverCmd[Cursor]
+  ) extends SqlDriverCmd[InitialCursor]
 
   case class ExecutePreparedUpdate(
     preparedStatementId: PreparedStatementId,
@@ -37,7 +37,7 @@ object SqlDriverCmd {
   case class ExecuteQuery(
     statement: String,
     context: Context
-  ) extends SqlDriverCmd[Cursor]
+  ) extends SqlDriverCmd[InitialCursor]
 
   case class ExecuteUpdate(
     statement: String,

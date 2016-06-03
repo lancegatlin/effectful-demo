@@ -12,7 +12,7 @@ trait SqlDriver[E[_]] {
     preparedStatementId: PreparedStatementId
   )(
     rows: SqlRow*
-  ): E[Cursor]
+  ): E[InitialCursor]
 
   def executePreparedUpdate(
     preparedStatementId: PreparedStatementId
@@ -20,9 +20,7 @@ trait SqlDriver[E[_]] {
     rows: SqlRow*
   ) : E[Int]
 
-  // todo: make cursor return Cursor.NonEmpty instead of data immediately
-  // todo: to align with normal iterator pattern
-  def executeQuery(statement: String)(implicit context: Context) : E[Cursor]
+  def executeQuery(statement: String)(implicit context: Context) : E[InitialCursor]
   def executeUpdate(statement: String)(implicit context: Context) : E[Int]
 
   def getCursorMetadata(cursorId: CursorId) : E[CursorMetadata]
@@ -77,15 +75,25 @@ object SqlDriver {
 
   type CursorId = Symbol
 
-  // todo: add Cursor.NonEmpty
-  // todo: to align with normal iterator pattern
+  sealed trait InitialCursor {
+    def isEmpty : Boolean
+    def nonEmpty:  Boolean = !isEmpty
+  }
+  object InitialCursor {
+    case class NonEmpty(id: CursorId) extends InitialCursor {
+      override def isEmpty = false
+    }
+    case object Empty extends InitialCursor {
+      override def isEmpty = true
+    }
+  }
+
   sealed trait Cursor {
-    def id: CursorId
     def isEmpty : Boolean
     def nonEmpty:  Boolean = !isEmpty
   }
   object Cursor {
-    case class Empty(id: CursorId) extends Cursor {
+    case object Empty extends Cursor {
       override def isEmpty = true
     }
     case class Row(

@@ -29,21 +29,21 @@ package object sql {
       iterator({ () => self.executeQuery(statement) })
     }
 
-    def iterator(fetchCursor: () => E[SqlDriver.Cursor])(implicit E:Monad[E]) : EffectIterator[E,SqlRow]= {
+    def iterator(fetchCursor: () => E[SqlDriver.InitialCursor])(implicit E:Monad[E]) : EffectIterator[E,SqlRow]= {
       import Monad.ops._
 
-      EffectIterator.flatten {
+      EffectIterator.flatten[E,SqlRow] {
         for {
-          cursor <- fetchCursor()
+          initialCursor <- fetchCursor()
         } yield {
-          cursor match {
-            case Cursor.Empty(_) =>
-              EffectIterator.empty
-            case Cursor.Row(_,_,firstRow) =>
-              EffectIterator.computed(firstRow) ++ EffectIterator[E,SqlRow] { () =>
-                self.nextCursor(cursor.id).map {
+          initialCursor match {
+            case InitialCursor.Empty =>
+              EffectIterator.empty[E,SqlRow]
+            case InitialCursor.NonEmpty(cursorId) =>
+              EffectIterator[E,SqlRow] { () =>
+                self.nextCursor(cursorId).map {
                   case Cursor.Row(_,_,row) => Some(row)
-                  case Cursor.Empty(_) => None
+                  case Cursor.Empty => None
                 }
               }
           }

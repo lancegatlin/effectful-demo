@@ -22,14 +22,14 @@ class FreeSqlDriver extends SqlDriver[FreeSqlDriverCmd] {
   override def prepare(statement: String)(implicit context: Context): FreeSqlDriverCmd[PreparedStatementId] =
     Command(Prepare(statement, context))
 
-  override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Cursor] =
+  override def executePreparedQuery(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[InitialCursor] =
     Command(ExecutePreparedQuery(preparedStatementId,rows))
 
   override def executePreparedUpdate(preparedStatementId: PreparedStatementId)(rows: SqlRow*): FreeSqlDriverCmd[Int] =
     Command(ExecutePreparedUpdate(preparedStatementId,rows))
 
 
-  override def executeQuery(statement: String)(implicit context: Context): FreeSqlDriverCmd[Cursor] =
+  override def executeQuery(statement: String)(implicit context: Context): FreeSqlDriverCmd[InitialCursor] =
     Command(ExecuteQuery(statement,context))
 
   override def executeUpdate(statement: String)(implicit context: Context): FreeSqlDriverCmd[Int] =

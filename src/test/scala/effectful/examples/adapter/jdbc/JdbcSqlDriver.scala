@@ -124,7 +124,7 @@ class JdbcSqlDriver(
     preparedStatementId: PreparedStatementId
   )(
     rows: SqlRow*
-  ): Id[Cursor] = {
+  ): Id[InitialCursor] = {
     val internalPreparedStatement = preparedStatements(preparedStatementId)
     prepareBatches(internalPreparedStatement.jdbcPreparedStatement,rows)
     createCursor(
@@ -139,7 +139,7 @@ class JdbcSqlDriver(
     statement: String
   )(implicit
     context: Context
-  ): Id[Cursor] = {
+  ): Id[InitialCursor] = {
     val jdbcConnection = getJdbcConnection()
     val jdbcStatement = jdbcConnection.createStatement()
     createCursor(
@@ -172,14 +172,14 @@ class JdbcSqlDriver(
 
   val cursors = new ConcurrentHashMap[Symbol,JdbcResultSetCursor]()
 
-  def createCursor(resultSet: java.sql.ResultSet, onClose: () => Unit) : Cursor = {
+  def createCursor(resultSet: java.sql.ResultSet, onClose: () => Unit) : InitialCursor = {
     val internalCursor = JdbcResultSetCursor(
       id = genId(),
       resultSet = resultSet,
       onClose = onClose
     )
     cursors.put(internalCursor.id, internalCursor)
-    internalCursor.next()
+    internalCursor.initialCursor
   }
 
   override def getCursorMetadata(cursorId: CursorId): Id[CursorMetadata] =

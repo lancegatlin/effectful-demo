@@ -25,7 +25,7 @@ object EffectIteratorOps {
     loop()
   }
 
-  def empty[E[_],A](implicit E: Monad[E]) = {
+  def empty[E[_],A](implicit E: Monad[E]) : EffectIterator[E,A] = {
     val _E = E
     new EffectIterator[E,A] {
       override implicit val E = _E

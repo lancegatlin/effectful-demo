@@ -45,6 +45,14 @@ case class JdbcResultSetCursor(
     }
   )
 
+  def initialCursor : InitialCursor = {
+    if(resultSet.isBeforeFirst) {
+      InitialCursor.NonEmpty(id)
+    } else {
+      InitialCursor.Empty
+    }
+  }
+
   def next() : Cursor = {
     if(resultSet.next()) {
       Cursor.Row(
@@ -58,7 +66,7 @@ case class JdbcResultSetCursor(
     } else {
       resultSet.close()
       onClose()
-      Cursor.Empty(id)
+      Cursor.Empty
     }
   }
 

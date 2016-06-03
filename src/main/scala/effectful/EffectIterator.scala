@@ -47,7 +47,7 @@ trait EffectIterator[E[_],A] { self =>
 }
 
 object EffectIterator {
-  def empty[E[_],A](implicit E: Monad[E]) =
+  def empty[E[_],A](implicit E: Monad[E]) : EffectIterator[E,A] =
     impl.EffectIteratorOps.empty[E,A]
 
   def apply[E[_], A](
