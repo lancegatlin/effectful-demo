@@ -22,7 +22,7 @@ object IdExample {
     uuids = uuids
   )
 
-  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,Id](
+  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,Id](
     sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -32,7 +32,7 @@ object IdExample {
   val tokens = new TokensImpl[Id](
     logger = Slf4jLogger("tokens").liftService,
     uuids = uuids.liftService,
-    tokens = tokenDao,
+    tokensDao = tokensDao,
     tokenDefaultDuration = 10.days
   )
 
@@ -46,7 +46,7 @@ object IdExample {
     metadataMapping = userDataMetadataRecordMapping
   )
   val users = new UsersImpl[Id](
-    users = userDao,
+    usersDao = userDao,
     passwords = passwords
   )
 

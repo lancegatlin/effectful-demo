@@ -24,7 +24,7 @@ object UsersImpl {
 }
 
 class UsersImpl[E[_]](
-  users: DocDao[UUID,UserData,E],
+  usersDao: DocDao[UUID,UserData,E],
   passwords: Passwords[E]
 )(implicit
   E:Monad[E]
@@ -43,28 +43,29 @@ class UsersImpl[E[_]](
     }
 
   def findById(id: UUID) =
-    users.findById(id).map(_.map(toUser))
+    usersDao.findById(id).map(_.map(toUser))
 
   def findByUsername(username: String) =
     E.pure(None)
+  //todo:
 //    users.find {
 //      UserDataFields.username === username
 //    }.map(_.headOption.map(toUser))
 
   def findAll(start: Int, batchSize: Int) =
-    users.findAll(start, batchSize).map(_.map(toUser))
+    usersDao.findAll(start, batchSize).map(_.map(toUser))
 
   def remove(userId: UUID) =
-    users.remove(userId)
+    usersDao.remove(userId)
 
   def rename(userId: UUID, newUsername: String) =
-    users.findById(userId).flatMap {
+    usersDao.findById(userId).flatMap {
       case Some((_,userData,_)) =>
         for {
           maybeUser <- findByUsername(newUsername)
           result <- {
             if(maybeUser.isEmpty) {
-              users.update(userId,userData.copy(username = newUsername))
+              usersDao.update(userId,userData.copy(username = newUsername))
             } else {
               E(false)
             }
@@ -83,7 +84,7 @@ class UsersImpl[E[_]](
           case None =>
             for {
               digest <- passwords.mkDigest(password)
-              result <- users.insert(id,UserData(
+              result <- usersDao.insert(id,UserData(
                 username = username,
                 passwordDigest = digest
               ))

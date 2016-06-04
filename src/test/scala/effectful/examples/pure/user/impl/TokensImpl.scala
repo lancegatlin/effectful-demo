@@ -28,7 +28,7 @@ object TokensImpl {
 class TokensImpl[E[_]](
   logger: Logger[E],
   uuids: UUIDs[E],
-  tokens: DocDao[String,Tokens.TokenInfo,E],
+  tokensDao: DocDao[String,Tokens.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
   E:Monad[E]
@@ -55,7 +55,7 @@ class TokensImpl[E[_]](
           MILLIS
         )
       )
-      result <- tokens.insert(token, tokenInfo)
+      result <- tokensDao.insert(token, tokenInfo)
       _ <- {
         if(result == false) {
           E(throw new RuntimeException("Failed to create token"))
@@ -69,11 +69,11 @@ class TokensImpl[E[_]](
 
   override def validate(token: String): E[Option[TokenInfo]] =
     for {
-      optTokenInfo <- tokens.findById(token)
+      optTokenInfo <- tokensDao.findById(token)
       result <- optTokenInfo match {
         case Some((_,tokenInfo,_)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
           for {
-            result <- tokens.update(token, tokenInfo.copy(
+            result <- tokensDao.update(token, tokenInfo.copy(
               lastValidated = Instant.now()
             ))
             _ <- {
@@ -89,15 +89,15 @@ class TokensImpl[E[_]](
     } yield result
 
   override def find(token: Token): E[Option[TokenInfo]] =
-    tokens.findById(token).map(_.map(_._2))
+    tokensDao.findById(token).map(_.map(_._2))
 
   override def forceExpire(token: Token): E[Unit] =
     for {
-      optTokenInfo <- tokens.findById(token)
+      optTokenInfo <- tokensDao.findById(token)
       result <- {
         optTokenInfo match {
           case Some((_,tokenInfo,_)) =>
-            tokens.update(token, tokenInfo.copy(
+            tokensDao.update(token, tokenInfo.copy(
               expiresOn = Instant.now()
             ))
           case None => E(throw new RuntimeException("Token does not exist"))
@@ -114,7 +114,7 @@ class TokensImpl[E[_]](
 
   override def forceAllExpire(userId: UUID, exceptTokens: Token*): E[Boolean] =
     for {
-      allTokenInfo <- tokens.find {
+      allTokenInfo <- tokensDao.find {
         TokenInfoFields.userId === userId
       }
       _ <- allTokenInfo.map { case (token,_,_) =>

@@ -42,7 +42,7 @@ object FreeMonadExample {
 
   val sqlDriver = new FreeSqlDriver
 
-  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
+  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService[E],
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -51,7 +51,7 @@ object FreeMonadExample {
   val tokens = new TokensImpl[E](
     logger = new FreeLogger("tokens").liftService[E],
     uuids = uuids.liftService,
-    tokens = tokenDao,
+    tokensDao = tokensDao,
     tokenDefaultDuration = 10.days
   )
 
@@ -67,7 +67,7 @@ object FreeMonadExample {
   )
 
   val users = new UsersImpl[E](
-    users = userDao,
+    usersDao = userDao,
     passwords = passwords
   )
 

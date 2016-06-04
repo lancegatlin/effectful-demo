@@ -38,7 +38,7 @@ object FutureLogWriterExample {
     uuids = uuids
   )
 
-  val tokenDao = new SqlDocDao[String,Tokens.TokenInfo,E](
+  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService[E],
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -47,7 +47,7 @@ object FutureLogWriterExample {
   val tokens = new TokensImpl[E](
     logger = WriterLogger("tokens").liftService[E],
     uuids = uuids.liftService[E],
-    tokens = tokenDao,
+    tokensDao = tokensDao,
     tokenDefaultDuration = 10.days
   )
 
@@ -61,7 +61,7 @@ object FutureLogWriterExample {
     metadataMapping = userDataMetadataRecordMapping
   )
   val users = new UsersImpl[E](
-    users = userDao,
+    usersDao = userDao,
     passwords = passwords
   )
 
