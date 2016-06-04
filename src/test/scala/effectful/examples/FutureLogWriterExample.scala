@@ -17,7 +17,7 @@ import s_mach.concurrent.ScheduledExecutionContext
 import scala.concurrent._
 import scala.concurrent.duration._
 
-object AkkaFutureExample {
+object FutureLogWriterExample {
   implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val scheduledExecutionContext = ScheduledExecutionContext(4)
 

@@ -5,7 +5,7 @@ import scala.concurrent.duration._
 import effectful._
 import effectful.aspects.{Delay, Exceptions, Par}
 import effectful.cats.{Capture, Monad, NaturalTransformation}
-import effectful.examples.AkkaFutureExample.E
+import effectful.examples.FutureLogWriterExample.E
 import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.WriterLogger
 import effectful.examples.adapter.slf4j.Slf4jLogger
@@ -55,8 +55,6 @@ object FreeMonadExample {
     tokenDefaultDuration = 10.days
   )
 
-  tokens.find("asdf")
-
   val passwords = new PasswordsImpl[E](
     passwordMismatchDelay = 5.seconds
   )
@@ -81,10 +79,10 @@ object FreeMonadExample {
   )
 
   // todo: generalize interpreter for any disjunction of commands
-  val futInterpreter = new Interpreter[Cmd,AkkaFutureExample.E] {
-    type EE[A] = AkkaFutureExample.E[A]
-    import AkkaFutureExample.exec_Future
-    import AkkaFutureExample.capture_LogWriter
+  val futInterpreter = new Interpreter[Cmd,FutureLogWriterExample.E] {
+    type EE[A] = FutureLogWriterExample.E[A]
+    import FutureLogWriterExample.exec_Future
+    import FutureLogWriterExample.capture_LogWriter
 
     override val C = implicitly[Capture[EE]]
     override val D = implicitly[Delay[EE]]
@@ -94,7 +92,7 @@ object FreeMonadExample {
 
     val sqlInterpreter =
       new SqlDriverCmdInterpreter[EE](
-        sqlDriver = AkkaFutureExample.sqlDriver.liftService
+        sqlDriver = FutureLogWriterExample.sqlDriver.liftService
       )
     val logInterpreter =
       new LoggerCmdInterpreter[EE](
