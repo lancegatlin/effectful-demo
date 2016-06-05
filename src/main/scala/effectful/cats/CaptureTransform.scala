@@ -10,7 +10,7 @@ object CaptureTransform {
     C:Capture[G],
     G:Monad[G],
     K:NaturalTransformation[F,G]
-  ) : CaptureTransform[F,G] =
+  ) =
     new CaptureTransform[F,G] {
       override def apply[A](f: => F[A]): G[A] = {
         G.flatMap(C.capture(K(f)))(identity)

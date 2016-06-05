@@ -50,6 +50,7 @@ trait CompositePar[F[_],G[_]] extends Par[({ type FG[A] = F[G[A]]})#FG] {
     }
   }
 
+  // todo:
   def parMap[M[AA] <: Seq[AA], A, B](items: M[A])(f: (A) => F[G[B]])(implicit cbf: CanBuildFrom[Nothing, B, M[B]]) = ???
 
   def parFlatMap[M[AA] <: Seq[AA], A, B](items: M[A])(f: (A) => F[G[Traversable[B]]])(implicit cbf: CanBuildFrom[Nothing, B, M[B]]) = ???

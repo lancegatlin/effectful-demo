@@ -15,6 +15,8 @@ object Query {
   case class EqualField[A,B](
     field: Field[A,B],
     test: Field[A,B]
+    // todo: when building a query need to know what dialect is target to bind render typeclass
+    // todo: since B type will be erased after that
   ) extends Op[A]  {
     def apply(a: A) : Boolean =
       field.extract(a) == test.extract(a)

@@ -1,6 +1,6 @@
 package effectful.cats
 
-trait Monad[E[_]] extends Applicative[E] {
+trait Monad[E[_]] {
   def map[A,B](m: E[A])(f: A => B) : E[B]
   def flatMap[A,B](m: E[A])(f: A => E[B]) : E[B]
 
@@ -19,14 +19,15 @@ trait Monad[E[_]] extends Applicative[E] {
 }
 
 object Monad {
-  implicit def apply[F[_],G[_]](implicit
-    F:Monad[F],
-    G:Monad[G],
-    flatSequenceFG: FlatSequence[F,G]
-  ) : Monad[({ type FG[A] = F[G[A]]})#FG] =
-    CompositeMonad[F,G]
+//  implicit def apply[F[_],G[_]](implicit
+//    F:Monad[F],
+//    G:Monad[G],
+//    flatSequenceFG: FlatSequence[F,G]
+//  ) : Monad[({ type FG[A] = F[G[A]]})#FG] =
+//    CompositeMonad[F,G]
 
-  object ops {
+  object oops e
+  trait ops {
     /**
       * Add the map/flatMap/widen methods to any effect system monad that
       * simply forward the call to the implicit EffectSystem type-class

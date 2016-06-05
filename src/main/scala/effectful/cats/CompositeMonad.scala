@@ -17,11 +17,11 @@ trait CompositeMonad[F[_],G[_]] extends Monad[({ type FG[A] = F[G[A]]})#FG] {
 }
 
 object CompositeMonad {
-  def apply[F[_],G[_]](implicit
+  implicit def apply[F[_],G[_]](implicit
     F:Monad[F],
     G:Monad[G],
     flatSequenceFG: FlatSequence[F,G]
-  ) : Monad[({ type FG[A] = F[G[A]]})#FG] = {
+  ) = {
     val _F = F
     val _G = G
     new CompositeMonad[F,G] {

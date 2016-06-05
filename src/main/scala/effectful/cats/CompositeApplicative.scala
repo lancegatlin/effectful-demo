@@ -9,10 +9,10 @@ trait CompositeApplicative[F[_],G[_]] extends Applicative[({ type FG[A] = F[G[A]
 }
 
 object CompositeApplicative {
-  def apply[F[_],G[_]](implicit
+  implicit def apply[F[_],G[_]](implicit
     F:Applicative[F],
     G:Applicative[G]
-  ) : CompositeApplicative[F,G] = {
+  ) = {
     val _F = F
     val _G = G
     new CompositeApplicative[F,G] {

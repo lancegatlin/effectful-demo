@@ -10,9 +10,13 @@ trait Applicative[E[_]] {
 }
 
 object Applicative {
-  implicit def apply[F[_],G[_]](implicit
-    F:Applicative[F],
-    G:Applicative[G]
-  ) : Applicative[({ type FG[A] = F[G[A]]})#FG] =
-    CompositeApplicative[F,G]
+  object ops extends ops
+  trait ops {
+
+  }
+//  implicit def apply[F[_],G[_]](implicit
+//    F:Applicative[F],
+//    G:Applicative[G]
+//  ) : Applicative[({ type FG[A] = F[G[A]]})#FG] =
+//    CompositeApplicative[F,G]
 }

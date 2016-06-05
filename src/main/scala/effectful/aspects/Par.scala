@@ -11,7 +11,6 @@ trait Par[E[_]] {
   def par[A,B,C,D](ea: =>E[A],eb: =>E[B],ec: =>E[C],ed: =>E[D]) : E[(A,B,C,D)]
   // todo: gen more
 
-  // todo: b/c of free monad interpreter this will prob have to be concrete Seq
   def parMap[M[AA] <: Seq[AA],A,B](
     items: M[A]
   )(
