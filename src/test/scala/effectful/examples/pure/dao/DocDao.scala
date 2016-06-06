@@ -2,16 +2,15 @@ package effectful.examples.pure.dao
 
 import java.time.Instant
 
-import query.Query
-
 /**
   * A simple document store
   *
   * @tparam ID type of the identifier
   * @tparam A type of the record
+  * @tparam Q the native query type
   * @tparam E effect system
   */
-trait DocDao[ID,A,E[_]] {
+trait DocDao[ID,A,Q,E[_]] {
   import DocDao._
 
   /** @return TRUE if id is in use FALSE otherwise */
@@ -22,7 +21,7 @@ trait DocDao[ID,A,E[_]] {
   /** @return if id exists, some value otherwise none */
   def findById(id: ID) : E[Option[(ID,A,RecordMetadata)]]
 
-  def find(query: Query[A]) : E[Seq[(ID,A,RecordMetadata)]]
+  def findByNativeQuery(q: Q) : E[Seq[(ID,A,RecordMetadata)]]
 
   /** @return a batch of all records starting with specified index and batch size (records are sorted by creation time) */
   def findAll(start: Int, batchSize: Int) : E[Seq[(ID,A,RecordMetadata)]]

@@ -4,7 +4,7 @@ import effectful.examples.effects.sql.SqlDriver.SqlRow
 import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.sql._
-import effectful.examples.pure.dao.sql.SqlDocDao.{FieldColumnMapping, RecordMapping}
+import effectful.examples.pure.dao.sql.{FieldColumnMapping, RecordMapping}
 import effectful.examples.pure.user.Tokens.TokenInfo
 import effectful.examples.pure.user.impl.UsersImpl.UserData
 import effectful.examples.pure.uuid.UUIDs
@@ -12,6 +12,11 @@ import effectful.examples.pure.uuid.UUIDs.UUID
 
 package object sql {
   import SqlVal._
+
+  implicit def sqlPrint_UUID[E[_]](implicit uuids:UUIDs[E]) = new SqlPrint[UUID] {
+    override def print(uuid: UUID): SqlString =
+      uuids.toBase64(uuid)
+  }
 
   implicit def charDataFormat_UUID[E[_]](implicit uuids:UUIDs[E]) = new CharDataFormat[UUID] {
     def toCharData(uuid: UUID) =
@@ -110,7 +115,7 @@ package object sql {
     idField = FieldColumnMapping(
       fieldName = "token",
       columnIndex = 1,
-      columnName = "token"
+      columnName = ColName("token")
     )
   )
 
@@ -122,7 +127,7 @@ package object sql {
       FieldColumnMapping(
         fieldName = "created",
         columnIndex = 6,
-        columnName = "created"
+        columnName = ColName("created")
       ),
       FieldColumnMapping(
         fieldName = "lastUpdated",

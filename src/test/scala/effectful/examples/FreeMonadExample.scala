@@ -5,17 +5,16 @@ import scala.concurrent.duration._
 import effectful._
 import effectful.aspects.{Delay, Exceptions, Par}
 import effectful.cats.{Capture, Monad, NaturalTransformation}
-import effectful.examples.FutureLogWriterExample.E
 import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.WriterLogger
 import effectful.examples.adapter.slf4j.Slf4jLogger
 import effectful.examples.effects.sql.free._
-import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user.impl._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.examples.pure.dao.sql.impl.SqlDocDaoImpl
 import effectful.examples.pure.uuid.UUIDs.UUID
 import effectful.free._
 
@@ -42,7 +41,7 @@ object FreeMonadExample {
 
   val sqlDriver = new FreeSqlDriver
 
-  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,E](
+  val tokensDao = new SqlDocDaoImpl[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService[E],
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -60,7 +59,7 @@ object FreeMonadExample {
   )
 
 
-  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,E](
     sql = sqlDriver.liftService[E],
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping

@@ -5,12 +5,12 @@ import effectful.cats._
 import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.scalaz.writer._
-import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.examples.pure.dao.sql.impl.SqlDocDaoImpl
 import effectful.examples.pure.uuid.UUIDs.UUID
 import s_mach.concurrent.ScheduledExecutionContext
 
@@ -38,7 +38,7 @@ object FutureLogWriterExample {
     uuids = uuids
   )
 
-  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,E](
+  val tokensDao = new SqlDocDaoImpl[String,Tokens.TokenInfo,E](
     sql = sqlDriver.liftService[E],
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -55,7 +55,7 @@ object FutureLogWriterExample {
     passwordMismatchDelay = 5.seconds
   )
 
-  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,E](
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,E](
     sql = sqlDriver.liftService[E],
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping

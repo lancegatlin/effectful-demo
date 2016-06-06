@@ -1,8 +1,82 @@
 package effectful.examples.pure.dao
 
+import scala.language.implicitConversions
 import effectful.examples.effects.sql._
 
 package object sql {
+  type SqlString = String with SqlStringTag
+  def SqlString(s: String) = s.asInstanceOf[SqlString]
+
+  implicit val sqlPrint_SqlString = new SqlPrint[SqlString] {
+    override def print(a: SqlString): SqlString = a
+  }
+
+  val `?` = "?".sql
+  def `repeat_?`(n: Int) : IndexedSeq[SqlString] =
+    (0 until n).map(_ => `?`)
+
+  implicit class SqlStringPML(val self: SqlString) extends AnyVal {
+    def *(n: Int) =
+      self.asInstanceOf[String] * n
+  }
+
+  implicit val sqlPrint_String = new SqlPrint[String] {
+    override def print(a: String): SqlString = ???
+  }
+
+  implicit class EverythingPML[A](val self: A) extends AnyVal {
+    def toSqlVal(implicit sqlValFormat: SqlValFormat[A]) : SqlVal =
+      sqlValFormat.toSqlVal(self)
+    def printSql(implicit sqlPrint:SqlPrint[A]) : SqlString =
+      sqlPrint.print(self)
+    def toCharData(implicit fmt: CharDataFormat[A]) : CharData =
+      fmt.toCharData(self)
+    def toBinData(implicit fmt: BinDataFormat[A]) : BinData =
+      fmt.toBinData(self)
+  }
+
+  implicit class TraversablePML[A](val self: Traversable[A]) extends AnyVal {
+    def mkSqlString(sep: String)(implicit sqlPrint: SqlPrint[A]) : SqlString =
+      self.map(_.printSql).mkString(sep).sql
+    def mkSqlString(implicit sqlPrint: SqlPrint[A]) : SqlString =
+      self.map(_.printSql).mkString.sql
+  }
+
+  implicit class StringPML(val self: String) extends AnyVal {
+    def sql = SqlString(self)
+  }
+
+  implicit class StringContextPML(val self: StringContext) extends AnyVal {
+    def sql(args: SqlString*) : SqlString = SqlString(self.s(args:_*))
+  }
+
+  implicit class SqlValPML(val self: SqlVal) extends AnyVal {
+    def as[S <: SqlVal] : S =
+      self.asInstanceOf[S]
+
+    def asNullable[S <: SqlVal] : Option[S] =
+      self match {
+        case SqlVal.NULL(_) => None
+        case _ => Some(self.as[S])
+      }
+  }
+
+  implicit class OptionSqlValPML(val self: Option[SqlVal]) extends AnyVal {
+    def orSqlNull(sqlType: SqlType) : SqlVal =
+      self match {
+        case Some(v) => v
+          // todo: either this to OptionSqlXXXPML to preserve sql type (sql type required by JDBC PreparedStatement.setNull
+        case None => SqlVal.NULL(sqlType)
+      }
+  }
+
+  implicit def everythingToSqlString[A](a: A)(implicit sqlPrint: SqlPrint[A]) : SqlString =
+    sqlPrint.print(a)
+
+  implicit val sqlPrint_SqlVal = new SqlPrint[SqlVal] {
+    override def print(sqlVal: SqlVal): SqlString = impl.SqlOps.printSql(sqlVal)
+  }
+
   implicit class CharDataPML(val self: CharData) extends AnyVal {
     def to[A](implicit fmt: CharDataFormat[A]) : A =
       fmt.fromCharData(self)
@@ -11,13 +85,6 @@ package object sql {
   implicit class BinDataPML(val self: BinData) extends AnyVal {
     def to[A](implicit fmt: BinDataFormat[A]) : A =
       fmt.fromBinData(self)
-  }
-
-  implicit class EverythingPML[A](val self: A) extends AnyVal {
-    def toCharData(implicit fmt: CharDataFormat[A]) : CharData =
-      fmt.toCharData(self)
-    def toBinData(implicit fmt: BinDataFormat[A]) : BinData =
-      fmt.toBinData(self)
   }
 
 }

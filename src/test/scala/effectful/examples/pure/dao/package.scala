@@ -2,20 +2,19 @@ package effectful.examples.pure
 
 import effectful._
 import effectful.cats.CaptureTransform
-import effectful.examples.pure.dao.query.Query
 
 package object dao {
-  implicit def liftS_DocDao[ID,A] = {
-    type S[G[_]] = DocDao[ID,A,G]
+  implicit def liftS_DocDao[ID,A,Q] = {
+    type S[G[_]] = DocDao[ID,A,Q,G]
 
     new LiftService[S] {
       override def apply[F[_],G[_]](
-        s: DocDao[ID,A,F]
+        s: DocDao[ID,A,Q,F]
       )(implicit
         X: CaptureTransform[F,G]
       ) = {
         import DocDao._
-        new DocDao[ID,A,G] {
+        new DocDao[ID,A,Q,G] {
           override def exists(id: ID) =
             X(s.exists(id))
           override def update(id: ID, value: A) =
@@ -38,8 +37,8 @@ package object dao {
             X(s.batchUpdate(records))
           override def batchInsert(records: Traversable[(ID, A)]) =
             X(s.batchInsert(records))
-          override def find(query: Query[A]) =
-            X(s.find(query))
+          override def findByNativeQuery(query: Q) =
+            X(s.findByNativeQuery(query))
           override def upsert(id: ID, a: A) =
             X(s.upsert(id,a))
         }

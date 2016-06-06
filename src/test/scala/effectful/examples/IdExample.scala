@@ -3,12 +3,12 @@ package effectful.examples
 import effectful._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
 import effectful.examples.adapter.slf4j.Slf4jLogger
-import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
 import effectful.examples.pure.user._
 import effectful.examples.pure._
+import effectful.examples.pure.dao.sql.impl.SqlDocDaoImpl
 import effectful.examples.pure.uuid.UUIDs.UUID
 
 import scala.concurrent.duration._
@@ -22,7 +22,7 @@ object IdExample {
     uuids = uuids
   )
 
-  val tokensDao = new SqlDocDao[String,Tokens.TokenInfo,Id](
+  val tokensDao = new SqlDocDaoImpl[String,Tokens.TokenInfo,Id](
     sql = sqlDriver.liftService,
     recordMapping = tokenInfoRecordMapping,
     metadataMapping = tokenInfoMetadataRecordMapping
@@ -40,7 +40,7 @@ object IdExample {
     passwordMismatchDelay = 5.seconds
   )
 
-  val userDao = new SqlDocDao[UUID,UsersImpl.UserData,Id](
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,Id](
     sql = sqlDriver.liftService,
     recordMapping = userDataRecordMapping,
     metadataMapping = userDataMetadataRecordMapping

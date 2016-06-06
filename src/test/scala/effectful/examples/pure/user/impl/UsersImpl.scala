@@ -1,9 +1,9 @@
 package effectful.examples.pure.user.impl
 
 import effectful.cats.Monad
-import effectful.examples.pure.dao.DocDao
+import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
-import effectful.examples.pure.dao.query.Query
+import effectful.examples.pure.dao.sql.SqlDocDao
 import effectful.examples.pure.user.{Passwords, Users}
 import effectful.examples.pure.user.Users.User
 import effectful.examples.pure.user.impl.UsersImpl.UserData
@@ -14,17 +14,10 @@ object UsersImpl {
     username: String,
     passwordDigest: String
   )
-
-  object UserDataFields {
-    val username = Query.Field("username",(_:UserData).username)
-    val passwordDigest = Query.Field("passwordDigest",(_:UserData).passwordDigest)
-
-    val allFields = Seq(username,passwordDigest)
-  }
 }
 
 class UsersImpl[E[_]](
-  usersDao: DocDao[UUID,UserData,E],
+  usersDao: SqlDocDao[UUID,UserData,E],
   passwords: Passwords[E]
 )(implicit
   E:Monad[E]
@@ -46,11 +39,7 @@ class UsersImpl[E[_]](
     usersDao.findById(id).map(_.map(toUser))
 
   def findByUsername(username: String) =
-    E.pure(None)
-  //todo:
-//    users.find {
-//      UserDataFields.username === username
-//    }.map(_.headOption.map(toUser))
+    usersDao.findByNativeQuery(sql"`username`=$username").map(_.headOption.map(toUser))
 
   def findAll(start: Int, batchSize: Int) =
     usersDao.findAll(start, batchSize).map(_.map(toUser))

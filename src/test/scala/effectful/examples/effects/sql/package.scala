@@ -1,8 +1,5 @@
 package effectful.examples.effects
 
-import java.time.format.DateTimeFormatter
-import javax.xml.bind.DatatypeConverter
-
 import effectful.{EffectIterator, LiftService}
 import effectful.aspects.Exceptions
 import effectful.cats.{CaptureTransform, Monad}
@@ -84,62 +81,6 @@ package object sql {
         }
       } yield result
     }
-  }
-
-  implicit class SqlValPML(val self: SqlVal) extends AnyVal {
-    def printSQL : String = {
-      def quotes(s: String) = s"'$s'"
-
-      import SqlVal._
-      self match {
-        case NULL(_) => "null"
-        case CHAR(_,data) => quotes(data.toCharString())
-        case VARCHAR(_,data) => quotes(data.toCharString())
-
-        case NCHAR(_,data) => quotes(data.toCharString())
-        case NVARCHAR(_,data) => quotes(data.toCharString())
-
-        // todo: prob shouldn't ship these as strings - should be way to attach stream?
-        case CLOB(data) => quotes(data.toCharString())
-        case NCLOB(data) => quotes(data.toCharString())
-
-        // todo: possible to use base 64 instead of hex for binary? more efficient
-        case BINARY(_,data) => DatatypeConverter.printHexBinary(data.toByteArray())
-        case VARBINARY(_,data) => DatatypeConverter.printHexBinary(data.toByteArray())
-        case BLOB(data) => DatatypeConverter.printHexBinary(data.toByteArray())
-
-        case BOOLEAN(value) => if(value) "true" else "false"
-        case BIT(value) => if(value) "1" else "0"
-        case TINYINT(value) => value.toString
-        case SMALLINT(value) => value.toString
-        case INTEGER(value) => value.toString
-        case BIGINT(value) => value.toString
-        case REAL(value) => value.toString
-        case DOUBLE(value) => value.toString
-        case NUMERIC(value,_,_) => value.toString
-        case DECIMAL(value,_,_) => value.toString
-        case DATE(date) => quotes(DateTimeFormatter.ISO_DATE.format(date))
-        case TIME(time) => quotes(DateTimeFormatter.ISO_TIME.format(time))
-        case TIMESTAMP(timestamp) => quotes(DateTimeFormatter.ISO_INSTANT.format(timestamp))
-      }
-    }
-    def as[S <: SqlVal] : S =
-      self.asInstanceOf[S]
-
-    def asNullable[S <: SqlVal] : Option[S] =
-      self match {
-        case SqlVal.NULL(_) => None
-        case _ => Some(self.as[S])
-      }
-  }
-
-  implicit class OptionSqlValPML(val self: Option[SqlVal]) extends AnyVal {
-    def orSqlNull(sqlType: SqlType) : SqlVal =
-      self match {
-        case Some(v) => v
-          // todo: either this to OptionSqlXXXPML to preserve sql type (sql type required by JDBC PreparedStatement.setNull
-        case None => SqlVal.NULL(sqlType)
-      }
   }
 
   implicit object LiftService_SqlDriver extends LiftService[SqlDriver] {

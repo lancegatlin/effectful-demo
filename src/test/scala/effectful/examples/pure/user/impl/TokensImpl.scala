@@ -6,36 +6,24 @@ import java.time.temporal.ChronoUnit.MILLIS
 import scala.concurrent.duration.Duration
 import effectful._
 import effectful.cats.Monad
-import effectful.examples.pure.dao.DocDao
-import effectful.examples.pure.dao.query.Query
 import effectful.examples.effects.logging.Logger
-import effectful.examples.pure.dao.query._
+import effectful.examples.pure.dao.sql._
+import effectful.examples.effects.sql._
 import effectful.examples.pure.user.Tokens
 import effectful.examples.pure.uuid.UUIDs
 import effectful.examples.pure.uuid.UUIDs.UUID
 
-object TokensImpl {
-  import Tokens._
-  object TokenInfoFields {
-    val userId = Query.Field("userId",(_:TokenInfo).userId)
-    val deviceId = Query.Field("deviceId",(_:TokenInfo).deviceId)
-    val lastValidated = Query.Field("lastValidated",(_:TokenInfo).lastValidated)
-    val expiresOn = Query.Field("expiresOn",(_:TokenInfo).expiresOn)
-    val allFields = Seq(userId,deviceId,lastValidated,expiresOn)
-  }
-}
-
 class TokensImpl[E[_]](
   logger: Logger[E],
   uuids: UUIDs[E],
-  tokensDao: DocDao[String,Tokens.TokenInfo,E],
+  tokensDao: SqlDocDao[String,Tokens.TokenInfo,E],
   tokenDefaultDuration: Duration
 )(implicit
-  E:Monad[E]
+  E:Monad[E],
+  sqlPrint: SqlPrint[UUID]
 ) extends Tokens[E] {
   import Monad.ops._
   import Tokens._
-  import TokensImpl._
   import logger._
 
   override def issue(
@@ -114,9 +102,7 @@ class TokensImpl[E[_]](
 
   override def forceAllExpire(userId: UUID, exceptTokens: Token*): E[Boolean] =
     for {
-      allTokenInfo <- tokensDao.find {
-        TokenInfoFields.userId === userId
-      }
+      allTokenInfo <- tokensDao.findByNativeQuery(sql"`user_id`=$userId")
       _ <- allTokenInfo.map { case (token,_,_) =>
         forceExpire(token)
       }.sequence
