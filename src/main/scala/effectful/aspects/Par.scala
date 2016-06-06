@@ -40,12 +40,3 @@ trait Par[E[_]] {
     f: A => E[Traversable[B]]
   )(implicit cbf: CanBuildFrom[Nothing,B,M[B]]) : E[M[B]]
 }
-
-object Par {
-  implicit def apply[F[_],G[_]](implicit
-    P:Par[F],
-    F:Monad[F],
-    G:Monad[G]
-  ) : Par[({ type FG[A] = F[G[A]]})#FG] =
-    CompositePar[F,G]
-}

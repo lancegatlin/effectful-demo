@@ -60,11 +60,3 @@ trait Exceptions[E[_]] {
     */
   def failure(t: Throwable) : E[Nothing]
 }
-
-object Exceptions {
-  implicit def apply[F[_],G[_]](implicit
-    X:Exceptions[F],
-    G:Applicative[G]
-  ) : Exceptions[({ type FG[A] = F[G[A]]})#FG] =
-    CompositeExceptions[F,G]
-}

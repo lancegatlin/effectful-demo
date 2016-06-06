@@ -4,11 +4,11 @@ import java.time.Instant
 
 import effectful.examples.effects.logging.Logger
 
-import scalaz.Writer
+import scalaz.{Writer, WriterT}
 
 class WriterLogger(name: String) extends Logger[LogWriter] {
   override def trace(message: =>String): LogWriter[Unit] =
-    Writer(LogEntry(name,LogLevel.Trace,message,None,Instant.now()) :: Nil,())
+    WriterT.tell(LogEntry(name,LogLevel.Trace,message,None,Instant.now()) :: Nil)
 
   override def trace(message: =>String, cause: Throwable): LogWriter[Unit] =
     Writer(LogEntry(name,LogLevel.Trace,message,Some(cause),Instant.now()) :: Nil,())

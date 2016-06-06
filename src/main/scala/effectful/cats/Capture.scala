@@ -16,19 +16,3 @@ trait Capture[E[_]] {
     */
   def capture[A](a: => A) : E[A]
 }
-
-object Capture {
-  // todo: how to make this implicit without ambiguous?
-  def fromApplicative[E[_]](implicit
-    E:Applicative[E]
-  ) : Capture[E] = new Capture[E] {
-    override def capture[A](a: => A): E[A] =
-      E.pure(a)
-  }
-
-  implicit def apply[F[_],G[_]](implicit
-    C:Capture[F],
-    G:Capture[G]
-  ) : Capture[({ type FG[A] = F[G[A]]})#FG] =
-    CompositeCapture[F,G]
-}

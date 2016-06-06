@@ -8,11 +8,3 @@ trait Applicative[E[_]] {
     */
   def pure[A](a: A) : E[A]
 }
-
-object Applicative {
-  implicit def apply[F[_],G[_]](implicit
-    F:Applicative[F],
-    G:Applicative[G]
-  ) : Applicative[({ type FG[A] = F[G[A]]})#FG] =
-    CompositeApplicative[F,G]
-}
