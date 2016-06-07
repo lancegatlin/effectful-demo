@@ -45,10 +45,10 @@ object FutureLogWriterExample {
   )
 
   val tokens = new TokensImpl[E](
-    logger = WriterLogger("tokens").liftService[E],
     uuids = uuids.liftService[E],
     tokensDao = tokensDao,
-    tokenDefaultDuration = 10.days
+    tokenDefaultDuration = 10.days,
+    logger = WriterLogger("tokens").liftService[E]
   )
 
   val passwords = new PasswordsImpl[E](
@@ -68,10 +68,10 @@ object FutureLogWriterExample {
   )
 
   val userLogins = new UserLoginsImpl[E](
-    logger = WriterLogger("userLogins").liftService[E],
     users = users,
     tokens = tokens,
-    passwords = passwords
+    passwords = passwords,
+    logger = WriterLogger("userLogins").liftService[E]
   )
   /*
   import scala.concurrent._

@@ -48,10 +48,10 @@ object FreeMonadExample {
   )
 
   val tokens = new TokensImpl[E](
-    logger = FreeLogger("tokens").liftService[E],
-    uuids = uuids.liftService,
+    uuids = uuids.liftService[E],
     tokensDao = tokensDao,
-    tokenDefaultDuration = 10.days
+    tokenDefaultDuration = 10.days,
+    logger = FreeLogger("tokens").liftService[E]
   )
 
   val passwords = new PasswordsImpl[E](

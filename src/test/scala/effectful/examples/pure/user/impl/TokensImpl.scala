@@ -15,10 +15,10 @@ import effectful.examples.pure.uuid.UUIDs
 import effectful.examples.pure.uuid.UUIDs.UUID
 
 class TokensImpl[E[_]](
-  logger: Logger[E],
   uuids: UUIDs[E],
   tokensDao: SqlDocDao[String,Tokens.TokenInfo,E],
-  tokenDefaultDuration: Duration
+  tokenDefaultDuration: Duration,
+  logger: Logger[E]
 )(implicit
   E:Monad[E],
   X:Exceptions[E],

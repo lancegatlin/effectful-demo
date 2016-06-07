@@ -7,10 +7,10 @@ import effectful.examples.pure.user._
 import scalaz.{-\/, \/, \/-}
 
 class UserLoginsImpl[E[_]](
-  logger: Logger[E],
   users: Users[E],
   passwords: Passwords[E],
-  tokens: Tokens[E]
+  tokens: Tokens[E],
+  logger: Logger[E]
 )(implicit
   E:Monad[E]
 ) extends UserLogins[E] {
