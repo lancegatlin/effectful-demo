@@ -3,7 +3,7 @@ package effectful.examples
 import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
-import effectful.aspects.{Delay, Exceptions, Par}
+import effectful.augments.{Delay, Exceptions, Par}
 import effectful.cats.{Capture, Monad, NaturalTransformation}
 import effectful.examples.effects.logging.free._
 import effectful.examples.adapter.scalaz.writer.WriterLogger
@@ -48,14 +48,15 @@ object FreeMonadExample {
   )
 
   val tokens = new TokensImpl[E](
-    logger = new FreeLogger("tokens").liftService[E],
+    logger = FreeLogger("tokens").liftService[E],
     uuids = uuids.liftService,
     tokensDao = tokensDao,
     tokenDefaultDuration = 10.days
   )
 
   val passwords = new PasswordsImpl[E](
-    passwordMismatchDelay = 5.seconds
+    passwordMismatchDelay = 5.seconds,
+    logger = FreeLogger("passwords").liftService[E]
   )
 
 
@@ -67,11 +68,12 @@ object FreeMonadExample {
 
   val users = new UsersImpl[E](
     usersDao = userDao,
-    passwords = passwords
+    passwords = passwords,
+    logger = FreeLogger("users").liftService[E]
   )
 
   val userLogins = new UserLoginsImpl[E](
-    logger = new FreeLogger("userLogins").liftService[E],
+    logger = FreeLogger("userLogins").liftService[E],
     users = users,
     tokens = tokens,
     passwords = passwords
@@ -83,6 +85,7 @@ object FreeMonadExample {
     import FutureLogWriterExample.exec_Future
     import FutureLogWriterExample.capture_LogWriter
 
+    // todo: clean this up
     override val C = implicitly[Capture[EE]]
     override val D = implicitly[Delay[EE]]
     override val M = implicitly[Monad[EE]]
@@ -107,6 +110,7 @@ object FreeMonadExample {
 
   val idInterpreter = new Interpreter[Cmd,Id] {
     type EE[A] = Id[A]
+    // todo: clean this up
     override val C = implicitly[Capture[EE]]
     override val D = implicitly[Delay[EE]]
     override val M = implicitly[Monad[EE]]

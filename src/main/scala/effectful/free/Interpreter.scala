@@ -1,7 +1,7 @@
 package effectful.free
 
 import effectful.cats._
-import effectful.aspects._
+import effectful.augments._
 
 trait Interpreter[Cmd[_],E[_]] {
   val C:Capture[E]

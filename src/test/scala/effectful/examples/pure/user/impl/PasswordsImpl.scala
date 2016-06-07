@@ -3,12 +3,14 @@ package effectful.examples.pure.user.impl
 import org.jasypt.digest.PooledStringDigester
 
 import scala.concurrent.duration.FiniteDuration
-import effectful.aspects._
+import effectful.augments._
 import effectful.cats.{Capture, Monad}
+import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.user.Passwords
 
 class PasswordsImpl[E[_]](
-  passwordMismatchDelay: FiniteDuration
+  passwordMismatchDelay: FiniteDuration,
+  logger: Logger[E]
 )(implicit
   E:Monad[E],
   C:Capture[E],
@@ -24,8 +26,10 @@ class PasswordsImpl[E[_]](
     if(digester.matches(plainTextPassword, passwordDigest)) {
       E.pure(true)
     } else {
-      // Delay if password didn't match
-      E.delay(passwordMismatchDelay).map(_ => false)
+      for {
+        _ <- logger.warn(s"Password mismatch delaying $passwordMismatchDelay")
+        _ <- E.delay(passwordMismatchDelay).map(_ => false)
+      } yield false
     }
   }
 

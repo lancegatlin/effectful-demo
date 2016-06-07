@@ -1,4 +1,4 @@
-package effectful.aspects
+package effectful.augments
 
 import effectful.cats.{Applicative, Monad}
 

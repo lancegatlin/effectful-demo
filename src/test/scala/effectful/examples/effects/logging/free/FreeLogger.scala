@@ -34,3 +34,8 @@ class FreeLogger(loggerName: String) extends Logger[FreeLoggerCmd] {
   override def error(message: =>String, cause: Throwable): FreeLoggerCmd[Unit] =
     Free.Command(LoggerCmd.Error(loggerName,message,Some(cause)))
 }
+
+object FreeLogger {
+  def apply(loggerName: String) : FreeLogger =
+    new FreeLogger(loggerName)
+}

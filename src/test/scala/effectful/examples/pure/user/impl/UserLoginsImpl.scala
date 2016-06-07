@@ -34,7 +34,7 @@ class UserLoginsImpl[E[_]](
                     expireAfter = None
                   )
                   (token,_) = tuple
-                  _ <- info(s"User ${user.id} logged in")
+                  _ <- info(s"User ${user.id} logged in, issued token $token")
                 } yield \/-(token)
               } else {
                 for {

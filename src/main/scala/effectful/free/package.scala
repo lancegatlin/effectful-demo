@@ -2,7 +2,7 @@ package effectful
 
 import scala.language.implicitConversions
 
-import effectful.aspects._
+import effectful.augments._
 import effectful.cats._
 
 import scala.collection.generic.CanBuildFrom

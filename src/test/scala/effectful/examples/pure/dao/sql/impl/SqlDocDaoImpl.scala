@@ -7,7 +7,7 @@ import effectful._
 import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import SqlDriver._
-import effectful.aspects.{Exceptions, Par}
+import effectful.augments._
 import effectful.cats.Monad
 import effectful.examples.pure.dao.sql._
 
@@ -23,7 +23,6 @@ class SqlDocDaoImpl[ID,A,E[_]](
   val metadataFormat: SqlRecordFormat[ID,RecordMetadata],
   val sqlPrint_ID: PrintSql[ID]
 ) extends SqlDocDao[ID,A,E] {
-  import P._
   import Monad.ops._
   import recordMapping._
 
@@ -186,7 +185,7 @@ class SqlDocDaoImpl[ID,A,E[_]](
     } else {
       // Maybe run in parallel
       for {
-        tuple <- par(
+        tuple <- E.par(
           sql.prepare(
             sql"INSERT INTO $tableName (${recordMapping.allFieldsOrdered.map(_.columnName).mkSqlString(",")}) VALUES(${`repeat_?`(recordFieldCount + 1).mkSqlString(",")})"
           ),
@@ -198,7 +197,7 @@ class SqlDocDaoImpl[ID,A,E[_]](
       } yield { (values: Seq[(ID, A)]) =>
         // Maybe run in parallel
         for {
-          tuple <- par(
+          tuple <- E.par(
               sql.executePreparedUpdate(prepMainInsert)(values.map { case (id,a) =>
               recordFormat.toSqlVal(id) +: recordFormat.toSqlRow(a)
             }:_*),
@@ -239,7 +238,7 @@ class SqlDocDaoImpl[ID,A,E[_]](
       }
     } else {
       for {
-        tuple <- par(
+        tuple <- E.par(
           sql.prepare(
             s"UPDATE $tableName SET ${recordColNames.map(name => sql"$name=?").mkSqlString(",")} WHERE $idColName=?"
           ),

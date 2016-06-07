@@ -15,7 +15,7 @@ package object sql {
 
   implicit def sqlPrint_UUID[E[_]](implicit uuids:UUIDs[E]) = new PrintSql[UUID] {
     override def printSql(uuid: UUID): SqlString =
-      uuids.toBase64(uuid)
+      uuids.toBase64(uuid).sql
   }
 
   implicit def charDataFormat_UUID[E[_]](implicit uuids:UUIDs[E]) = new CharDataFormat[UUID] {

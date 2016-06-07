@@ -1,6 +1,6 @@
 package effectful.impl
 
-import effectful.aspects.Par
+import effectful.augments.Par
 import effectful.cats.Monad
 
 import scala.collection.generic.CanBuildFrom

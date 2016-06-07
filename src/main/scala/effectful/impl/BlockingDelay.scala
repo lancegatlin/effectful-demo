@@ -1,7 +1,7 @@
 package effectful.impl
 
 import scala.concurrent.duration.FiniteDuration
-import effectful.aspects.Delay
+import effectful.augments.Delay
 import effectful.cats.Capture
 
 trait BlockingDelay[E[_]] extends Delay[E] {

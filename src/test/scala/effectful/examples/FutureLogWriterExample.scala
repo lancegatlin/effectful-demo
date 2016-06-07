@@ -52,7 +52,8 @@ object FutureLogWriterExample {
   )
 
   val passwords = new PasswordsImpl[E](
-    passwordMismatchDelay = 5.seconds
+    passwordMismatchDelay = 5.seconds,
+    logger = WriterLogger("passwords").liftService[E]
   )
 
   val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,E](
@@ -62,7 +63,8 @@ object FutureLogWriterExample {
   )
   val users = new UsersImpl[E](
     usersDao = userDao,
-    passwords = passwords
+    passwords = passwords,
+    logger = WriterLogger("users").liftService[E]
   )
 
   val userLogins = new UserLoginsImpl[E](

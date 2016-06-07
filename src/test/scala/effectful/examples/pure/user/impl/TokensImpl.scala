@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration
 import effectful._
-import effectful.aspects._
+import effectful.augments._
 import effectful.cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.sql._
@@ -94,10 +94,10 @@ class TokensImpl[E[_]](
         }
       }:E[Boolean] // Note: fix intellij erroneous error
       _ <- {
-        if(result == false) {
-          E.failure(throw new RuntimeException("Failed to update token"))
+        if(result) {
+          info(s"Forced expiration of token $token")
         } else {
-          E.pure(())
+          E.failure(throw new RuntimeException("Failed to update token"))
         }
       }
     } yield ()
@@ -108,6 +108,7 @@ class TokensImpl[E[_]](
       _ <- allTokenInfo.map { case (token,_,_) =>
         forceExpire(token)
       }.sequence
+      _ <- info(s"Forced expiration of all tokens for $userId except ${exceptTokens.mkString(",")}")
     } yield true
 
 }

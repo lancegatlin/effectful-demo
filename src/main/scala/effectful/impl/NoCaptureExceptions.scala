@@ -1,6 +1,6 @@
 package effectful.impl
 
-import effectful.aspects.Exceptions
+import effectful.augments.Exceptions
 import effectful.cats.Monad
 
 /**

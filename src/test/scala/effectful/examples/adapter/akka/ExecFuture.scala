@@ -2,7 +2,7 @@ package effectful.examples.adapter.akka
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import effectful.aspects._
+import effectful.augments._
 import effectful.cats._
 import effectful.impl.StdPar
 import s_mach.concurrent._

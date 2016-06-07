@@ -1,7 +1,7 @@
 package effectful.examples.effects.sql.free
 
 import effectful.cats._
-import effectful.aspects._
+import effectful.augments._
 import effectful.examples.effects.sql._
 import effectful.free.Interpreter
 

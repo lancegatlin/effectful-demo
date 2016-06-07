@@ -30,14 +30,15 @@ object IdExample {
 
 
   val tokens = new TokensImpl[Id](
-    logger = Slf4jLogger("tokens").liftService,
+    logger = Slf4jLogger("tokens"),
     uuids = uuids.liftService,
     tokensDao = tokensDao,
     tokenDefaultDuration = 10.days
   )
 
   val passwords = new PasswordsImpl[Id](
-    passwordMismatchDelay = 5.seconds
+    passwordMismatchDelay = 5.seconds,
+    logger = Slf4jLogger("passwords")
   )
 
   val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,Id](
@@ -47,11 +48,12 @@ object IdExample {
   )
   val users = new UsersImpl[Id](
     usersDao = userDao,
-    passwords = passwords
+    passwords = passwords,
+    logger = Slf4jLogger("users")
   )
 
   val userLogins = new UserLoginsImpl[Id](
-    logger = Slf4jLogger("userLogins").liftService,
+    logger = Slf4jLogger("userLogins"),
     users = users,
     tokens = tokens,
     passwords = passwords

@@ -5,7 +5,7 @@ import effectful.cats.{Capture, Monad}
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
-package object aspects {
+package object augments {
   implicit class ParHelper[M[AA] <: Seq[AA],A,E[_]](
     val self: M[A]
   ) extends AnyVal {

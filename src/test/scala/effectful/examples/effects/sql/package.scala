@@ -1,7 +1,7 @@
 package effectful.examples.effects
 
 import effectful.{EffectIterator, LiftService}
-import effectful.aspects.Exceptions
+import effectful.augments._
 import effectful.cats.{CaptureTransform, Monad}
 import effectful.examples.effects.sql.SqlDriver._
 
@@ -62,12 +62,11 @@ package object sql {
       X:Exceptions[E]
     ) : E[A] = {
       import Monad.ops._
-      import X._
 
       for {
         transaction <- self.beginTransaction()
         result <- {
-          attempt {
+          E.attempt {
             for {
               result <- f(transaction)
               _ <- self.commit()(transaction)

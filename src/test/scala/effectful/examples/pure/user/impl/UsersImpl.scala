@@ -1,6 +1,7 @@
 package effectful.examples.pure.user.impl
 
 import effectful.cats.Monad
+import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import effectful.examples.pure.dao.sql.SqlDocDao
@@ -18,12 +19,14 @@ object UsersImpl {
 
 class UsersImpl[E[_]](
   usersDao: SqlDocDao[UUID,UserData,E],
-  passwords: Passwords[E]
+  passwords: Passwords[E],
+  logger: Logger[E]
 )(implicit
   E:Monad[E]
 ) extends Users[E] {
   import Monad.ops._
   import UsersImpl._
+  import logger._
 
   val toUser : ((UUID,UserData,RecordMetadata)) => User = { case (id,userData,metadata) =>
       User(
@@ -59,6 +62,11 @@ class UsersImpl[E[_]](
               E.pure(false)
             }
           }
+          _ <- if(result) {
+            info(s"Renamed user $userId to $newUsername")
+          } else {
+            E.pure(())
+          }
         } yield result
       case None =>
         E.pure(false)
@@ -71,6 +79,11 @@ class UsersImpl[E[_]](
         for {
           newDigest <- passwords.mkDigest(plainTextPassword)
           result <- usersDao.update(userId,userData.copy(passwordDigest = newDigest))
+          _ <- if(result) {
+            info(s"Change password for user $userId")
+          } else {
+            E.pure(())
+          }
         } yield result
       case None =>
         E.pure(false)
@@ -90,6 +103,11 @@ class UsersImpl[E[_]](
                 username = username,
                 passwordDigest = digest
               ))
+              _ <- if(result) {
+                info(s"Created user $id with username $username")
+              } else {
+                E.pure(())
+              }
             } yield result
         }
     }

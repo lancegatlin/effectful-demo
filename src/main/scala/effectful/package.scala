@@ -1,7 +1,7 @@
 
 import scala.collection.generic.CanBuildFrom
 import effectful.cats._
-import effectful.aspects._
+import effectful.augments._
 
 package object effectful {
   /**

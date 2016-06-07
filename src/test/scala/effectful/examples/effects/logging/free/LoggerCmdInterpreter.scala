@@ -1,7 +1,7 @@
 package effectful.examples.effects.logging.free
 
 import effectful.cats._
-import effectful.aspects._
+import effectful.augments._
 import effectful.examples.effects.logging.Logger
 import effectful.free.Interpreter
 
