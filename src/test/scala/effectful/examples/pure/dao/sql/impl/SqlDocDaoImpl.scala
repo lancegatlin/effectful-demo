@@ -20,7 +20,8 @@ class SqlDocDaoImpl[ID,A,E[_]](
   P:Par[E],
   X:Exceptions[E],
   val recordFormat: SqlRecordFormat[ID,A],
-  val metadataFormat: SqlRecordFormat[ID,RecordMetadata]
+  val metadataFormat: SqlRecordFormat[ID,RecordMetadata],
+  val sqlPrint_ID: PrintSql[ID]
 ) extends SqlDocDao[ID,A,E] {
   import P._
   import Monad.ops._
@@ -130,7 +131,7 @@ class SqlDocDaoImpl[ID,A,E[_]](
   override def batchExists(ids: Traversable[ID]): E[Set[ID]] =
     sql.autoCommit { implicit autoCommit =>
       sql.iterateQuery(
-        sql"SELECT $idColName FROM $tableName WHERE $idColName IN (${ids.map(recordFormat.toSqlVal).mkSqlString(",")}) "
+        sql"SELECT $idColName FROM $tableName WHERE $idColName IN (${ids.map(_.printSql).mkSqlString(",")}) "
       )
         .map(row => recordFormat.fromSqlVal(row(0)))
         .collect[Set]

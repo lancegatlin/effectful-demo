@@ -6,18 +6,18 @@ case class FieldColumnMapping(
   columnName: ColName
 )
 
-object FieldColumnMapping {
-  def apply(
-    fieldName: String,
-    columnIndex: Int,
-    columnName: String
-  ) : FieldColumnMapping =
-    FieldColumnMapping(
-      fieldName = fieldName,
-      columnIndex = columnIndex,
-      columnName = ColName(columnName)
-    )
-}
+//object FieldColumnMapping {
+//  def apply(
+//    fieldName: String,
+//    columnIndex: Int,
+//    columnName: String
+//  ) : FieldColumnMapping =
+//    FieldColumnMapping(
+//      fieldName = fieldName,
+//      columnIndex = columnIndex,
+//      columnName = ColName(columnName)
+//    )
+//}
 
 // todo: simple DDL generator
 case class RecordMapping[ID,A](
@@ -31,15 +31,15 @@ case class RecordMapping[ID,A](
   val allFieldsOrdered = allFields.sortBy(_.columnIndex)
 }
 
-object RecordMapping {
-  def apply[ID,A](
-    tableName: String,
-    recordFields: Seq[FieldColumnMapping],
-    idField: FieldColumnMapping
-  ) : RecordMapping[ID,A] =
-    RecordMapping(
-      tableName = TableName(tableName),
-      recordFields = recordFields,
-      idField = idField
-    )
-}
+//object RecordMapping {
+//  def apply[ID,A](
+//    tableName: String,
+//    recordFields: Seq[FieldColumnMapping],
+//    idField: FieldColumnMapping
+//  ) : RecordMapping[ID,A] =
+//    RecordMapping(
+//      tableName = TableName(tableName),
+//      recordFields = recordFields,
+//      idField = idField
+//    )
+//}

@@ -7,9 +7,17 @@ package object sql {
   type SqlString = String with SqlStringTag
   def SqlString(s: String) = s.asInstanceOf[SqlString]
 
-  implicit val sqlPrint_SqlString = new SqlPrint[SqlString] {
-    override def print(a: SqlString): SqlString = a
+  implicit val sqlPrint_SqlString = new PrintSql[SqlString] {
+    override def printSql(a: SqlString): SqlString = a
   }
+  
+  type ColName = String with ColNameTag
+  implicit def ColName(s: String) : ColName = s.asInstanceOf[ColName]
+  implicit val splPrint_ColName = PrintSql.backtick[ColName](_.sql)
+  
+  type TableName = String with TableNameTag
+  implicit def TableName(s: String) : TableName = s.asInstanceOf[TableName]
+  implicit val splPrint_TableName = PrintSql.backtick[TableName](_.sql)
 
   val `?` = "?".sql
   def `repeat_?`(n: Int) : IndexedSeq[SqlString] =
@@ -20,15 +28,11 @@ package object sql {
       self.asInstanceOf[String] * n
   }
 
-  implicit val sqlPrint_String = new SqlPrint[String] {
-    override def print(a: String): SqlString = ???
-  }
-
   implicit class EverythingPML[A](val self: A) extends AnyVal {
     def toSqlVal(implicit sqlValFormat: SqlValFormat[A]) : SqlVal =
       sqlValFormat.toSqlVal(self)
-    def printSql(implicit sqlPrint:SqlPrint[A]) : SqlString =
-      sqlPrint.print(self)
+    def printSql(implicit sqlPrint:PrintSql[A]) : SqlString =
+      sqlPrint.printSql(self)
     def toCharData(implicit fmt: CharDataFormat[A]) : CharData =
       fmt.toCharData(self)
     def toBinData(implicit fmt: BinDataFormat[A]) : BinData =
@@ -36,9 +40,9 @@ package object sql {
   }
 
   implicit class TraversablePML[A](val self: Traversable[A]) extends AnyVal {
-    def mkSqlString(sep: String)(implicit sqlPrint: SqlPrint[A]) : SqlString =
+    def mkSqlString(sep: String)(implicit sqlPrint: PrintSql[A]) : SqlString =
       self.map(_.printSql).mkString(sep).sql
-    def mkSqlString(implicit sqlPrint: SqlPrint[A]) : SqlString =
+    def mkSqlString(implicit sqlPrint: PrintSql[A]) : SqlString =
       self.map(_.printSql).mkString.sql
   }
 
@@ -70,12 +74,8 @@ package object sql {
       }
   }
 
-  implicit def everythingToSqlString[A](a: A)(implicit sqlPrint: SqlPrint[A]) : SqlString =
-    sqlPrint.print(a)
-
-  implicit val sqlPrint_SqlVal = new SqlPrint[SqlVal] {
-    override def print(sqlVal: SqlVal): SqlString = impl.SqlOps.printSql(sqlVal)
-  }
+  implicit def everythingToSqlString[A](a: A)(implicit sqlPrint: PrintSql[A]) : SqlString =
+    sqlPrint.printSql(a)
 
   implicit class CharDataPML(val self: CharData) extends AnyVal {
     def to[A](implicit fmt: CharDataFormat[A]) : A =

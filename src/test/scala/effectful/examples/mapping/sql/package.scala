@@ -13,8 +13,8 @@ import effectful.examples.pure.uuid.UUIDs.UUID
 package object sql {
   import SqlVal._
 
-  implicit def sqlPrint_UUID[E[_]](implicit uuids:UUIDs[E]) = new SqlPrint[UUID] {
-    override def print(uuid: UUID): SqlString =
+  implicit def sqlPrint_UUID[E[_]](implicit uuids:UUIDs[E]) = new PrintSql[UUID] {
+    override def printSql(uuid: UUID): SqlString =
       uuids.toBase64(uuid)
   }
 

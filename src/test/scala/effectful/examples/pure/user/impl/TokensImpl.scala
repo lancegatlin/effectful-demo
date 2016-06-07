@@ -20,7 +20,7 @@ class TokensImpl[E[_]](
   tokenDefaultDuration: Duration
 )(implicit
   E:Monad[E],
-  sqlPrint: SqlPrint[UUID]
+  sqlPrint: PrintSql[UUID]
 ) extends Tokens[E] {
   import Monad.ops._
   import Tokens._
