@@ -24,8 +24,7 @@ class UserLoginsImpl[E[_]](
       result <- maybeUser match {
         case Some(user:Users.User) =>
           for {
-            digest <- passwords.mkDigest(password)
-            passwordOk <- passwords.compareDigest(user.passwordDigest,digest)
+            passwordOk <- passwords.compareDigest(password,user.passwordDigest)
             result <- {
               if(passwordOk) {
                 for {
@@ -45,7 +44,7 @@ class UserLoginsImpl[E[_]](
             }:E[LoginFailure \/ Token]
           } yield result
         case None =>
-          E(-\/(LoginFailure.UserDoesNotExist))
+          E.pure(-\/(LoginFailure.UserDoesNotExist))
       }
     } yield result
 }

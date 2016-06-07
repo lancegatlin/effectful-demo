@@ -2,9 +2,9 @@ package effectful.examples.pure.user
 
 trait Passwords[E[_]] {
   def compareDigest(
-    d1: String,
-    d2: String
+    plainTextPassword: String,
+    passwordDigest: String
   ) : E[Boolean]
 
-  def mkDigest(plainText: String) : E[String]
+  def mkDigest(plainTextPassword: String) : E[String]
 }

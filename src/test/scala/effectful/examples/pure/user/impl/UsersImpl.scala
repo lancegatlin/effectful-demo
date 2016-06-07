@@ -56,23 +56,36 @@ class UsersImpl[E[_]](
             if(maybeUser.isEmpty) {
               usersDao.update(userId,userData.copy(username = newUsername))
             } else {
-              E(false)
+              E.pure(false)
             }
           }
         } yield result
       case None =>
-        E(false)
+        E.pure(false)
     }
 
-  def create(id: UUID, username: String, password: String) =
+
+  override def setPassword(userId: UUID, plainTextPassword: String): E[Boolean] =
+    usersDao.findById(userId).flatMap {
+      case Some((_,userData,_)) =>
+        for {
+          newDigest <- passwords.mkDigest(plainTextPassword)
+          result <- usersDao.update(userId,userData.copy(passwordDigest = newDigest))
+        } yield result
+      case None =>
+        E.pure(false)
+    }
+
+
+  def create(id: UUID, username: String, plainTextPassword: String) =
     findById(id).flatMap {
-      case Some(_) => E(false)
+      case Some(_) => E.pure(false)
       case None =>
         findByUsername(username).flatMap {
-          case Some(_) => E(false)
+          case Some(_) => E.pure(false)
           case None =>
             for {
-              digest <- passwords.mkDigest(password)
+              digest <- passwords.mkDigest(plainTextPassword)
               result <- usersDao.insert(id,UserData(
                 username = username,
                 passwordDigest = digest

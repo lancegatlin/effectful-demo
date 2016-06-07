@@ -45,9 +45,5 @@ object Monad {
       def pure[E[_]](implicit E:Monad[E]) : E[A] =
         E.pure(self)
     }
-    implicit class MonadPML[E[_]](val self: Monad[E]) extends AnyVal {
-      def apply[A](a: A) : E[A] =
-        self.pure(a)
-    }
   }
 }

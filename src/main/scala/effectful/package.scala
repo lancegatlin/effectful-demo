@@ -111,5 +111,4 @@ package object effectful {
       liftService:LiftService[S]
     ) : S[G] = liftService(self)
   }
-
 }

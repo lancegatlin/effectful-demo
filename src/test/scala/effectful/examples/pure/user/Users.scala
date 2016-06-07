@@ -12,9 +12,10 @@ trait Users[E[_]] {
   def create(
     id: UUID,
     username: String,
-    password: String
+    plainTextPassword: String
   ) : E[Boolean]
   def rename(userId: UUID, newUsername: String) : E[Boolean]
+  def setPassword(userId: UUID, plainTextPassword: String) : E[Boolean]
   def remove(userId: UUID) : E[Boolean]
  }
 

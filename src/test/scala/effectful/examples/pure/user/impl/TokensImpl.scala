@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit.MILLIS
 
 import scala.concurrent.duration.Duration
 import effectful._
+import effectful.aspects._
 import effectful.cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.sql._
@@ -20,7 +21,8 @@ class TokensImpl[E[_]](
   tokenDefaultDuration: Duration
 )(implicit
   E:Monad[E],
-  sqlPrint: PrintSql[UUID]
+  X:Exceptions[E],
+  sqlPrint_UUID: PrintSql[UUID]
 ) extends Tokens[E] {
   import Monad.ops._
   import Tokens._
@@ -46,9 +48,9 @@ class TokensImpl[E[_]](
       result <- tokensDao.insert(token, tokenInfo)
       _ <- {
         if(result == false) {
-          E(throw new RuntimeException("Failed to create token"))
+          E.failure(throw new RuntimeException("Failed to create token"))
         } else {
-          E(())
+          E.pure(())
         }
       }:E[Unit] // Note: fix intellij erroneous error
       _ <- info(s"Issued token $uuid to user $userId")
@@ -68,11 +70,11 @@ class TokensImpl[E[_]](
               if(result) {
                 info(s"Validated token $token for user ${optTokenInfo.get._2.userId}")
               } else {
-                E(throw new RuntimeException("Failed to update token"))
+                E.failure(throw new RuntimeException("Failed to update token"))
               }
             }:E[Unit]
           } yield Some(tokenInfo)
-        case _ => E(None)
+        case _ => E.pure(None)
       }
     } yield result
 
@@ -88,14 +90,14 @@ class TokensImpl[E[_]](
             tokensDao.update(token, tokenInfo.copy(
               expiresOn = Instant.now()
             ))
-          case None => E(throw new RuntimeException("Token does not exist"))
+          case None => E.failure(throw new RuntimeException("Token does not exist"))
         }
       }:E[Boolean] // Note: fix intellij erroneous error
       _ <- {
         if(result == false) {
-          E(throw new RuntimeException("Failed to update token"))
+          E.failure(throw new RuntimeException("Failed to update token"))
         } else {
-          E(())
+          E.pure(())
         }
       }
     } yield ()
