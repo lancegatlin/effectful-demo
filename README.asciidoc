@@ -30,22 +30,24 @@ trait Users[E[_]] {
   def remove(userId: UUID) : E[Boolean]
 }
 ----
+https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/Users.scala[Users.scala]
 
 ==== Implement an effectful service
 * Implement the service by creating a class that inherits from the trait and also has a generic monad
 parameter that is propagated to the trait.
-* Constructor inject required dependencies on other effectful services.
+* Constructor-inject required dependencies for other effectful services.
 ** Propagate the generic monad type to the other effectful services to ensure that only implementations
 that use the same monad type can be passed.
 ** This decouples dependencies from callers of the trait.
-* Implicitly inject Monad type-class and import monad operations to support for-comprehensions.
-** Also can implicitly inject monad "augments" (such as Exceptions or Par) to ensure monad supports
+** This alleviates most of the need for the Reader monad.
+* Implicitly constructor-inject Monad type-class and import monad operations to support for-comprehensions.
+** Monad "augments" (such as Exceptions or Par) can also be injected to ensure monad supports
 extra operations such as exception handling, parallel execution or time delays.
-* Keep service pure by deferring effect capture to other services or augments that capture the effects
-inside the monad.
-* Because monad is generic, map/flatMap and for-comprehensions can be used without the need for monad
-transformers or lifting every statement.
-* Because implementation is pure and generic, it can be reused for any monad or nested monad combination.
+* Keep service pure by deferring effect capture to other effectful services or augments that capture
+the effects inside the monad.
+* Use map/flatMap and for-comprehensions without the need for monad transformers or lifting every
+statement.
+* Re-use service implementation for any monad or nested monad combination (such as Future[LogWriter[A]]).
 
 ----
 class UsersImpl[E[_]](
@@ -82,6 +84,7 @@ class UsersImpl[E[_]](
    ...
 }
 ----
+https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/UsersImpl.scala[UsersImpl.scala]
 
 ==== Use an effectful service
 * Decide on a monad or nested monad combination then wire and inject
@@ -107,7 +110,7 @@ class UsersImpl[E[_]](
   )
 ...
 ----
-
+https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/FutureLogWriterExample.scala[FutureLogWriterExample.scala]
 
 ==== Re-use effectful services with any monad
 * Later, use a completely different monad without changing UserImpl
@@ -129,6 +132,34 @@ class UsersImpl[E[_]](
     usersDao = userDao,
     passwords = passwords,
     logger = Slf4jLogger("users")
+  )
+...
+----
+https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/IdExample.scala[IdExample]
+
+==== Use effectful services with the free monad
+* Finally, completely capture all effects using the free monad (without changing UserImpl)
+* Free monad can be executed later or serialized for execution elsewhere
+
+----
+  type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
+  type E[A] = Free[Cmd,A]
+...
+  val passwords = new PasswordsImpl[E](
+    passwordMismatchDelay = 5.seconds,
+    logger = FreeLogger("passwords").liftService[E]
+  )
+
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,E](
+    sql = sqlDriver.liftService[E],
+    recordMapping = userDataRecordMapping,
+    metadataMapping = userDataMetadataRecordMapping
+  )
+
+  val users = new UsersImpl[E](
+    usersDao = userDao,
+    passwords = passwords,
+    logger = FreeLogger("users").liftService[E]
   )
 ...
 ----
