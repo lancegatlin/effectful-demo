@@ -39,8 +39,8 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 ==== Implement an effectful service
 * Implement the service by creating a class that inherits from the trait and also has a generic monad
 parameter that is propagated to the trait.
-* Constructor-inject required dependencies for other effectful services to decouple and hide dependencies
-from callers of the trait.
+* Compose service from other services by constructor-injecting required dependencies
+** Decouple and hide dependencies from callers of the trait by not exposing them in the trait.
 ** Propagate the generic monad type to the other effectful services to ensure that only implementations
 that use the same monad type can be passed.
 * Implicitly constructor-inject Monad type-class for generic monad type and import monad operations to
