@@ -140,8 +140,8 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/IdExample.scala[IdExample]
 
 ==== Use effectful services with the free monad
-* Finally, completely capture all effects using the free monad (without changing UserImpl)
-* Free monad can be executed later or serialized for execution elsewhere
+* Completely capture all effects using the free monad (without changing UserImpl)
+** Free monad can be executed later or serialized for execution elsewhere
 
 ----
   type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
