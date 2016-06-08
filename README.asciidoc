@@ -120,8 +120,6 @@ Example: UserLogins with identity monad instead
 ...
 ----
 
-----
-
 == Example: UserLogin with identity monad
 
 ----
