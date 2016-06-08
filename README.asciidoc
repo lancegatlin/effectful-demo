@@ -1,6 +1,6 @@
-= s_mach.$PROJECT: $PROJECT_SHORT_DESC 
+= effectful-demo
 Lance Gatlin <lance.gatlin@gmail.com>
-v1,$DATE
+v1,7 Jun 2016
 :blogpost-status: unpublished
 :blogpost-categories: s_mach, scala
 
