@@ -119,8 +119,11 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/FutureLogWriterExample.scala[FutureLogWriterExample.scala]
 
 ==== Re-use effectful services with any monad
-* Use different monads for different circumstances
-** Testing a pure service could be done with the identity monad
+* Use different monads for different circumstances, some examples:
+** Test pure services with the identity monad for simplicity
+** Use immediate logging for local services callers and LogWriter monad for remote service callers
+** Compare performance of similar monads such as Future and scalaz.Task
+** Try out different frameworks
 
 ----
   type Id[A] = A
