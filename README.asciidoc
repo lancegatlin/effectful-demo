@@ -9,7 +9,7 @@ v1,7 Jun 2016
 A demonstration library and ongoing sandbox project for "effectful services".
 
 ==== Declare an effectful service
-* Declare an effectful service by creating a generic trait that accepts a generic monad parameter
+* Declare an effectful service by creating a trait that accepts a generic monad parameter.
 ** Any monad or nested monad combination could be substituted for the generic monad parameter (such as
 Future, IO or free monad).
 * Create trait with only unimplemented methods (and maybe the occasional unimplemented val).
