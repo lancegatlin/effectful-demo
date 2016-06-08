@@ -71,7 +71,7 @@ class UsersImpl[E[_]](
 }
 ----
 
-* Decide on a monad stack and wire and inject
+* Decide on a monad or monad stack then wire and inject
 * Lift services that are implemented with another monad into the desired monad
 
 Example: UserImpl with Future + LogWriter
