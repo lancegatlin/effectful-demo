@@ -5,13 +5,14 @@ v1,7 Jun 2016
 :blogpost-categories: s_mach, scala
 
 == Overview
-Note: ultimate goal of this library is only to demonstrate capability; it is an ongoing project.
 * Declare pure service contracts ("effectful services") that accept a generic effect monad parameter
 that can be any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
 logical combination like Task[Writer[A]])
 * Each method's return value is wrapped in the generic monad type to ensure intended effects generated
 by method call are captured by the monad
 ** Note: which effects are captured depends on the monad selected and the implementation of the service
+
+Note: library is for demonstration only and will be ongoing sandbox project.
 
 Example: Declare a pure service for managing users
 ----
