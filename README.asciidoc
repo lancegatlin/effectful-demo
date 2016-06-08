@@ -119,7 +119,8 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/FutureLogWriterExample.scala[FutureLogWriterExample.scala]
 
 ==== Re-use effectful services with any monad
-* Later, use a completely different monad without changing UserImpl
+* Use different monads for different circumstances
+** Testing a pure service could be done with the identity monad
 
 ----
   type Id[A] = A
