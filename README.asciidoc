@@ -38,7 +38,6 @@ parameter that is propagated to the trait.
 from callers of the trait.
 ** Propagate the generic monad type to the other effectful services to ensure that only implementations
 that use the same monad type can be passed.
-** Using constructor injection alleviates most of the need for the Reader monad.
 * Implicitly constructor-inject Monad type-class for generic monad type and import monad operations to
 support for-comprehensions.
 ** Monad "augments" (such as Exceptions or Par) can also be injected to ensure monad supports
