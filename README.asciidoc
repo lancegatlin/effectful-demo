@@ -43,7 +43,8 @@ support for-comprehensions.
 ** Monad "augments" (such as Exceptions or Par) can also be injected to ensure monad supports
 extra operations such as exception handling, parallel execution or time delays (see
 https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/PasswordsImpl.scala[PasswordsImpl.scala]
-for example)
+or https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/dao/sql/impl/SqlDocDaoImpl.scala[SqlDocDaoImpl.scala]
+for examples)
 * Keep service pure by deferring effect capture to other effectful services or augments that capture
 the effects inside the monad.
 * Use map/flatMap and for-comprehensions without the need for monad transformers or lifting every
