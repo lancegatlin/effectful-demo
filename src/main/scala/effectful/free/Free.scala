@@ -114,7 +114,7 @@ object Free {
     override def run[E[_]](i: Interpreter[Cmd, E]): E[Unit] =
       i.D.delay(duration)
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, Unit] =
-      this.asInstanceOf
+      this.asInstanceOf[Free[Cmd2,Unit]]
   }
 
   // Par aspect

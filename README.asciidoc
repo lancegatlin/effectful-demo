@@ -9,12 +9,13 @@ v1,7 Jun 2016
 A demonstration library and ongoing sandbox project for "effectful services".
 
 ==== Example: Declare an effectful service for managing users
-* Declare effectful services: pure service traits that accept a generic monad parameter
-that can be any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
-logical combination like Task[Writer[A]])
+* Declare an effectful service by creating a generic trait that accepts a generic monad parameter
+* Any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
+  logical combination like Task[Writer[A]]) could be substituted.
+* Trait contains only unimplemented methods (and maybe the occasional val)
 * Each method's return value is wrapped in the generic monad type to ensure intended effects generated
 by method call are captured by the monad
-** Note: which effects are captured depends on the monad selected and the implementation of its service
+** Note: which effects are captured depends on the monad selected and the implementation of this trait's
 dependencies
 
 ----
