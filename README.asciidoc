@@ -7,14 +7,15 @@ v1,7 Jun 2016
 A demonstration library and ongoing sandbox project for "effectful services".
 
 == Overview
-* Declare pure service traits ("effectful services") that accept a generic monad parameter
+* Declare effectful services: pure service traits that accept a generic monad parameter
 that can be any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
 logical combination like Task[Writer[A]])
 * Each method's return value is wrapped in the generic monad type to ensure intended effects generated
 by method call are captured by the monad
-** Note: which effects are captured depends on the monad selected and the implementation of the service
+** Note: which effects are captured depends on the monad selected and the implementation of its service
+dependencies
 
-=== Example: Declare a pure service for managing users
+=== Example: Declare an effectful service for managing users
 ----
 trait Users[E[_]] {
   def findByUsername(username: String) : E[Option[User]]
@@ -27,11 +28,10 @@ trait Users[E[_]] {
 }
 ----
 
-* Implement service trait with pure effect-free code
-* Implementation is also generic for all monads and nested monads
+* Implement services with generic and pure effect-free code
+* Defer effect capture to other injected services that capture the effects inside the monad
 * Use map/flatMap and for-comprehensions without the need for monad transformers or lifting
-* Constructor inject service dependencies to hide from callers
-* Defer effects to other services that capture the effects in the monad
+* Constructor inject service dependencies to hide dependencies from callers
 * Use monad "augments" to ensure monad supports extra operations such as exception handling,
 parallel execution or time delays
 
@@ -157,14 +157,6 @@ scala> userLogins.login("lance","password")
 21:53:45.645 [run-main-0] INFO tokens - Issued token 8a8055cd-04e6-4e06-bd17-7a2bebce192c to user f54214e6-2054-4717-b2bb-b0f9c0e7fbb1
 21:53:45.646 [run-main-0] INFO userLogins - User f54214e6-2054-4717-b2bb-b0f9c0e7fbb1 logged in, issued token 8a8055cd-04e6-4e06-bd17-7a2bebce192c
 res3: effectful.Id[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = \/-(8a8055cd-04e6-4e06-bd17-7a2bebce192c)
-
-scala> users.findbyId(res0)
-<console>:16: error: value findbyId is not a member of effectful.examples.pure.user.impl.UsersImpl[effectful.Id]
-       users.findbyId(res0)
-             ^
-
-scala> users.findById(res0)
-res5: effectful.Id[Option[effectful.examples.pure.user.Users.User]] = Some(User(f54214e6-2054-4717-b2bb-b0f9c0e7fbb1,lance,w+diya9sU07ZEVMRFk4QIG0qoTKUiKuV,2016-06-08T01:53:07.661Z,None))
 
 scala>
 ----
