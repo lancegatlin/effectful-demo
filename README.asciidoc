@@ -15,7 +15,7 @@ by method call are captured by the monad
 ** Note: which effects are captured depends on the monad selected and the implementation of its service
 dependencies
 
-=== Example: Declare an effectful service for managing users
+==== Example: Declare an effectful service for managing users
 ----
 trait Users[E[_]] {
   def findByUsername(username: String) : E[Option[User]]
@@ -35,7 +35,7 @@ trait Users[E[_]] {
 * Use monad "augments" to ensure monad supports extra operations such as exception handling,
 parallel execution or time delays
 
-=== Example: Implement pure service for managing users
+==== Example: Implement pure service for managing users
 ----
 class UsersImpl[E[_]](
   usersDao: SqlDocDao[UUID,UserData,E],
@@ -74,7 +74,7 @@ class UsersImpl[E[_]](
 * Decide on a monad or monad stack then wire and inject
 * Lift services that are implemented with another monad into the desired monad
 
-=== Example: UsersImpl with Future + LogWriter
+==== Example: UsersImpl with Future + LogWriter
 ----
   type E[A] = Future[LogWriter[A]]
 ...
@@ -98,7 +98,7 @@ class UsersImpl[E[_]](
 
 * Later, use a completely different monad without changing UserImpl
 
-=== Example: UsersImpl with identity monad instead
+==== Example: UsersImpl with identity monad instead
 ----
   type Id[A] = A
 ...
