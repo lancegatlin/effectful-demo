@@ -52,9 +52,8 @@ or https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effe
 for examples)
 * Keep service pure by deferring effect capture to other effectful services or augments that capture
 the effects inside the monad.
-* Use map/flatMap and for-comprehensions without the need for monad transformers or lifting every
-statement.
-* Re-use service implementation for any monad or nested monad combination (such as Future[LogWriter[A]]).
+* Use map/flatMap and for-comprehensions on monad type (even if it is nested) without the need for monad transformers or lifting every statement.
+* Re-use service implementation for any monad or nested monad combination.
 
 ----
 class UsersImpl[E[_]](
