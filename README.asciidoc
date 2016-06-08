@@ -93,8 +93,9 @@ class UsersImpl[E[_]](
 Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/UsersImpl.scala[UsersImpl.scala]
 
 ==== Use an effectful service
-* Decide on a monad or nested monad combination then wire and inject
-* Lift services that are implemented with another monad into the desired monad
+* Decide on a monad or nested monad combination then wire and inject.
+* Lift services that are implemented with another monad into the desired monad.
+* Avoid creating implicits at every call site by injecting them once at service creation.
 
 ----
   type E[A] = Future[LogWriter[A]]
