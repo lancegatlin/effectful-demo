@@ -4,9 +4,11 @@ v1,7 Jun 2016
 :blogpost-status: unpublished
 :blogpost-categories: s_mach, scala
 
-A demonstration library and ongoing sandbox project for "effectful services".
 
 == Overview
+A demonstration library and ongoing sandbox project for "effectful services".
+
+==== Example: Declare an effectful service for managing users
 * Declare effectful services: pure service traits that accept a generic monad parameter
 that can be any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
 logical combination like Task[Writer[A]])
@@ -15,7 +17,6 @@ by method call are captured by the monad
 ** Note: which effects are captured depends on the monad selected and the implementation of its service
 dependencies
 
-==== Example: Declare an effectful service for managing users
 ----
 trait Users[E[_]] {
   def findByUsername(username: String) : E[Option[User]]
@@ -28,6 +29,7 @@ trait Users[E[_]] {
 }
 ----
 
+==== Example: Implement pure service for managing users
 * Implement services with generic and pure effect-free code
 * Defer effect capture to other injected services that capture the effects inside the monad
 * Use map/flatMap and for-comprehensions without the need for monad transformers or lifting
@@ -35,7 +37,6 @@ trait Users[E[_]] {
 * Use monad "augments" to ensure monad supports extra operations such as exception handling,
 parallel execution or time delays
 
-==== Example: Implement pure service for managing users
 ----
 class UsersImpl[E[_]](
   usersDao: SqlDocDao[UUID,UserData,E],
@@ -71,10 +72,10 @@ class UsersImpl[E[_]](
 }
 ----
 
+==== Example: UsersImpl with Future + LogWriter
 * Decide on a monad or monad stack then wire and inject
 * Lift services that are implemented with another monad into the desired monad
 
-==== Example: UsersImpl with Future + LogWriter
 ----
   type E[A] = Future[LogWriter[A]]
 ...
@@ -96,9 +97,10 @@ class UsersImpl[E[_]](
 ...
 ----
 
-* Later, use a completely different monad without changing UserImpl
 
 ==== Example: UsersImpl with identity monad instead
+* Later, use a completely different monad without changing UserImpl
+
 ----
   type Id[A] = A
 ...
