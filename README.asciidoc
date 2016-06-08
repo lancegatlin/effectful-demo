@@ -5,11 +5,10 @@ v1,7 Jun 2016
 :blogpost-categories: s_mach, scala
 
 == Overview
-* Declare pure service contracts that accept a generic effect monad parameter
-* Each method's return value is wrapped in the generic monad type
-* Reuse trait for any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
+* Declare pure service contracts that accept a generic effect monad parameter that can be reused
+for any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
 logical combination)
-* Use free monad to capture code for later execution or serialization
+* Each method's return value is "lifted" into the generic monad type
 
 Example: pure service for managing users
 ----
@@ -26,8 +25,8 @@ trait Users[E[_]] {
 }
 ----
 
-* Implement service code once and reuse for all monads and nested monads.
-* Use for-comprehensions without the need for monad transformers or lifting
+* Implement service trait and reuse for all monads and nested monads
+* Use map/flatMap and for-comprehensions without the need for monad transformers or lifting
 * Constructor inject service dependencies to hide from callers
 * Defer effects in pure services by calling other services that capture effects in the monad
 * Use monad augments to add extra operations to monad such as exceptions, parallel execution or
@@ -76,6 +75,56 @@ class UsersImpl[E[_]](
     }
    ...
 }
+----
+
+* Decide on a monad stack and wire and inject
+
+Example: UserImpl with Future + LogWriter
+----
+  type E[A] = Future[LogWriter[A]]
+...
+  val passwords = new PasswordsImpl[E](
+    passwordMismatchDelay = 5.seconds,
+    logger = WriterLogger("passwords").liftService[E]
+  )
+
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,E](
+    sql = sqlDriver.liftService[E],
+    recordMapping = userDataRecordMapping,
+    metadataMapping = userDataMetadataRecordMapping
+  )
+  val users = new UsersImpl[E](
+    usersDao = userDao,
+    passwords = passwords,
+    logger = WriterLogger("users").liftService[E]
+  )
+...
+----
+
+* Or use a completely different monad later without changing UserImpl
+----
+Example: UserLogins with identity monad instead
+----
+  type Id[A] = A
+...
+  val passwords = new PasswordsImpl[Id](
+    passwordMismatchDelay = 5.seconds,
+    logger = Slf4jLogger("passwords")
+  )
+
+  val userDao = new SqlDocDaoImpl[UUID,UsersImpl.UserData,Id](
+    sql = sqlDriver,
+    recordMapping = userDataRecordMapping,
+    metadataMapping = userDataMetadataRecordMapping
+  )
+  val users = new UsersImpl[Id](
+    usersDao = userDao,
+    passwords = passwords,
+    logger = Slf4jLogger("users")
+  )
+...
+----
+
 ----
 
 == Example: UserLogin with identity monad
