@@ -1,5 +1,5 @@
 scalaVersion := "2.11.8"
 
-organization := "net.s_mach"
+organization := "org.lancegatlin"
 
 scalacOptions ++= Seq("-feature","-unchecked", "-deprecation")
