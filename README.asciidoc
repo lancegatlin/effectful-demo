@@ -10,9 +10,8 @@ A demonstration library and ongoing sandbox project for "effectful services".
 
 ==== Declare an effectful service
 * Declare an effectful service by creating a generic trait that accepts a generic monad parameter
-** Because trait is generic monadically,  any monad or nested monad combination (such as Future,
-Task, IO, writer, free, identity monad or any logical combination like Task[Writer[A]]) could be
-substituted for the generic monad parameter.
+** Any monad or nested monad combination could be substituted for the generic monad parameter (such as
+Future, IO or free monad).
 * Create trait with only unimplemented methods (and maybe the occasional unimplemented val).
 ** This decouples implementation details and dependencies from callers.
 * Each method's return value is wrapped in the generic monad type.
