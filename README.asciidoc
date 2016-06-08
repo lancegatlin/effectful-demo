@@ -5,15 +5,9 @@ v1,7 Jun 2016
 :blogpost-categories: s_mach, scala
 
 == Overview
-* Write pure service logic once for all possible monads and monad stacks such as
-Future, Task, IO, writer monad, free monad or identity monad.
-* Write monadic service code using for-comprehensions on a complex monad stack
-(such as Future[Writer[A]]) without needing monad transformers
-* Compose services to encapsulate logic and hide dependencies from callers
-* Differ effects to effect services that capture effects in monad
-* Run services with the free monad to capture code for later execution or serialization
-* Use execution augments to expand Monad to support extra operations such as exceptions, parallel execution or
-time delays
+* Declare pure service contracts that accept a generic effect monad parameter
+* Each method's return value is wrapped in the generic monad type
+* Reuse for any monad or nested monad stack (such as Future, Task, IO, writer, free or identity monad)
 
 Example: pure service for managing users
 ----
@@ -23,16 +17,23 @@ trait Users[E[_]] {
   def findByUsername(username: String) : E[Option[User]]
   def findById(id: UUID) : E[Option[User]]
   def findAll(start: Int, batchSize: Int) : E[Seq[User]]
-  def create(
-    id: UUID,
-    username: String,
-    plainTextPassword: String
-  ) : E[Boolean]
+  def create(id: UUID,username: String,plainTextPassword: String) : E[Boolean]
   def rename(userId: UUID, newUsername: String) : E[Boolean]
   def setPassword(userId: UUID, plainTextPassword: String) : E[Boolean]
   def remove(userId: UUID) : E[Boolean]
 }
 ----
+
+* Implement service code once and reuse for all monads and nested monads such as
+Future, Task, IO, writer monad, free monad or identity monad (or any logical combination).
+* Write monadic code using for-comprehensions on a complex monad stack
+(such as Future[Writer[A]]) without the need for monad transformers
+* Compose services to encapsulate logic and hide dependencies from callers
+* Differ effects to effect services that capture effects in monad
+* Run services with the free monad to capture code for later execution or serialization
+* Use execution augments to expand Monad to support extra operations such as exceptions, parallel execution or
+time delays
+
 
 Example: implementation for pure service for managing users
 ----
