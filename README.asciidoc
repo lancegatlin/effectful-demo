@@ -259,4 +259,4 @@ scala>
 
 == Demo: UserLogin with Free monad
 
-// todo:
+todo: fix bug in free monad
