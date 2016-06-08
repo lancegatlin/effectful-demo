@@ -105,7 +105,7 @@ Example: UserImpl with Future + LogWriter
 ----
 
 * Later, use a completely different monad without changing UserImpl
-----
+
 Example: UserLogins with identity monad instead
 ----
   type Id[A] = A
