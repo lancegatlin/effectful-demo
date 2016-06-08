@@ -28,14 +28,26 @@ class UsersImpl[E[_]](
   import UsersImpl._
   import logger._
 
-  val toUser : ((UUID,UserData,RecordMetadata)) => User = { case (id,userData,metadata) =>
-      User(
-        id = id,
-        username = userData.username,
-        passwordDigest = userData.passwordDigest,
-        created = metadata.created,
-        removed = metadata.removed
-      )
+  def create(id: UUID, username: String, plainTextPassword: String) =
+    findById(id).flatMap {
+      case Some(_) => E.pure(false)
+      case None =>
+        findByUsername(username).flatMap {
+          case Some(_) => E.pure(false)
+          case None =>
+            for {
+              digest <- passwords.mkDigest(plainTextPassword)
+              result <- usersDao.insert(id,UserData(
+                username = username,
+                passwordDigest = digest
+              ))
+              _ <- if(result) {
+                info(s"Created user $id with username $username")
+              } else {
+                E.pure(())
+              }
+            } yield result
+        }
     }
 
   def findById(id: UUID) =
@@ -89,26 +101,13 @@ class UsersImpl[E[_]](
         E.pure(false)
     }
 
-
-  def create(id: UUID, username: String, plainTextPassword: String) =
-    findById(id).flatMap {
-      case Some(_) => E.pure(false)
-      case None =>
-        findByUsername(username).flatMap {
-          case Some(_) => E.pure(false)
-          case None =>
-            for {
-              digest <- passwords.mkDigest(plainTextPassword)
-              result <- usersDao.insert(id,UserData(
-                username = username,
-                passwordDigest = digest
-              ))
-              _ <- if(result) {
-                info(s"Created user $id with username $username")
-              } else {
-                E.pure(())
-              }
-            } yield result
-        }
+  val toUser : ((UUID,UserData,RecordMetadata)) => User = { case (id,userData,metadata) =>
+      User(
+        id = id,
+        username = userData.username,
+        passwordDigest = userData.passwordDigest,
+        created = metadata.created,
+        removed = metadata.removed
+      )
     }
 }

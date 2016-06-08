@@ -17,7 +17,7 @@ trait Users[E[_]] {
   def rename(userId: UUID, newUsername: String) : E[Boolean]
   def setPassword(userId: UUID, plainTextPassword: String) : E[Boolean]
   def remove(userId: UUID) : E[Boolean]
- }
+}
 
 object Users {
   case class User(

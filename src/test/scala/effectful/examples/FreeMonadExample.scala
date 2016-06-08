@@ -73,10 +73,10 @@ object FreeMonadExample {
   )
 
   val userLogins = new UserLoginsImpl[E](
-    logger = FreeLogger("userLogins").liftService[E],
     users = users,
     tokens = tokens,
-    passwords = passwords
+    passwords = passwords,
+    logger = FreeLogger("userLogins").liftService[E]
   )
 
   // todo: generalize interpreter for any disjunction of commands

@@ -17,7 +17,7 @@ sealed abstract class Free[Cmd[_],A] extends Product with Serializable {
   def flatMap[B](f: A => Free[Cmd,B]) : Free[Cmd,B] =
     Free.FlatMap(this,f)
   def widen[AA >: A] : Free[Cmd,AA] =
-    this.asInstanceOf
+    this.asInstanceOf[Free[Cmd,AA]]
 
   def run[E[_]](i: Interpreter[Cmd,E]) : E[A]
 

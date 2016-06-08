@@ -4,35 +4,176 @@ v1,$DATE
 :blogpost-status: unpublished
 :blogpost-categories: s_mach, scala
 
-image:https://travis-ci.org/S-Mach/s_mach.$PROJECT.svg[Build Status, link="https://travis-ci.org/S-Mach/s_mach.$PROJECT"]
-image:https://coveralls.io/repos/S-Mach/s_mach.$PROJECT/badge.png[Test Coverage,link="https://coveralls.io/r/S-Mach/s_mach.$PROJECT"]
-image:https://api.codacy.com/project/badge/grade/cf9048205e154e8a9e01244de497db25[Codacy Badge,link="https://www.codacy.com/public/lancegatlin/s_mach.$PROJECT"]
-https://github.com/S-Mach/s_mach.$PROJECT[Code]
-http://s-mach.github.io/s_mach.$PROJECT/#s_mach.$PROJECT.package[Scaladoc]
-
-+s_mach.$PROJECT+ $PROJECT_LONG_DESC
-
-== Include in SBT
-1. Add to +build.sbt+
-+
-[source,sbt,numbered]
-----
-libraryDependencies += "net.s_mach" %% "$PROJECT" % "$PROJECT_VERSION"
-----
-NOTE: +s_mach.$PROJECT+ is currently only compiled for Scala 2.11 (though 2.10.4
-support can be added if there is interest)
-
-== Versioning
-+s_mach.$PROJECT+ uses semantic versioning (http://semver.org/). +s_mach.$PROJECT+
-does not use the package private modifier. Instead, all code files outside of
-the +s_mach.$PROJECT.impl+ package form the public interface and are governed by
-the rules of semantic versioning. Code files inside the +s_mach.$PROJECT.impl+
-package may be used by downstream applications and libraries. However, no
-guarantees are made as to the stability or interface of code in the
-+s_mach.$PROJECT.impl+ package between versions.
-
 == Overview
+* Write pure service logic once for all possible monads and monad stacks such as
+Future, Task, IO, writer monad, free monad or identity monad.
+* Write monadic service code using for-comprehensions on a complex monad stack
+(such as Future[Writer[A]]) without needing monad transformers
+* Compose services to encapsulate logic and hide dependencies from callers
+* Differ effects to effect services that capture effects in monad
+* Run services with the free monad to capture code for later execution or serialization
+* Use execution augments to expand Monad to support extra operations such as exceptions, parallel execution or
+time delays
 
-== Features
+Example: pure service for managing users
+----
+trait Users[E[_]] {
+  import Users._
 
-== Examples
+  def findByUsername(username: String) : E[Option[User]]
+  def findById(id: UUID) : E[Option[User]]
+  def findAll(start: Int, batchSize: Int) : E[Seq[User]]
+  def create(
+    id: UUID,
+    username: String,
+    plainTextPassword: String
+  ) : E[Boolean]
+  def rename(userId: UUID, newUsername: String) : E[Boolean]
+  def setPassword(userId: UUID, plainTextPassword: String) : E[Boolean]
+  def remove(userId: UUID) : E[Boolean]
+}
+----
+
+Example: implementation for pure service for managing users
+----
+object UsersImpl {
+  case class UserData(
+    username: String,
+    passwordDigest: String
+  )
+}
+
+class UsersImpl[E[_]](
+  usersDao: SqlDocDao[UUID,UserData,E],
+  passwords: Passwords[E],
+  logger: Logger[E]
+)(implicit
+  E:Monad[E]
+) extends Users[E] {
+  import Monad.ops._
+  import UsersImpl._
+  import logger._
+
+  def create(id: UUID, username: String, plainTextPassword: String) =
+    findById(id).flatMap {
+      case Some(_) => E.pure(false)
+      case None =>
+        findByUsername(username).flatMap {
+          case Some(_) => E.pure(false)
+          case None =>
+            for {
+              digest <- passwords.mkDigest(plainTextPassword)
+              result <- usersDao.insert(id,UserData(
+                username = username,
+                passwordDigest = digest
+              ))
+              _ <- if(result) {
+                info(s"Created user $id with username $username")
+              } else {
+                E.pure(())
+              }
+            } yield result
+        }
+    }
+----
+
+== Example: UserLogin with identity monad
+
+----
+$ sbt
+[info] Loading project definition from /Users/lancegatlin/Code/effectful/project
+[info] Set current project to effectful-demo (in build file:/Users/lancegatlin/Code/effectful/)
+> test:console
+[info] Updating {file:/Users/lancegatlin/Code/effectful/}effectful...
+[info] Resolving jline#jline;2.12.1 ...
+[info] Done updating.
+[info] Compiling 2 Scala sources to /Users/lancegatlin/Code/effectful/target/scala-2.11/test-classes...
+[info] Starting scala interpreter...
+[info]
+Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_77).
+Type in expressions for evaluation. Or try :help.
+
+scala> import effectful.examples.IdExample._
+import effectful.examples.IdExample._
+
+scala> uuids.gen()
+res0: effectful.Id[effectful.examples.pure.uuid.UUIDs.UUID] = f54214e6-2054-4717-b2bb-b0f9c0e7fbb1
+
+scala> users.create(res0,"lance","password")
+21:53:16.293 [MLog-Init-Reporter] INFO com.mchange.v2.log.MLog - MLog clients using slf4j logging.
+...
+21:53:16.736 [run-main-0] INFO users - Created user f54214e6-2054-4717-b2bb-b0f9c0e7fbb1 with username lance
+res1: effectful.Id[Boolean] = true
+
+scala> userLogins.login("lance","not my password")
+21:53:30.595 [run-main-0] WARN passwords - Password mismatch delaying 5 seconds
+21:53:35.600 [run-main-0] WARN userLogins - User f54214e6-2054-4717-b2bb-b0f9c0e7fbb1 password mismatch
+res2: effectful.Id[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = -\/(PasswordMismatch)
+
+scala> userLogins.login("lance","password")
+21:53:45.645 [run-main-0] INFO tokens - Issued token 8a8055cd-04e6-4e06-bd17-7a2bebce192c to user f54214e6-2054-4717-b2bb-b0f9c0e7fbb1
+21:53:45.646 [run-main-0] INFO userLogins - User f54214e6-2054-4717-b2bb-b0f9c0e7fbb1 logged in, issued token 8a8055cd-04e6-4e06-bd17-7a2bebce192c
+res3: effectful.Id[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = \/-(8a8055cd-04e6-4e06-bd17-7a2bebce192c)
+
+scala> users.findbyId(res0)
+<console>:16: error: value findbyId is not a member of effectful.examples.pure.user.impl.UsersImpl[effectful.Id]
+       users.findbyId(res0)
+             ^
+
+scala> users.findById(res0)
+res5: effectful.Id[Option[effectful.examples.pure.user.Users.User]] = Some(User(f54214e6-2054-4717-b2bb-b0f9c0e7fbb1,lance,w+diya9sU07ZEVMRFk4QIG0qoTKUiKuV,2016-06-08T01:53:07.661Z,None))
+
+scala>
+----
+
+== Example: UserLogin with Future + LogWriter
+
+----
+$ sbt
+[info] Loading project definition from /Users/lancegatlin/Code/effectful/project
+[info] Set current project to effectful-demo (in build file:/Users/lancegatlin/Code/effectful/)
+> test:console
+[info] Starting scala interpreter...
+[info]
+Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_77).
+Type in expressions for evaluation. Or try :help.
+
+scala> import scala.concurrent._
+import scala.concurrent._
+
+scala> import scala.concurrent.duration._
+import scala.concurrent.duration._
+
+scala> import effectful.examples.FutureLogWriterExample._
+import effectful.examples.FutureLogWriterExample._
+
+scala> uuids.gen()
+res0: effectful.Id[effectful.examples.pure.uuid.UUIDs.UUID] = 6cff63f8-1294-4e1a-9943-f7c5b5598f3d
+
+scala> users.create(res0,"lance","password")
+res1: effectful.examples.FutureLogWriterExample.E[Boolean] = List()
+
+scala> 21:57:51.026 [MLog-Init-Reporter] INFO com.mchange.v2.log.MLog - MLog clients using slf4j logging.
+...
+Verified test user is inserted...
+
+scala> Await.result(res1,Duration.Inf)
+res2: effectful.examples.adapter.scalaz.writer.LogWriter[Boolean] = WriterT((List(LogEntry(users,Info,Created user 6cff63f8-1294-4e1a-9943-f7c5b5598f3d with username lance,None,2016-06-08T01:57:51.943Z)),true))
+
+scala> userLogins.login("lance","not my password")
+res3: effectful.examples.FutureLogWriterExample.E[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = List()
+
+scala> Await.result(res3,Duration.Inf)
+res4: effectful.examples.adapter.scalaz.writer.LogWriter[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = WriterT((List(LogEntry(passwords,Warn,Password mismatch delaying 5 seconds,None,2016-06-08T01:59:14.130Z), LogEntry(userLogins,Warn,User 6cff63f8-1294-4e1a-9943-f7c5b5598f3d password mismatch,None,2016-06-08T01:59:19.146Z)),-\/(PasswordMismatch)))
+
+scala> userLogins.login("lance","password")
+res5: effectful.examples.FutureLogWriterExample.E[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = List()
+
+scala> Await.result(res6,Duration.Inf)
+res6: effectful.examples.adapter.scalaz.writer.LogWriter[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = WriterT((List(LogEntry(tokens,Info,Issued token 273a4ec0-571c-4cfe-93c2-53198717a6b6 to user 6cff63f8-1294-4e1a-9943-f7c5b5598f3d,None,2016-06-08T01:59:37.725Z), LogEntry(userLogins,Info,User 6cff63f8-1294-4e1a-9943-f7c5b5598f3d logged in, issued token 273a4ec0-571c-4cfe-93c2-53198717a6b6,None,2016-06-08T01:59:37.725Z)),\/-(273a4ec0-571c-4cfe-93c2-53198717a6b6)))
+
+scala>
+----
+
+== Example: UserLogin with Free monad
+

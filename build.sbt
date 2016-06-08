@@ -1,4 +1,4 @@
-name := "effectful"
+name := "effectful-demo"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-io" % "1.3.2" % "test",
