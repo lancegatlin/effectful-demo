@@ -33,8 +33,10 @@ trait Users[E[_]] {
 
 ==== Implement an effectful service
 * Implement the service by creating a class that inherits from the trait and also has a generic monad
-parameter.
-* Constructor inject required dependencies on other efffectful services
+parameter that is propagated to the trait.
+* Constructor inject required dependencies on other effectful services.
+** Propagate the generic monad type to the other effectful services to ensure that only implementations
+that use the same monad type can be passed.
 ** This decouples dependencies from callers of the trait.
 * Implicitly inject Monad type-class and import monad operations to support for-comprehensions.
 ** Also can implicitly inject monad "augments" (such as Exceptions or Par) to ensure monad supports
