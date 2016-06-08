@@ -5,17 +5,15 @@ v1,7 Jun 2016
 :blogpost-categories: s_mach, scala
 
 == Overview
-* Declare pure service contracts that accept a generic effect monad parameter that can be reused
-for any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
-logical combination)
-* Each method's return value is wrapped in the generic monad type to ensure intended effects
-are captured by monad
+* Declare pure service contracts ("effectful services") that accept a generic effect monad parameter
+that can be any monad or nested monad stack (such as Future, Task, IO, writer, free, identity monad or any
+logical combination like Task[Writer[A]])
+* Each method's return value is wrapped in the generic monad type to ensure intended effects generated
+by method call are captured by the monad
 
 Example: Declare a pure service for managing users
 ----
 trait Users[E[_]] {
-  import Users._
-
   def findByUsername(username: String) : E[Option[User]]
   def findById(id: UUID) : E[Option[User]]
   def findAll(start: Int, batchSize: Int) : E[Seq[User]]
@@ -30,18 +28,11 @@ trait Users[E[_]] {
 * Use map/flatMap and for-comprehensions without the need for monad transformers or lifting
 * Constructor inject service dependencies to hide from callers
 * Defer effects to other services that capture the effects in the monad
-* Use monad augments to add extra operations to monad such as exception handling,
+* Use monad "augments" to ensure monad supports extra operations such as exception handling,
 parallel execution or time delays
 
 Example: Implment pure service for managing users
 ----
-object UsersImpl {
-  case class UserData(
-    username: String,
-    passwordDigest: String
-  )
-}
-
 class UsersImpl[E[_]](
   usersDao: SqlDocDao[UUID,UserData,E],
   passwords: Passwords[E],
@@ -49,9 +40,7 @@ class UsersImpl[E[_]](
 )(implicit
   E:Monad[E]
 ) extends Users[E] {
-  import Monad.ops._
-  import UsersImpl._
-  import logger._
+  import ...
 
   def create(id: UUID, username: String, plainTextPassword: String) =
     findById(id).flatMap {
