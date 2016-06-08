@@ -41,7 +41,9 @@ that use the same monad type can be passed.
 * Implicitly constructor-inject Monad type-class for generic monad type and import monad operations to
 support for-comprehensions.
 ** Monad "augments" (such as Exceptions or Par) can also be injected to ensure monad supports
-extra operations such as exception handling, parallel execution or time delays.
+extra operations such as exception handling, parallel execution or time delays (see
+https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/PasswordsImpl.scala[PasswordsImpl.scala]
+for example)
 * Keep service pure by deferring effect capture to other effectful services or augments that capture
 the effects inside the monad.
 * Use map/flatMap and for-comprehensions without the need for monad transformers or lifting every
