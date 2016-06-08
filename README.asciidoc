@@ -122,8 +122,8 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 * Use different monads for different circumstances, some examples:
 ** Test pure services with the identity monad for simplicity
 ** Use immediate logging for local services callers and LogWriter for remote service callers (to return logs back to remote call).
-** Compare performance of similar monads such as Future and scalaz.Task
-** Try out different frameworks
+** Compare performance of similar monads such as Future and scalaz.Task.
+** Try out and migrate between frameworks with minimal code changes.
 
 ----
   type Id[A] = A
