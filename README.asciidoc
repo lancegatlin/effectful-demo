@@ -45,7 +45,7 @@ parameter that is propagated to the trait.
 that use the same monad type can be passed.
 * Implicitly constructor-inject Monad type-class for generic monad type and import monad operations to
 support for-comprehensions.
-** Monad "augments" (such as Exceptions or Par) can also be injected to ensure monad supports
+** Monad "augments" (such as https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Exceptions.scala[Exceptions] or https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Par.scala[Par]) can also be injected to ensure monad supports
 extra operations such as exception handling, parallel execution or time delays (see
 https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/PasswordsImpl.scala[PasswordsImpl.scala]
 or https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/dao/sql/impl/SqlDocDaoImpl.scala[SqlDocDaoImpl.scala]
