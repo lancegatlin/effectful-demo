@@ -269,4 +269,44 @@ scala>
 
 == Demo: UserLogin with Free monad
 
-todo: fix bug in free monad
+----
+Welcome to Scala 2.11.8 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_77).
+Type in expressions for evaluation. Or try :help.
+
+scala> import effectful.examples.FreeMonadExample._
+import effectful.examples.FreeMonadExample._
+
+scala> implicit val interpreter = idInterpreter
+interpreter: effectful.free.Interpreter[effectful.examples.FreeMonadExample.Cmd,effectful.Id]{type EE[A] = effectful.Id[A]; val sqlInterpreter: effectful.examples.effects.sql.free.SqlDriverCmdInterpreter[this.EE]; val logInterpreter: effectful.examples.effects.logging.free.LoggerCmdInterpreter[this.EE]} = effectful.examples.FreeMonadExample$$anon$2@5f3d5850
+
+scala> uuids.gen()
+res0: effectful.Id[effectful.examples.pure.uuid.UUIDs.UUID] = b9510471-2986-4826-9e9d-93a104b54801
+
+scala> users.create(res0,"lance","password")
+res1: effectful.examples.FreeMonadExample.E[Boolean] = FlatMap(Map(Command(\/-(Prepare(SELECT `Users`.`id`,`Users`.`username`,`Users`.`password_digest`,`Users`.`created`,`Users`.`last_updated`,`Users`.`removed` FROM `Users`  WHERE `id`=?,AutoCommit))),<function1>),<function1>)
+
+scala> res1.run
+22:24:15.364 [MLog-Init-Reporter] INFO com.mchange.v2.log.MLog - MLog clients using slf4j logging.
+...
+Verified test user is inserted...
+22:24:16.122 [run-main-0] INFO users - Created user b9510471-2986-4826-9e9d-93a104b54801 with username lance
+res2: effectful.Id[Boolean] = true
+
+scala> userLogins.login("lance","password")
+res3: effectful.examples.FreeMonadExample.E[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = FlatMap(Command(\/-(ExecuteQuery(SELECT `Users`.`id`,`Users`.`username`,`Users`.`password_digest`,`Users`.`created`,`Users`.`last_updated`,`Users`.`removed` FROM `Users`  WHERE `username`='lance',AutoCommit))),<function1>)
+
+scala> res3.run
+22:25:10.211 [run-main-0] INFO tokens - Issued token 7c7ae8fb-a7e4-4e08-ba64-65bb6249dc6e to user b9510471-2986-4826-9e9d-93a104b54801
+22:25:10.212 [run-main-0] INFO userLogins - User b9510471-2986-4826-9e9d-93a104b54801 logged in, issued token 7c7ae8fb-a7e4-4e08-ba64-65bb6249dc6e
+res4: effectful.Id[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = \/-(7c7ae8fb-a7e4-4e08-ba64-65bb6249dc6e)
+
+scala> userLogins.login("lance","not my password")
+res5: effectful.examples.FreeMonadExample.E[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = FlatMap(Command(\/-(ExecuteQuery(SELECT `Users`.`id`,`Users`.`username`,`Users`.`password_digest`,`Users`.`created`,`Users`.`last_updated`,`Users`.`removed` FROM `Users`  WHERE `username`='lance',AutoCommit))),<function1>)
+
+scala> res5.run
+22:25:20.704 [run-main-0] WARN passwords - Password mismatch delaying 5 seconds
+22:25:25.711 [run-main-0] WARN userLogins - User b9510471-2986-4826-9e9d-93a104b54801 password mismatch
+res6: effectful.Id[scalaz.\/[effectful.examples.pure.user.UserLogins.LoginFailure,effectful.examples.pure.user.UserLogins.Token]] = -\/(PasswordMismatch)
+
+scala>
+----
