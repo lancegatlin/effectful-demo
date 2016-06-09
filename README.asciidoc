@@ -8,7 +8,7 @@ v1,7 Jun 2016
 == Overview
 A demonstration library and ongoing sandbox project for "effectful services". 
 
-Effectful services are generic trait/class pairs that can be used with any monad or nested monad combination without code changes to the trait or class. They follow standard service orientation patterns which offer callers a stable service contract, decouple callers from service dependencies and implementations and allow composition of services to create new services. Effectful services allow the creation of generic business logic libraries that can be reused in any Scala framework such as Play, akka-http, scala-js, http4s, etc.
+Effectful services are generic trait/class pairs that can be used with any monad or nested monad combination without code changes to the trait or class. They follow standard service orientation patterns which offer callers a stable service contract, decouples them from service dependencies and implementation details and allows composition of services to create new services. Effectful services allow the creation of generic business logic libraries that can be reused in any Scala framework or environment such as Play, akka-http, scala-js, scala-native, http4s, scalaz, typelevel-cats, etc.
 
 Note: this demonstration library uses its own versions of the standard functional type-classes such as Monad, Applicative, etc. A real version of this library that uses scalaz and/or cats will be forthcoming.
 
