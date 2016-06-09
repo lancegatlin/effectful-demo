@@ -1,7 +1,5 @@
 package effectful.impl
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import effectful._
 import effectful.cats.Monad
 
@@ -13,46 +11,60 @@ object EffectIteratorOps {
     import Monad.ops._
 
     val builder = cbf()
-    def loop(): E[M[A]] = {
-      next().flatMap {
-        case Some(a) =>
-          builder += a
-          loop()
-        case None =>
-          E.pure(builder.result())
+    for {
+      initial <- initialize()
+      result <- {
+        def loop(state: S): E[M[A]] = {
+          next(state).flatMap {
+            case Some((s,a)) =>
+              builder += a
+              loop(s)
+            case None =>
+              E.pure(builder.result())
+          }
+        }
+        loop(initial)
       }
-    }
-    loop()
+    } yield result
   }
 
   def empty[E[_],A](implicit E: Monad[E]) : EffectIterator[E,A] = {
     val _E = E
     new EffectIterator[E,A] {
       override implicit val E = _E
-      val none : E[Option[A]] = E.pure(None)
-      override def next(): E[Option[A]] = none
+      type S = Unit
+      val none : E[Option[(Unit,A)]] = E.pure(None)
+      def next(s: S) = none
+      def initialize() = E.pure(())
     }
   }
 
-  def apply[E[_], A](
-    f: () => E[Option[A]]
+  def apply[E[_],SS,A](
+    initialize: () => E[SS]
+  )(
+    next: SS => E[Option[(SS,A)]]
   )(implicit
     E: Monad[E]
   ) : EffectIterator[E,A] = {
+    import Monad.ops._
     val _E = E
+    val _next = next
+    val _initialize = initialize
     new EffectIterator[E,A] {
       override implicit val E = _E
-      override def next() = f()
+      type S = SS
+      def initialize() = _initialize()
+      def next(s: S) =  _next(s)
     }
   }
 
   def computed[E[_],A](a: A*)(implicit E: Monad[E]) : EffectIterator[E,A] =
     FromIterator(a.iterator)
 
-  def flatten[E[_],A](
-    eia: E[EffectIterator[E,A]]
-  )(implicit E: Monad[E]) : EffectIterator[E,A] =
-    Flatten[E,A](eia)
+//  def flatten[E[_],A](
+//    eia: E[EffectIterator[E,A]]
+//  )(implicit E: Monad[E]) : EffectIterator[E,A] =
+//    Flatten[E,A](eia)
 
   case class Map[E[_],A,B](
     base: EffectIterator[E,A],
@@ -60,51 +72,65 @@ object EffectIteratorOps {
   )(implicit
     val E: Monad[E]
   ) extends EffectIterator[E,B] {
-    override def next(): E[Option[B]] = {
+    type S = base.S
+
+    override def initialize(): E[S] = base.initialize()
+
+    override def next(s: S): E[Option[(S,B)]] = {
       import Monad.ops._
-      base.next().map(_.map(f))
+      base.next(s).map (_.map { case (nextS,a) => (nextS,f(a)) })
     }
   }
 
-  case class FlatMap[E[_],A,B](
-    base: EffectIterator[E,A],
-    f: A => EffectIterator[E,B]
-  )(implicit
-    val E: Monad[E]
-  ) extends EffectIterator[E,B] {
-    import Monad.ops._
-
-    // Note: EffectIterator is not thread safe itself, however, E might be async so need to ensure
-    // volatile for thread safety within next() below
-    private[this] val current = new AtomicReference[Option[EffectIterator[E,B]]](None)
-    override def next(): E[Option[B]] = {
-      current.get match {
-        case sib@Some(ib) =>
-          for {
-            optB <- ib.next()
-            result <- optB match {
-              case sb@Some(b) =>
-                E.pure(sb)
-              case None =>
-                current.compareAndSet(sib,None)
-                next()
-            }
-          } yield result
-        case None =>
-          for {
-            oa <- base.next()
-            result <- oa match {
-              case Some(a) =>
-                val ib = f(a)
-                current.compareAndSet(None,Some(ib))
-                next()
-              case None =>
-                E.pure(None)
-            }
-          } yield result
-      }
-    }
-  }
+//  case class FlatMap[E[_],A,B](
+//    base: EffectIterator[E,A],
+//    f: A => EffectIterator[E,B]
+//  )(implicit
+//    val E: Monad[E]
+//  ) extends EffectIterator[E,B] {
+//    import Monad.ops._
+//
+//    type S1 = base.S
+//    case class Inner(
+//      ib: EffectIterator[E,B]
+//    )(
+//      val s: ib.S
+//    ) {
+//      def next() : E[Option[(ib.S,B)]] =
+//        ib.next(s)
+//    }
+//
+//    case class S(
+//      s1: S1,
+//      optInner: Option[Inner]
+//    )
+//
+//    override def initialize(): E[S] =
+//      base.initialize().map(S(_,None))
+//
+//    override def next(s: S): E[Option[(S,B)]] = {
+//      s match {
+//        case S(s1,None) =>
+//          base.next(s1).flatMap {
+//            case Some((nextS1,a)) =>
+//              val ib = f(a)
+//              for {
+//                state <- ib.initialize()
+//                result <- next(S(s1,Some(Inner(ib)(state))))
+//              } yield result
+//            case None =>
+//              E.pure(None)
+//          }
+//        case S(s1,Some(inner@Inner(ib))) =>
+//            inner.next().flatMap {
+//              case Some((nextInnerS,b)) =>
+//                E.pure(Some((S(s1,Some(Inner(ib)(nextInnerS))),b)))
+//              case None =>
+//                next(S(s1,None))
+//            }
+//      }
+//    }
+//  }
 
   case class Append[E[_],A](
     first: EffectIterator[E,A],
@@ -113,24 +139,33 @@ object EffectIteratorOps {
     val E: Monad[E]
   ) extends EffectIterator[E,A] {
     import Monad.ops._
+    type S1 = first.S
+    type S2 = second.S
+    type S = (S1,Option[S2])
 
-    // Note: same note as FlatMap above
-    private[this] val isFirstExhausted = new AtomicBoolean(false)
-    override def next(): E[Option[A]] = {
-      if(isFirstExhausted.get == false) {
-        for {
-          oa <- first.next()
-          result <- oa match {
-            case s@Some(_) => E.pure(s)
+    override def initialize(): E[(S1, Option[S2])] =
+      first.initialize().map((_,None))
+
+    override def next(s: S): E[Option[(S,A)]] =
+      s match {
+        case (s1,None) =>
+          first.next(s1).flatMap {
             case None =>
-              isFirstExhausted.set(true)
-              next()
+              for {
+                s2 <- second.initialize()
+                result <- next((s1,Some(s2)))
+              } yield result
+            case Some((nextS1,a)) =>
+              E.pure(Some(((nextS1,None),a)))
           }
-        } yield result
-      } else {
-        second.next()
+        case (s1,Some(s2)) =>
+          second.next(s2).map {
+            case None => None
+            case Some((nextS2,a)) =>
+              Some(((s1,Some(nextS2)),a))
+          }
       }
-    }
+
   }
 
   case class FromIterator[E[_],A](
@@ -138,22 +173,27 @@ object EffectIteratorOps {
   )(implicit
     val E: Monad[E]
   ) extends EffectIterator[E,A] {
-    override def next(): E[Option[A]] =
-      if(values.hasNext) {
-        E.pure(Some(values.next()))
+    type S = Iterator[A]
+    def initialize() = E.pure(values)
+    override def next(s: S): E[Option[(S,A)]] =
+      if(s.hasNext) {
+        E.pure(Some((s,s.next())))
       } else {
         E.pure(None)
       }
   }
 
-  case class Flatten[E[_],A](
-    eia: E[EffectIterator[E,A]]
-  )(implicit
-    val E: Monad[E]
-  ) extends EffectIterator[E,A] {
-    import Monad.ops._
-
-    override def next(): E[Option[A]] =
-      eia.flatMap(_.next())
-  }
+//  case class Flatten[E[_],A](
+//    eia: E[EffectIterator[E,A]]
+//  )(implicit
+//    val E: Monad[E]
+//  ) extends EffectIterator[E,A] {
+//    import Monad.ops._
+//
+//    type S = eia
+//
+//    def next(s: Flatten.this.type) = ???
+//
+//    def initialize() = eia.flatMap(_.initialize())
+//  }
 }

@@ -19,7 +19,7 @@ sealed abstract class Free[Cmd[_],A] extends Product with Serializable {
   def widen[AA >: A] : Free[Cmd,AA] =
     this.asInstanceOf[Free[Cmd,AA]]
 
-  def run[E[_]](i: Interpreter[Cmd,E]) : E[A]
+  def run[E[_]](implicit i: Interpreter[Cmd,E]) : E[A]
 
   def mapCmd[Cmd2[_]](implicit X: NaturalTransformation[Cmd,Cmd2]) : Free[Cmd2,A]
 }
@@ -30,7 +30,7 @@ object Free {
   case class Command[Cmd[_],A](cmd: Cmd[A]) extends Free[Cmd,A] {
     def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd,Cmd2]) : Command[Cmd2,A] =
       Command(X(cmd))
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[A] =
       i(cmd)
   }
   // todo: should this be lazy? () => A
@@ -41,7 +41,7 @@ object Free {
       f(value)
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Pure[Cmd2, A] =
       this.asInstanceOf[Pure[Cmd2,A]]
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[A] =
       i.M.pure(value)
   }
   case class Map[Cmd[_],A,B](
@@ -54,7 +54,7 @@ object Free {
       FlatMap(this, g)
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Map[Cmd2,A,B] =
       Map(base.mapCmd,f)
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[B] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[B] =
       i.M.map(base.run(i))(f)
   }
   case class FlatMap[Cmd[_],A,B](
@@ -67,7 +67,7 @@ object Free {
       FlatMap(base, f andThen(_.flatMap(g)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): FlatMap[Cmd2,A,B] =
       FlatMap(base.mapCmd,f.andThen(_.mapCmd))
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[B] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[B] =
       i.M.flatMap(base.run(i))(inner => f(inner).run(i))
   }
 
@@ -77,7 +77,7 @@ object Free {
     _try: Free[Cmd,A],
     _catch: PartialFunction[Throwable,Free[Cmd,A]]
   ) extends Free[Cmd,A] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[A] =
       i.X.attempt(_try.run(i))(_catch.andThen(_.run(i)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, A] =
       Attempt(
@@ -90,7 +90,7 @@ object Free {
     _catch: PartialFunction[Throwable,Free[Cmd,A]],
     _finally: Free[Cmd,U]
   ) extends Free[Cmd,A] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[A] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[A] =
       i.X.attemptFinally(_try.run(i))(_catch.andThen(_.run(i)))(_finally.run(i))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, A] =
       AttemptFinally(
@@ -101,7 +101,7 @@ object Free {
   }
   // Note: Success just uses Apply (unless it gets made lazy)
   case class Failure[Cmd[_]](t: Throwable) extends Free[Cmd,Nothing] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[Nothing] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[Nothing] =
       i.X.failure(t)
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, Nothing] =
       this.asInstanceOf
@@ -111,7 +111,7 @@ object Free {
   case class Delay[Cmd[_]](
     duration: FiniteDuration
   ) extends Free[Cmd,Unit] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[Unit] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[Unit] =
       i.D.delay(duration)
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, Unit] =
       this.asInstanceOf[Free[Cmd2,Unit]]
@@ -122,7 +122,7 @@ object Free {
     fa: Free[Cmd,A],
     fb: Free[Cmd,B]
   ) extends Free[Cmd,(A,B)] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[(A, B)] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[(A, B)] =
       i.P.par(fa.run(i),fb.run(i))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, (A, B)] =
       Par2(fa.mapCmd,fb.mapCmd)
@@ -132,7 +132,7 @@ object Free {
     fb: Free[Cmd,B],
     fc: Free[Cmd,C]
   ) extends Free[Cmd,(A,B,C)] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[(A,B,C)] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[(A,B,C)] =
       i.P.par(fa.run(i),fb.run(i),fc.run(i))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, (A,B,C)] =
       Par3(fa.mapCmd,fb.mapCmd,fc.mapCmd)
@@ -143,7 +143,7 @@ object Free {
     fc: Free[Cmd,C],
     fd: Free[Cmd,D]
   ) extends Free[Cmd,(A,B,C,D)] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[(A,B,C,D)] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[(A,B,C,D)] =
       i.P.par(fa.run(i),fb.run(i),fc.run(i),fd.run(i))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, (A,B,C,D)] =
       Par4(fa.mapCmd,fb.mapCmd,fc.mapCmd,fd.mapCmd)
@@ -155,7 +155,7 @@ object Free {
   )(implicit
     cbf: CanBuildFrom[Nothing,B,M[B]]
   ) extends Free[Cmd,M[B]] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[M[B]] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[M[B]] =
       i.P.parMap[M,A,B](items)(f.andThen(_.run(i)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, M[B]] =
       ParMap(items, f.andThen(_.mapCmd))
@@ -166,7 +166,7 @@ object Free {
   )(implicit
     cbf: CanBuildFrom[Nothing,B,M[B]]
   ) extends Free[Cmd,M[B]] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[M[B]] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[M[B]] =
       i.P.parFlatMap[M,A,B](items)(f.andThen(_.run(i)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, M[B]] =
       ParFlatMap(items, f.andThen(_.mapCmd))
@@ -177,7 +177,7 @@ object Free {
   )(implicit
     cbf: CanBuildFrom[Nothing,B,M[B]]
   ) extends Free[Cmd,M[B]] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[M[B]] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[M[B]] =
       i.P.parMapUnordered[M,A,B](items)(f.andThen(_.run(i)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, M[B]] =
       ParMapUnordered(items, f.andThen(_.mapCmd))
@@ -188,7 +188,7 @@ object Free {
   )(implicit
     cbf: CanBuildFrom[Nothing,B,M[B]]
   ) extends Free[Cmd,M[B]] {
-    override def run[E[_]](i: Interpreter[Cmd, E]): E[M[B]] =
+    override def run[E[_]](implicit i: Interpreter[Cmd, E]): E[M[B]] =
       i.P.parFlatMapUnordered[M,A,B](items)(f.andThen(_.run(i)))
     override def mapCmd[Cmd2[_]](implicit X:NaturalTransformation[Cmd, Cmd2]): Free[Cmd2, M[B]] =
       ParFlatMapUnordered(items, f.andThen(_.mapCmd))

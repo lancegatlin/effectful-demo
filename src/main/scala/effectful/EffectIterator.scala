@@ -1,6 +1,6 @@
 package effectful
 
-import effectful.cats.{Applicative, Monad}
+import effectful.cats.Monad
 
 import scala.collection.generic.CanBuildFrom
 
@@ -22,17 +22,28 @@ trait EffectIterator[E[_],A] { self =>
   def map[B](f: A => B) : EffectIterator[E,B] =
     impl.EffectIteratorOps.Map(this,f)
 
-  def flatMap[B](f: A => EffectIterator[E,B]) : EffectIterator[E,B] =
-    impl.EffectIteratorOps.FlatMap(this,f)
+  // todo: figure out how to make this work with type S
+//  def flatMap[B](f: A => EffectIterator[E,B]) : EffectIterator[E,B] =
+//    impl.EffectIteratorOps.FlatMap(this,f)
+
+  type S
+
+  def initialize() :  E[S]
 
   /**
     * Attempt to retrieve the next data item
     *
     * @return Some(data) or None if exhausted
     */
-  def next(): E[Option[A]]
+  def next(s: S): E[Option[(S,A)]]
 
-  def headOption() : E[Option[A]] = next()
+  def headOption() : E[Option[A]] = {
+    import Monad.ops._
+    for {
+      state <- initialize()
+      optSA <- next(state)
+    } yield optSA.map(_._2)
+  }
 
   /**
     * @return a collection of all data items retrieved serially until exhausted
@@ -42,7 +53,7 @@ trait EffectIterator[E[_],A] { self =>
 
   /** @return a new EffectIterator that returns the data items from this iterator
     *         and after exhausted all data items from other until exhausted */
-  def ++(other: EffectIterator[E,A]) : EffectIterator[E,A] =
+  def ++[S2](other: EffectIterator[E,A]) : EffectIterator[E,A] =
     impl.EffectIteratorOps.Append(this,other)
 }
 
@@ -51,17 +62,28 @@ object EffectIterator {
     impl.EffectIteratorOps.empty[E,A]
 
   def apply[E[_], A](
-    f: () => E[Option[A]]
+    next: () => E[Option[A]]
+  )(implicit
+    E: Monad[E]
+  ) : EffectIterator[E,A] = {
+    import Monad.ops._
+    impl.EffectIteratorOps.apply[E,Unit,A](
+      initialize = () => E.pure(())
+    )(
+      next = _ => next().map(_.map(((),_)))
+    )
+  }
+
+  def apply[E[_],S,A](
+    initial: () => E[S]
+  )(
+    next: S => E[Option[(S,A)]]
   )(implicit
     E: Monad[E]
   ) : EffectIterator[E,A] =
-    impl.EffectIteratorOps.apply(f)
+    impl.EffectIteratorOps.apply[E,S,A](initial)(next)
 
   def computed[E[_],A](a: A*)(implicit E: Monad[E]) : EffectIterator[E,A] =
     impl.EffectIteratorOps.computed(a:_*)
 
-  def flatten[E[_],A](
-    eia: E[EffectIterator[E,A]]
-  )(implicit E: Monad[E]) : EffectIterator[E,A] =
-    impl.EffectIteratorOps.flatten[E,A](eia)
 }
