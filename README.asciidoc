@@ -68,6 +68,7 @@ the effects inside the monad.
 * Re-use service implementation for any monad or nested monad combination.
 
 ----
+  ...
   def create(id: UUID, username: String, plainTextPassword: String) =
     findById(id).flatMap {
       case Some(_) => E.pure(false)
