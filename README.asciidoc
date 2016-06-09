@@ -44,16 +44,11 @@ parameter that is propagated to the trait.
 ** Propagate the generic monad type to the other effectful services to ensure that only implementations
 that use the same monad type can be passed.
 * Implicitly constructor-inject Monad type-class for generic monad type and import monad operations to
-support for-comprehensions.
-** Monad "augments" (such as https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Exceptions.scala[Exceptions] or https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Par.scala[Par]) can also be injected to ensure monad supports
-extra operations such as exception handling, parallel execution or time delays (see
+support for-comprehensions with monad type (and map/flatMap).
+** Add extra operations to monad type by injecting monad "augments" (such as https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Exceptions.scala[Exceptions] or https://github.com/lancegatlin/effectful-demo/blob/master/src/main/scala/effectful/augments/Par.scala[Par]) to ensure monad supports operations such as exception handling, parallel execution or time delays (see
 https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/user/impl/PasswordsImpl.scala[PasswordsImpl.scala]
 or https://github.com/lancegatlin/effectful-demo/blob/master/src/test/scala/effectful/examples/pure/dao/sql/impl/SqlDocDaoImpl.scala[SqlDocDaoImpl.scala]
 for examples)
-* Keep service pure by deferring effect capture to other effectful services or augments that capture
-the effects inside the monad.
-* Use map/flatMap and for-comprehensions on monad type (even if it is nested) without the need for monad transformers or lifting every statement.
-* Re-use service implementation for any monad or nested monad combination.
 
 ----
 class UsersImpl[E[_]](
@@ -65,7 +60,14 @@ class UsersImpl[E[_]](
 ) extends Users[E] {
   import Monad.ops._
   ...
+----
 
+* Keep service pure by deferring effect capture to other effectful services or augments that capture
+the effects inside the monad.
+* Use map/flatMap and for-comprehensions on monad type (even if it is nested) without the need for monad transformers or lifting every statement.
+* Re-use service implementation for any monad or nested monad combination.
+
+----
   def create(id: UUID, username: String, plainTextPassword: String) =
     findById(id).flatMap {
       case Some(_) => E.pure(false)
