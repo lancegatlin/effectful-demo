@@ -126,6 +126,7 @@ Full source: https://github.com/lancegatlin/effectful-demo/blob/master/src/test/
 * Use different monads for different circumstances, some examples:
 ** Simplify testing by testing services using the identity monad.
 ** Use immediate logging for local service callers and LogWriter for remote service callers to return logs back to remote callers.
+** Easily modify how errors are captured later (e.g. convert some/all exceptions to an explicit type: Future[Error \/ A]]
 ** Compare performance of similar monads such as Future and scalaz.Task.
 ** Try out new frameworks easily.
 ** Migrate between frameworks with minimal code changes.
