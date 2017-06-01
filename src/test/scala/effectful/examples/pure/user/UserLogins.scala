@@ -1,11 +1,9 @@
 package effectful.examples.pure.user
 
-import scalaz.\/
-
 trait UserLogins[E[_]] {
   import UserLogins._
 
-  def login(username: String, password: String) : E[LoginFailure \/ Token]
+  def login(username: String, password: String) : E[Either[LoginFailure,Token]]
 }
 
 object UserLogins {

@@ -1,14 +1,13 @@
 
 import scala.collection.generic.CanBuildFrom
-import effectful.cats._
+import cats._
+import cats.arrow.FunctionK
 import effectful.augments._
+import effectful.impl.AbstractComposedMonad
+
+import scala.concurrent.Future
 
 package object effectful {
-  /**
-    * Identity monad
-    */
-  type Id[A] = A
-
   // todo: figure out how this sugar is declared in emm
 //  type |:[F[_],G[_]] = F[G[_]]
 //  val |: = Nested
@@ -47,20 +46,6 @@ package object effectful {
     def capture[A](a: => A) = a
   }
 
-  implicit object monad_Id extends Monad[Id] {
-    override def map[A, B](m: Id[A])(f: (A) => B): Id[B] =
-      f(m)
-
-    override def flatMap[A, B](m: Id[A])(f: (A) => Id[B]): Id[B] =
-      f(m)
-
-    override def widen[A, AA >: A](ea: Id[A]): Id[AA] =
-      ea
-
-    override def pure[A](a: A): Id[A] =
-      a
-  }
-
   implicit object par_Id extends Par[Id] {
     override def par[A, B](ea: => Id[A], eb: => Id[B]): (A, B) =
       (ea,eb)
@@ -85,7 +70,7 @@ package object effectful {
   }
 
   implicit object exceptions_Id extends impl.NoCaptureExceptions[Id] {
-    implicit val E = monad_Id
+    implicit val E = implicitly[Monad[Id]]
   }
 
   implicit object delay_Id extends impl.BlockingDelay[Id] {
@@ -94,11 +79,10 @@ package object effectful {
 
   implicit def naturalTransformation_Id[E[_]](implicit
     E:Applicative[E]
-  ) = new NaturalTransformation[Id,E] {
+  ) = new FunctionK[Id,E] {
     override def apply[A](f: Id[A]): E[A] =
       E.pure(f)
   }
-
 
   /**
     * Add the liftS method to any effectful service that uses the LiftS
@@ -110,5 +94,20 @@ package object effectful {
       X:CaptureTransform[F,G],
       liftService:LiftService[S]
     ) : S[G] = liftService(self)
+  }
+
+  implicit def composedMonadFuture[G[_]](implicit
+    F: Monad[Future],
+    G: Monad[G],
+    GT: Traverse[G]
+  ) : Monad[({ type FG[A] = Future[G[A]]})#FG] = new AbstractComposedMonad[Future,G] {
+    def tailRecM[A, B](a: A)(f: (A) => Future[G[Either[A, B]]]) : Future[G[B]] =
+      notStackSafeM(a)(f)
+  }
+
+  implicit def composedFunctionK[F[_],G[_]](implicit
+    F: Applicative[F]
+  ) : FunctionK[G,({type FG[A]=F[G[A]]})#FG] = new FunctionK[G,({type FG[A]=F[G[A]]})#FG] {
+    def apply[A](fa: G[A]) = F.pure(fa)
   }
 }

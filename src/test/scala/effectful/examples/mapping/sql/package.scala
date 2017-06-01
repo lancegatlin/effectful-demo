@@ -28,7 +28,7 @@ package object sql {
       )
   }
 
-  implicit def sqlRowFormat_RecordMetadata[E[_]](implicit uuids:UUIDs[E]) = new SqlRowFormat[RecordMetadata] {
+  implicit def sqlRowFormat_RecordMetadata[E[_]] = new SqlRowFormat[RecordMetadata] {
     def toSqlRow(a: RecordMetadata) = {
       import a._
 

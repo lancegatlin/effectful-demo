@@ -1,6 +1,6 @@
 package effectful
 
-import effectful.cats.{Capture, Monad}
+import cats._
 
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration

@@ -1,10 +1,8 @@
 package effectful.examples.pure.user.impl
 
-import effectful.cats.Monad
+import cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.user._
-
-import scalaz.{-\/, \/, \/-}
 
 class UserLoginsImpl[E[_]](
   users: Users[E],
@@ -18,7 +16,7 @@ class UserLoginsImpl[E[_]](
   import UserLogins._
   import logger._
 
-  override def login(username: String, password: String): E[LoginFailure \/ Token] =
+  override def login(username: String, password: String): E[Either[LoginFailure,Token]] =
     for {
       maybeUser <- users.findByUsername(username)
       result <- maybeUser match {
@@ -35,16 +33,16 @@ class UserLoginsImpl[E[_]](
                   )
                   (token,_) = tuple
                   _ <- info(s"User ${user.id} logged in, issued token $token")
-                } yield \/-(token)
+                } yield Right(token)
               } else {
                 for {
                   _ <- warn(s"User ${user.id} password mismatch")
-                } yield -\/(LoginFailure.PasswordMismatch)
+                } yield Left(LoginFailure.PasswordMismatch)
               }
-            }:E[LoginFailure \/ Token]
+            }:E[Either[LoginFailure,Token]]
           } yield result
         case None =>
-          E.pure(-\/(LoginFailure.UserDoesNotExist))
+          E.pure(Left(LoginFailure.UserDoesNotExist))
       }
     } yield result
 }

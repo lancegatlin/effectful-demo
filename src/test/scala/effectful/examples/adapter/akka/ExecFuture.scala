@@ -3,37 +3,27 @@ package effectful.examples.adapter.akka
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import effectful.augments._
-import effectful.cats._
+import cats._
 import effectful.impl.StdPar
 import s_mach.concurrent._
 
 object ExecFuture {
   def bindContext()(implicit
     ec: ExecutionContext,
-    ses:ScheduledExecutionContext
+    ses:ScheduledExecutionContext,
+    _E: Monad[Future]
   ) :   Capture[Future] with
-        Monad[Future] with
         Exceptions[Future] with
         Par[Future] with
         Delay[Future] =
     new
         Capture[Future] with
-        Monad[Future] with
         Exceptions[Future] with
         StdPar[Future] with
         Delay[Future] {
-    implicit val E = this
+    implicit val E = _E
 
     override def capture[A](a: => A) = Future(a)
-
-    override def map[A, B](m: Future[A])(f: (A) => B): Future[B] =
-      m.map(f)
-    override def flatMap[A, B](m: Future[A])(f: (A) => Future[B]): Future[B] =
-      m.flatMap(f)
-    override def widen[A, AA >: A](ea: Future[A]): Future[AA] =
-      ea
-    override def pure[A](a: A): Future[A] =
-      Future.successful(a)
 
     override def delay(duration: FiniteDuration) =
       Future.delayed(duration)(())

@@ -1,6 +1,6 @@
 package effectful.augments
 
-import effectful.cats.Applicative
+import cats._
 
 // todo: this could be generalized to Errors[Err,E[_]]
 trait Exceptions[E[_]] {

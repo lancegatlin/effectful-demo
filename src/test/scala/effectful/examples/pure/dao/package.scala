@@ -1,7 +1,7 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.cats.CaptureTransform
+import effectful.augments.CaptureTransform
 
 package object dao {
   implicit def liftS_DocDao[ID,A,Q] = {
@@ -13,7 +13,6 @@ package object dao {
       )(implicit
         X: CaptureTransform[F,G]
       ) = {
-        import DocDao._
         new DocDao[ID,A,Q,G] {
           override def exists(id: ID) =
             X(s.exists(id))

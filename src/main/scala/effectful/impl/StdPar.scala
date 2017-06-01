@@ -1,7 +1,7 @@
 package effectful.impl
 
 import effectful.augments.Par
-import effectful.cats.Monad
+import cats._
 
 import scala.collection.generic.CanBuildFrom
 

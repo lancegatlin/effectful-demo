@@ -1,23 +1,30 @@
 package effectful
 
-import scala.language.implicitConversions
-
 import effectful.augments._
-import effectful.cats._
-
+import cats._
+import cats.arrow.FunctionK
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.duration.FiniteDuration
 
 package object free {
   implicit def monad_Free[Cmd[_]] = new Monad[({ type E[AA] = Free[Cmd,AA] })#E] {
-    def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
+    override def map[A, B](m: Free[Cmd, A])(f: (A) => B) =
       m.map(f)
     def flatMap[A, B](m: Free[Cmd, A])(f: (A) => Free[Cmd, B]) =
       m.flatMap(f)
     def pure[A](a: A) =
       Free.Pure(a)
-    def widen[A, AA >: A](ea: Free[Cmd, A]) =
+
+    override def widen[A, AA >: A](ea: Free[Cmd, A]) =
       ea.widen[AA]
+
+//    @annotation.tailrec
+    def tailRecM[A, B](init: A)(fn: A => Free[Cmd,Either[A, B]]): Free[Cmd, B] = ???
+//      fn(init) match {
+//        case None => None
+//        case Some(Right(b)) => Some(b)
+//        case Some(Left(a)) => tailRecM(a)(fn)
+//      }
   }
 
   implicit def exceptions_Free[Cmd[_]] = new Exceptions[({ type E[AA] = Free[Cmd,AA] })#E] {
@@ -58,9 +65,9 @@ package object free {
   }
 
   implicit def naturalTransformation_Free[Cmd1[_],Cmd2[_]](implicit
-    X: NaturalTransformation[Cmd1,Cmd2]
-  ) : NaturalTransformation[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] =
-    new NaturalTransformation[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] {
+    X: FunctionK[Cmd1,Cmd2]
+  ) : FunctionK[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] =
+    new FunctionK[({ type F[A]=Free[Cmd1,A]})#F,({ type F[A]=Free[Cmd2,A]})#F] {
       override def apply[A](f: Free[Cmd1, A]): Free[Cmd2, A] =
         f.mapCmd[Cmd2]
     }

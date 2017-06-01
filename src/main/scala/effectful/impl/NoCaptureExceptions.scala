@@ -1,7 +1,8 @@
 package effectful.impl
 
 import effectful.augments.Exceptions
-import effectful.cats.Monad
+
+import cats._
 
 /**
   * An instance of Exceptions for monads that don't capture exceptions

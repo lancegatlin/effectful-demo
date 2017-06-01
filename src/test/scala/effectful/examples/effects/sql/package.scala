@@ -2,7 +2,7 @@ package effectful.examples.effects
 
 import effectful.{EffectIterator, LiftService}
 import effectful.augments._
-import effectful.cats.{CaptureTransform, Monad}
+import cats._
 import effectful.examples.effects.sql.SqlDriver._
 
 package object sql {
@@ -44,8 +44,6 @@ package object sql {
 
     def autoCommit[A](
       f: Context.AutoCommit.type => E[A]
-    )(implicit
-      E:Monad[E]
     ) : E[A] = f(Context.AutoCommit)
 
     def inTransaction[A](

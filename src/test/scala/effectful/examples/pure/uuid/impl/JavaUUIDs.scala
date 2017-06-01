@@ -3,7 +3,7 @@ package effectful.examples.pure.uuid.impl
 import java.nio.ByteBuffer
 import java.util.{UUID => JavaUUID}
 
-import effectful._
+import cats._
 import effectful.examples.pure.uuid.UUIDs
 import org.apache.commons.codec.binary.Base64
 

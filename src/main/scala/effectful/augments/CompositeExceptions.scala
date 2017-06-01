@@ -1,6 +1,6 @@
 package effectful.augments
 
-import effectful.cats.Applicative
+import cats._
 
 trait CompositeExceptions[F[_],G[_]] extends Exceptions[({ type FG[A] = F[G[A]]})#FG] {
   val X:Exceptions[F]

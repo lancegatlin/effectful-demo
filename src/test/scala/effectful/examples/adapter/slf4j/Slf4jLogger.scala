@@ -1,8 +1,7 @@
 package effectful.examples.adapter.slf4j
 
 import effectful.examples.effects.logging.Logger
-
-import scalaz.Id.Id
+import cats.Id
 
 class Slf4jLogger(underlying: org.slf4j.Logger) extends Logger[Id] {
   override def trace(message: => String) : Id[Unit] =

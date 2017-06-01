@@ -8,7 +8,7 @@ import effectful.examples.effects.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata
 import SqlDriver._
 import effectful.augments._
-import effectful.cats.Monad
+import cats.Monad
 import effectful.examples.pure.dao.sql._
 
 class SqlDocDaoImpl[ID,A,E[_]](

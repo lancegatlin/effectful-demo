@@ -4,7 +4,7 @@ import org.jasypt.digest.PooledStringDigester
 
 import scala.concurrent.duration.FiniteDuration
 import effectful.augments._
-import effectful.cats.{Capture, Monad}
+import cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.user.Passwords
 

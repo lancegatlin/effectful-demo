@@ -6,10 +6,9 @@ import java.time.temporal.ChronoUnit.MILLIS
 import scala.concurrent.duration.Duration
 import effectful._
 import effectful.augments._
-import effectful.cats.Monad
+import cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.sql._
-import effectful.examples.effects.sql._
 import effectful.examples.pure.user.Tokens
 import effectful.examples.pure.uuid.UUIDs
 import effectful.examples.pure.uuid.UUIDs.UUID

@@ -1,4 +1,4 @@
-package effectful.cats
+package effectful.augments
 
 trait CompositeCapture[F[_],G[_]] extends Capture[({ type FG[A] = F[G[A]]})#FG] {
   implicit val C:Capture[F]

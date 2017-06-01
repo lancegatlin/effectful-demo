@@ -1,5 +1,6 @@
 package effectful.augments
-import effectful.cats.{Applicative, Monad}
+
+import cats._
 
 import scala.concurrent.duration.FiniteDuration
 
