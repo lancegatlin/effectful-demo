@@ -2,7 +2,7 @@ package effectful.examples.adapter.jdbc
 
 import java.util.concurrent.ConcurrentHashMap
 
-import effectful._
+import cats._
 import effectful.examples.effects.sql.SqlDriver._
 import effectful.examples.effects.sql._
 import effectful.examples.pure.uuid.UUIDs

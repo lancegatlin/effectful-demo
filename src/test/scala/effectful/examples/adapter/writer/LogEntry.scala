@@ -1,4 +1,4 @@
-package effectful.examples.adapter.scalaz.writer
+package effectful.examples.adapter.writer
 
 import java.time.Instant
 

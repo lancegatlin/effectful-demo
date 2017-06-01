@@ -1,7 +1,7 @@
 package effectful.examples.effects
 
 import effectful._
-import effectful.cats.CaptureTransform
+import effectful.augments.CaptureTransform
 
 package object logging {
   implicit object LiftService_Logger extends LiftService[Logger] {

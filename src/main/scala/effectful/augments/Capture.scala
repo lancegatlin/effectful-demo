@@ -1,4 +1,6 @@
-package effectful.cats
+package effectful.augments
+
+import cats._
 
 trait Capture[E[_]] {
   /**

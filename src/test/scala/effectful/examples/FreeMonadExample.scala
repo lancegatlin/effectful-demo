@@ -1,13 +1,14 @@
 package effectful.examples
 
-import scalaz.{-\/, \/, \/-}
 import scala.concurrent.duration._
 import effectful._
-import effectful.augments.{Delay, Exceptions, Par}
-import effectful.cats.{Capture, Monad, NaturalTransformation}
+import effectful.augments.{Capture, Delay, Exceptions, Par}
+import cats._
+import cats.arrow.FunctionK
+import effectful.examples.adapter.akka.ExecFuture
 import effectful.examples.effects.logging.free._
-import effectful.examples.adapter.scalaz.writer.WriterLogger
 import effectful.examples.adapter.slf4j.Slf4jLogger
+import effectful.examples.adapter.writer.WriterLogger
 import effectful.examples.effects.sql.free._
 import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.mapping.sql._
@@ -17,24 +18,27 @@ import effectful.examples.pure._
 import effectful.examples.pure.dao.sql.impl.SqlDocDaoImpl
 import effectful.examples.pure.uuid.UUIDs.UUID
 import effectful.free._
+import s_mach.concurrent.ScheduledExecutionContext
+
+import scala.concurrent.Future
 
 object FreeMonadExample {
 
-  type Cmd[A] = LoggerCmd[A] \/ SqlDriverCmd[A]
+  type Cmd[A] = Either[LoggerCmd[A],SqlDriverCmd[A]]
   type E[A] = Free[Cmd,A]
 
   // todo: shouldnt need this
   implicit def capture_Free[Cmd1[_]]  =
     Capture.fromApplicative[({ type F[A] = Free[Cmd1,A]})#F]
 
-  implicit def lift_disjunction_left[Cmd1[_],Cmd2[_]] : NaturalTransformation[Cmd1,({ type C[A] = Cmd1[A] \/ Cmd2[A] })#C] =
-    new NaturalTransformation[Cmd1,({ type C[A] = Cmd1[A] \/ Cmd2[A] })#C] {
-      override def apply[A](c: Cmd1[A]) = -\/(c)
+  implicit def lift_disjunction_left[Cmd1[_],Cmd2[_]] : FunctionK[Cmd1,({ type C[A] = Either[Cmd1[A],Cmd2[A]] })#C] =
+    new FunctionK[Cmd1,({ type C[A] = Either[Cmd1[A],Cmd2[A]] })#C] {
+      override def apply[A](c: Cmd1[A]) = Left(c)
     }
 
-  implicit def lift_disjunction_right[Cmd1[_],Cmd2[_]] : NaturalTransformation[Cmd2,({ type C[A] = Cmd1[A] \/ Cmd2[A] })#C] =
-    new NaturalTransformation[Cmd2,({ type C[A] = Cmd1[A] \/ Cmd2[A] })#C] {
-      override def apply[A](c: Cmd2[A]) = \/-(c)
+  implicit def lift_disjunction_right[Cmd1[_],Cmd2[_]] : FunctionK[Cmd2,({ type C[A] = Either[Cmd1[A],Cmd2[A]] })#C] =
+    new FunctionK[Cmd2,({ type C[A] = Either[Cmd1[A],Cmd2[A]] })#C] {
+      override def apply[A](c: Cmd2[A]) = Right(c)
     }
 
   implicit val uuids = new JavaUUIDs
@@ -82,8 +86,15 @@ object FreeMonadExample {
   // todo: generalize interpreter for any disjunction of commands
   val futInterpreter = new Interpreter[Cmd,FutureLogWriterExample.E] {
     type EE[A] = FutureLogWriterExample.E[A]
-    import FutureLogWriterExample.exec_Future
-    import FutureLogWriterExample.capture_LogWriter
+    import cats.implicits._
+
+    implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+    implicit val scheduledExecutionContext = ScheduledExecutionContext(4)
+    implicit val exec_Future = ExecFuture.bindContext()(
+      executionContext,
+      scheduledExecutionContext,
+      implicitly[cats.Monad[Future]]
+    )
 
     // todo: clean this up
     override val C = implicitly[Capture[EE]]
@@ -103,8 +114,8 @@ object FreeMonadExample {
       )
     override def apply[A](cmd: Cmd[A]): EE[A] =
       cmd match {
-        case -\/(loggingCmd) => logInterpreter(loggingCmd)
-        case \/-(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
+        case Left(loggingCmd) => logInterpreter(loggingCmd)
+        case Right(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
       }
   }
 
@@ -128,8 +139,8 @@ object FreeMonadExample {
       )
     override def apply[A](cmd: Cmd[A]): EE[A] =
       cmd match {
-        case -\/(loggingCmd) => logInterpreter(loggingCmd)
-        case \/-(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
+        case Left(loggingCmd) => logInterpreter(loggingCmd)
+        case Right(sqlDriverCmd) => sqlInterpreter(sqlDriverCmd)
       }
   }
 }

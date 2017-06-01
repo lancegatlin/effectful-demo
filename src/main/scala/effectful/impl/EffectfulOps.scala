@@ -1,7 +1,7 @@
 package effectful.impl
 
 import scala.collection.generic.CanBuildFrom
-import effectful.cats.Monad
+import cats._
 
 object EffectfulOps {
   def sequence[M[_],A,F[AA] <: Traversable[AA]](self: F[M[A]])(implicit

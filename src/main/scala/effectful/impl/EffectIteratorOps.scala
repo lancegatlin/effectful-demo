@@ -1,7 +1,7 @@
 package effectful.impl
 
 import effectful._
-import effectful.cats.Monad
+import cats._
 
 import scala.collection.generic.CanBuildFrom
 
@@ -46,7 +46,7 @@ object EffectIteratorOps {
   )(implicit
     E: Monad[E]
   ) : EffectIterator[E,A] = {
-    import Monad.ops._
+//    import Monad.ops._
     val _E = E
     val _next = next
     val _initialize = initialize

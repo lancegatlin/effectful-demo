@@ -1,6 +1,6 @@
 package effectful
 
-import effectful.cats.CaptureTransform
+import effectful.augments.CaptureTransform
 
 /**
   * A type-class for lifting the exec monad of a service into another

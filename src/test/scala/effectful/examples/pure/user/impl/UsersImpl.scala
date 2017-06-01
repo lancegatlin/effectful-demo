@@ -1,6 +1,6 @@
 package effectful.examples.pure.user.impl
 
-import effectful.cats.Monad
+import cats.Monad
 import effectful.examples.effects.logging.Logger
 import effectful.examples.pure.dao.sql._
 import effectful.examples.pure.dao.DocDao.RecordMetadata

@@ -1,10 +1,10 @@
 package effectful.examples
 
 import effectful._
-import effectful.cats._
+import cats.implicits._
 import effectful.examples.adapter.akka._
 import effectful.examples.adapter.jdbc.JdbcSqlDriver
-import effectful.examples.adapter.scalaz.writer._
+import effectful.examples.adapter.writer._
 import effectful.examples.pure.uuid.impl.JavaUUIDs
 import effectful.examples.pure.user.impl._
 import effectful.examples.mapping.sql._
@@ -25,16 +25,14 @@ object FutureLogWriterExample {
 
   implicit val exec_Future = ExecFuture.bindContext()(
     executionContext,
-    scheduledExecutionContext
+    scheduledExecutionContext,
+    implicitly[cats.Monad[Future]]
   )
-
-  // todo: shouldnt need this
-  implicit val capture_LogWriter = Capture.fromApplicative[LogWriter]
 
   implicit val uuids = new JavaUUIDs
 
   val sqlDriver = new JdbcSqlDriver(
-    getConnectionFromPool = SqlDb.pool.getConnection,
+    getConnectionFromPool = () => SqlDb.pool.getConnection(),
     uuids = uuids
   )
 
@@ -73,15 +71,4 @@ object FutureLogWriterExample {
     passwords = passwords,
     logger = WriterLogger("userLogins").liftService[E]
   )
-  /*
-  import scala.concurrent._
-  import scala.concurrent.duration._
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import effectful.examples.adapter.scalaz.writer.LogWriter
-  def get[A](f: Future[LogWriter[A]]) = {
-    val (log,result) = Await.result(f,Duration.Inf).run
-    log.foreach(println)
-    result
-  }
-   */
 }

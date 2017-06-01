@@ -1,7 +1,7 @@
 package effectful.examples
 
 import effectful._
-import effectful.cats.CaptureTransform
+import effectful.augments.CaptureTransform
 import effectful.examples.pure.uuid.UUIDs
 
 package object pure {

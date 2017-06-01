@@ -1,6 +1,6 @@
 package effectful.free
 
-import effectful.cats._
+import cats._
 import effectful.augments._
 
 trait Interpreter[Cmd[_],E[_]] {

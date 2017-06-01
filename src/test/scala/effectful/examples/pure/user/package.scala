@@ -1,7 +1,7 @@
 package effectful.examples.pure
 
 import effectful._
-import effectful.cats.CaptureTransform
+import effectful.augments.CaptureTransform
 import effectful.examples.pure.uuid.UUIDs.UUID
 
 import scala.concurrent.duration.Duration
@@ -50,7 +50,6 @@ package object user {
     )(implicit
       X:CaptureTransform[F,G]
     ) = {
-      import UserLogins._
       new UserLogins[G] {
         override def login(username: String, password: String) =
           X(s.login(username,password))
