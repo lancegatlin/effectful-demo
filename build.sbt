@@ -2,6 +2,8 @@ name := "effectful-demo"
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.9.0",
+  "io.monadless" %% "monadless-stdlib" % "0.0.13",
+  "io.monadless" %% "monadless-cats" % "0.0.13",
   "ch.qos.logback" % "logback-classic" % "1.1.7"
 )
 

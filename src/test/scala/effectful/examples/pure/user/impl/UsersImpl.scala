@@ -24,81 +24,87 @@ class UsersImpl[E[_]](
 )(implicit
   E:Monad[E]
 ) extends Users[E] {
-  import Monad.ops._
+//  import Monad.ops._
   import UsersImpl._
   import logger._
+  val eMonadMonadless = io.monadless.cats.MonadlessMonad[E]()
+  import eMonadMonadless._
 
   def create(id: UUID, username: String, plainTextPassword: String) =
-    findById(id).flatMap {
-      case Some(_) => E.pure(false)
-      case None =>
-        findByUsername(username).flatMap {
-          case Some(_) => E.pure(false)
-          case None =>
-            for {
-              digest <- passwords.mkDigest(plainTextPassword)
-              result <- usersDao.insert(id,UserData(
+    lift {
+      unlift(findById(id)) match {
+        case Some(_) => false
+        case None =>
+          unlift(findByUsername(username)) match {
+            case Some(_) => false
+            case None =>
+              val digest = unlift(passwords.mkDigest(plainTextPassword))
+              val result = unlift(usersDao.insert(id,UserData(
                 username = username,
                 passwordDigest = digest
-              ))
-              _ <- if(result) {
-                info(s"Created user $id with username $username")
-              } else {
-                E.pure(())
+              )))
+              if(result) {
+                unlift(info(s"Created user $id with username $username"))
               }
-            } yield result
-        }
+              result
+          }
+      }
     }
 
   def findById(id: UUID) =
-    usersDao.findById(id).map(_.map(toUser))
+    lift {
+      unlift(usersDao.findById(id))
+        .map(toUser)
+    }
 
   def findByUsername(username: String) =
-    usersDao.findByNativeQuery(sql"`username`=$username").map(_.headOption.map(toUser))
+    lift {
+      unlift(usersDao.findByNativeQuery(sql"`username`=$username"))
+        .headOption
+        .map(toUser)
+    }
+
 
   def findAll(start: Int, batchSize: Int) =
-    usersDao.findAll(start, batchSize).map(_.map(toUser))
+    lift {
+      unlift(usersDao.findAll(start, batchSize))
+        .map(toUser)
+    }
+
 
   def remove(userId: UUID) =
     usersDao.remove(userId)
 
   def rename(userId: UUID, newUsername: String) =
-    usersDao.findById(userId).flatMap {
-      case Some((_,userData,_)) =>
-        for {
-          maybeUser <- findByUsername(newUsername)
-          result <- {
-            if(maybeUser.isEmpty) {
-              usersDao.update(userId,userData.copy(username = newUsername))
-            } else {
-              E.pure(false)
-            }
-          }
-          _ <- if(result) {
-            info(s"Renamed user $userId to $newUsername")
+    lift {
+      unlift(usersDao.findById(userId)) match {
+        case Some((_,userData,_)) =>
+          val maybeUser = unlift(findByUsername(newUsername))
+          val result = if(maybeUser.isEmpty) {
+            unlift(usersDao.update(userId,userData.copy(username = newUsername)))
           } else {
-            E.pure(())
+            false
           }
-        } yield result
-      case None =>
-        E.pure(false)
+          if(result) {
+            unlift(info(s"Renamed user $userId to $newUsername"))
+          }
+          result
+        case None => false
+      }
     }
 
-
   override def setPassword(userId: UUID, plainTextPassword: String): E[Boolean] =
-    usersDao.findById(userId).flatMap {
-      case Some((_,userData,_)) =>
-        for {
-          newDigest <- passwords.mkDigest(plainTextPassword)
-          result <- usersDao.update(userId,userData.copy(passwordDigest = newDigest))
-          _ <- if(result) {
-            info(s"Change password for user $userId")
-          } else {
-            E.pure(())
+    lift {
+      unlift(usersDao.findById(userId)) match {
+        case Some((_,userData,_)) =>
+          val newDigest = unlift(passwords.mkDigest(plainTextPassword))
+          val result = unlift(usersDao.update(userId,userData.copy(passwordDigest = newDigest)))
+          if(result) {
+            unlift(info(s"Changed password for user $userId"))
           }
-        } yield result
-      case None =>
-        E.pure(false)
+          result
+        case None => false
+      }
     }
 
   val toUser : ((UUID,UserData,RecordMetadata)) => User = { case (id,userData,metadata) =>

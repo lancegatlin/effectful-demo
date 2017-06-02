@@ -22,6 +22,9 @@ Note: this demo uses cats for the standard functional type-classes such as
 Monad, Applicative, etc. Scalaz (or any other similar library) could have been
 used.
 
+Note: this demo uses monadless (https://github.com/monadless/monadless) for
+service implementations
+
 ==== Declare an effectful service
 * Declare an effectful service by creating a trait that accepts a generic monad
 parameter.
@@ -79,7 +82,6 @@ class UsersImpl[E[_]](
 )(implicit
   E:Monad[E]
 ) extends Users[E] {
-  import Monad.ops._
   ...
 ----
 
@@ -92,25 +94,24 @@ without the need for monad transformers or lifting every statement.
 ----
   ...
   def create(id: UUID, username: String, plainTextPassword: String) =
-    findById(id).flatMap {
-      case Some(_) => E.pure(false)
-      case None =>
-        findByUsername(username).flatMap {
-          case Some(_) => E.pure(false)
-          case None =>
-            for {
-              digest <- passwords.mkDigest(plainTextPassword)
-              result <- usersDao.insert(id,UserData(
+    lift {
+      unlift(findById(id)) match {
+        case Some(_) => false
+        case None =>
+          unlift(findByUsername(username)) match {
+            case Some(_) => false
+            case None =>
+              val digest = unlift(passwords.mkDigest(plainTextPassword))
+              val result = unlift(usersDao.insert(id,UserData(
                 username = username,
                 passwordDigest = digest
-              ))
-              _ <- if(result) {
-                info(s"Created user $id with username $username")
-              } else {
-                E.pure(())
+              )))
+              if(result) {
+                unlift(info(s"Created user $id with username $username"))
               }
-            } yield result
-        }
+              result
+          }
+      }
     }
    ...
 }

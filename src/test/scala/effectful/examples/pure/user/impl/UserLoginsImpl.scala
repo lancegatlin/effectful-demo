@@ -15,8 +15,31 @@ class UserLoginsImpl[E[_]](
   import Monad.ops._
   import UserLogins._
   import logger._
+//  val eMonadMonadless = io.monadless.cats.MonadlessMonad[E]()
+//  import eMonadMonadless._
 
   override def login(username: String, password: String): E[Either[LoginFailure,Token]] =
+  // todo: fix me
+//    lift {
+//      unlift(users.findByUsername(username)) match {
+//        case Some(user:Users.User) =>
+//          val passwordOk = unlift(passwords.compareDigest(password,user.passwordDigest))
+//          if(passwordOk) {
+//            val (token,_) = unlift(tokens.issue(
+//              userId = user.id,
+//              deviceId = None,
+//              expireAfter = None
+//            ))
+//            unlift(info(s"User ${user.id} logged in, issued token $token"))
+//            Right(token)
+//          } else {
+//            unlift(warn(s"User ${user.id} password mismatch"))
+//            Left(LoginFailure.PasswordMismatch)
+//          }
+//        case None =>
+//          Left(LoginFailure.UserDoesNotExist)
+//      }
+//    }
     for {
       maybeUser <- users.findByUsername(username)
       result <- maybeUser match {

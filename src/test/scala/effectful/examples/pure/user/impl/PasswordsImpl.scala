@@ -17,23 +17,27 @@ class PasswordsImpl[E[_]](
   D:Delay[E]
 ) extends Passwords[E] {
   import Monad.ops._
+  import logger._
+  val eMonadMonadless = io.monadless.cats.MonadlessMonad[E]()
+  import eMonadMonadless._
 
   val digester = new PooledStringDigester()
   digester.setPoolSize(Runtime.getRuntime.availableProcessors())
   digester.initialize()
 
-  override def compareDigest(plainTextPassword: String, passwordDigest: String): E[Boolean] = {
-    if(digester.matches(plainTextPassword, passwordDigest)) {
-      E.pure(true)
-    } else {
-      for {
-        _ <- logger.warn(s"Password mismatch delaying $passwordMismatchDelay")
-        _ <- E.delay(passwordMismatchDelay).map(_ => false)
-      } yield false
+  override def compareDigest(plainTextPassword: String, passwordDigest: String): E[Boolean] =
+    lift {
+      if(digester.matches(plainTextPassword, passwordDigest)) {
+        true
+      } else {
+        unlift(warn(s"Password mismatch delaying $passwordMismatchDelay"))
+        unlift(E.delay(passwordMismatchDelay).map(_ => false))
+        false
+      }
     }
-  }
 
-  override def mkDigest(plainTextPassword: String): E[String] = E.capture {
-    digester.digest(plainTextPassword)
-  }
+  override def mkDigest(plainTextPassword: String): E[String] =
+    E.capture {
+      digester.digest(plainTextPassword)
+    }
 }
