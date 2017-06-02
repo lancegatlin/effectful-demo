@@ -27,15 +27,18 @@ class TokensImpl[E[_]](
   import Tokens._
   import logger._
 
+  val eMonadMonadless = io.monadless.cats.MonadlessMonad[E]()
+  import eMonadMonadless._
+
   override def issue(
     userId: UUID,
     deviceId: Option[UUID],
     expireAfter: Option[Duration]
   ): E[(Token,TokenInfo)] =
-    for {
-      uuid <- uuids.gen()
-      token = uuid.toString
-      tokenInfo = TokenInfo(
+    lift {
+      val uuid = unlift(uuids.gen())
+      val token = uuid.toString
+      val tokenInfo = TokenInfo(
         userId = userId,
         deviceId = deviceId,
         lastValidated = Instant.now(),
@@ -44,34 +47,47 @@ class TokensImpl[E[_]](
           MILLIS
         )
       )
-      result <- tokensDao.insert(token, tokenInfo)
-      _ <- {
-        if(result == false) {
-          E.failure(throw new RuntimeException("Failed to create token"))
-        } else {
-          E.pure(())
-        }
-      }:E[Unit] // Note: fix intellij erroneous error
-      _ <- info(s"Issued token $uuid to user $userId")
-    } yield (token,tokenInfo)
-
+      val result = unlift(tokensDao.insert(token, tokenInfo))
+      if(result == false) {
+        unlift(E.failure(throw new RuntimeException("Failed to create token")))
+      }
+      unlift(info(s"Issued token $uuid to user $userId"))
+      (token,tokenInfo)
+    }
 
   override def validate(token: String): E[Option[TokenInfo]] =
+  // todo: fix me
+//    lift {
+//      val optTokenInfo = unlift(tokensDao.findById(token))
+//      optTokenInfo match {
+//        case Some((_, tokenInfo, _)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
+//          val result = unlift(tokensDao.update(token, tokenInfo.copy(
+//            lastValidated = Instant.now()
+//          )))
+//          if (result) {
+//            unlift(info(s"Validated token $token for user ${optTokenInfo.get._2.userId}"))
+//          } else {
+//            unlift(E.failure(throw new RuntimeException("Failed to update token")))
+//          }
+//          Some(tokenInfo)
+//        case _ => None
+//      }
+//    }
     for {
       optTokenInfo <- tokensDao.findById(token)
       result <- optTokenInfo match {
-        case Some((_,tokenInfo,_)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
+        case Some((_, tokenInfo, _)) if tokenInfo.expiresOn.compareTo(Instant.now()) > 0 =>
           for {
             result <- tokensDao.update(token, tokenInfo.copy(
               lastValidated = Instant.now()
             ))
             _ <- {
-              if(result) {
+              if (result) {
                 info(s"Validated token $token for user ${optTokenInfo.get._2.userId}")
               } else {
                 E.failure(throw new RuntimeException("Failed to update token"))
               }
-            }:E[Unit]
+            }: E[Unit]
           } yield Some(tokenInfo)
         case _ => E.pure(None)
       }
@@ -81,33 +97,32 @@ class TokensImpl[E[_]](
     tokensDao.findById(token).map(_.map(_._2))
 
   override def forceExpire(token: Token): E[Unit] =
-    for {
-      optTokenInfo <- tokensDao.findById(token)
-      result <- {
-        optTokenInfo match {
-          case Some((_,tokenInfo,_)) =>
-            tokensDao.update(token, tokenInfo.copy(
-              expiresOn = Instant.now()
-            ))
-          case None => E.failure(throw new RuntimeException("Token does not exist"))
-        }
-      }:E[Boolean] // Note: fix intellij erroneous error
-      _ <- {
-        if(result) {
-          info(s"Forced expiration of token $token")
-        } else {
-          E.failure(throw new RuntimeException("Failed to update token"))
-        }
+    lift {
+      unlift(tokensDao.findById(token)) match {
+        case Some((_,tokenInfo,_)) =>
+          val result = unlift(tokensDao.update(token, tokenInfo.copy(
+            expiresOn = Instant.now()
+          )))
+          if(result) {
+            unlift(info(s"Forced expiration of token $token"))
+          } else {
+            unlift[Unit](E.failure(throw new RuntimeException("Failed to update token")))
+          }
+        case None =>
+          unlift[Unit](E.failure(throw new RuntimeException("Token does not exist")))
       }
-    } yield ()
+      ()
+    }
 
   override def forceAllExpire(userId: UUID, exceptTokens: Token*): E[Boolean] =
-    for {
-      allTokenInfo <- tokensDao.findByNativeQuery(sql"`user_id`=$userId")
-      _ <- allTokenInfo.map { case (token,_,_) =>
-        forceExpire(token)
-      }.sequence
-      _ <- info(s"Forced expiration of all tokens for $userId except ${exceptTokens.mkString(",")}")
-    } yield true
-
+    lift {
+      val allTokenInfo = unlift(tokensDao.findByNativeQuery(sql"`user_id`=$userId"))
+      unlift {
+        allTokenInfo.map { case (token, _, _) =>
+          forceExpire(token)
+        }.sequence
+      }
+      unlift(info(s"Forced expiration of all tokens for $userId except ${exceptTokens.mkString(",")}"))
+      true
+    }
 }
