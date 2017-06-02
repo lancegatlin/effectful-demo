@@ -30,7 +30,7 @@ class UsersImpl[E[_]](
   val eMonadMonadless = io.monadless.cats.MonadlessMonad[E]()
   import eMonadMonadless._
 
-  def create(id: UUID, username: String, plainTextPassword: String) =
+  def create(id: UUID, username: String, plainTextPassword: String) : E[Boolean] =
     lift {
       unlift(findById(id)) match {
         case Some(_) => false
