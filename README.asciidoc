@@ -93,7 +93,7 @@ without the need for monad transformers or lifting every statement.
 
 ----
   ...
-  def create(id: UUID, username: String, plainTextPassword: String) =
+  def create(id: UUID, username: String, plainTextPassword: String) : E[Boolean] =
     lift {
       unlift(findById(id)) match {
         case Some(_) => false
